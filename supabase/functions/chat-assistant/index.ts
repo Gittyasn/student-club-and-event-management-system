@@ -1,0 +1,56 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import "https://deno.land/x/xhr@0.1.0/mod.ts"
+
+const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY')
+
+const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+serve(async (req) => {
+    // Handle CORS
+    if (req.method === 'OPTIONS') {
+        return new Response('ok', { headers: corsHeaders })
+    }
+
+    try {
+        const { messages, context } = await req.json()
+
+        // Build the system prompt using Supabase context data
+        const systemPrompt = `You are a helpful university AI assistant for Bandaru University.
+Current university context:
+Events: ${JSON.stringify(context?.events || [])}
+Clubs: ${JSON.stringify(context?.clubs || [])}
+
+Use the above real context from our Supabase database to answer the user's questions about clubs, events, or general university queries. If you don't know, suggest they check the dashboard. Keep responses brief, polite, and directly address the user.`
+
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${OPENAI_API_KEY}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                model: 'gpt-4o-mini',
+                messages: [
+                    { role: 'system', content: systemPrompt },
+                    ...messages
+                ],
+                max_tokens: 250,
+                temperature: 0.7,
+            }),
+        })
+
+        const data = await response.json()
+        return new Response(JSON.stringify(data), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 200,
+        })
+    } catch (error) {
+        return new Response(JSON.stringify({ error: error.message }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 400,
+        })
+    }
+})
