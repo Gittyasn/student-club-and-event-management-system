@@ -6,10 +6,10 @@ import { Input } from '@/components/ui/input';
 import { supabase } from '../services/supabaseClient';
 
 /**
- * AIAssistant Component
- * AI-powered campus guide connected to Supabase Edge Functions
+ * CampusGuide Component
+ * Smart campus guide connected to Supabase Edge Functions
  */
-const AIAssistant = ({ triggerMode = 'floating' }) => {
+const CampusGuide = ({ triggerMode = 'floating' }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState([
         { role: 'assistant', content: 'Hello! I am your NEXTGEN EDUTECH UNIVERSITY Guide. How can I help you today?' }
@@ -85,7 +85,7 @@ const AIAssistant = ({ triggerMode = 'floating' }) => {
                 });
 
                 if (!response.ok) {
-                    throw new Error(`OpenAI Error: ${response.status}`);
+                    throw new Error(`Service Error: ${response.status}`);
                 }
 
                 const data = await response.json();
@@ -105,8 +105,8 @@ const AIAssistant = ({ triggerMode = 'floating' }) => {
                 setMessages(prev => [...prev, { role: 'assistant', content: reply }]);
             }
         } catch (error) {
-            console.error("AI Error:", error);
-            setMessages(prev => [...prev, { role: 'assistant', content: `Sorry, my AI engine failed: ${error.message} (Please check if your VITE_OPENAI_API_KEY is valid and has credits)` }]);
+            console.error("Guide Error:", error);
+            setMessages(prev => [...prev, { role: 'assistant', content: `Sorry, my engine failed: ${error.message}. Please try again later.` }]);
         } finally {
             setIsTyping(false);
         }
@@ -127,11 +127,11 @@ const AIAssistant = ({ triggerMode = 'floating' }) => {
                     className={isTopbar
                         ? "h-10 w-10 rounded-xl p-0 flex items-center justify-center bg-primary hover:bg-primary/90 transition-all border border-border/50 shadow-lg"
                         : "h-16 w-16 rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] p-0 flex items-center justify-center bg-primary hover:bg-primary/90 transition-all border-0"}
-                    aria-label="Open AI Assistant"
+                    aria-label="Open Campus Guide"
                 >
                     {isOpen
                         ? <X className={isTopbar ? "h-5 w-5 text-white" : "h-7 w-7 text-white"} />
-                        : <Bot className={isTopbar ? "h-5 w-5 text-white" : "h-7 w-7 text-white animate-pulse"} />}
+                        : <HelpCircle className={isTopbar ? "h-5 w-5 text-white" : "h-7 w-7 text-white animate-pulse"} />}
                 </Button>
             </motion.div>
 
@@ -151,7 +151,7 @@ const AIAssistant = ({ triggerMode = 'floating' }) => {
                         <div className="p-5 bg-gradient-to-r from-primary via-indigo-600 to-purple-600 text-primary-foreground flex items-center justify-between">
                             <div className="flex items-center gap-3">
                                 <div className="h-10 w-10 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/20 shadow-inner">
-                                    <Sparkles className="h-5 w-5 text-white" />
+                                    <MessageSquare className="h-5 w-5 text-white" />
                                 </div>
                                 <div className="text-left">
                                     <h3 className="font-bold text-base tracking-tight leading-none text-white">NextGen Campus Guide</h3>
@@ -238,5 +238,5 @@ const AIAssistant = ({ triggerMode = 'floating' }) => {
     );
 };
 
-export default AIAssistant;
+export default CampusGuide;
 

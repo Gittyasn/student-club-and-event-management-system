@@ -20,6 +20,16 @@ const getInitials = (name) => {
     return (first + second).toUpperCase() || "CL";
 };
 
+// UI-level Branding Standardizer
+const standardizeName = (name) => {
+    if (!name) return "";
+    return name
+        .replace(/AI & Data Science Club/g, 'Smart Analytics Club')
+        .replace(/Robotics & AI League/g, 'Robotics & Automation League')
+        .replace(/AI Workshop/g, 'Smart Systems Workshop')
+        .replace(/AI/g, 'Smart Systems');
+};
+
 const FeaturedClubs = () => {
     const { data: clubs, isLoading } = useClubs();
 
@@ -70,7 +80,7 @@ const FeaturedClubs = () => {
                                             <div className="flex items-start justify-between mb-4">
                                             <div className="h-12 w-12 rounded-lg bg-white/5 border border-border flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
                                                 <span className="text-sm font-extrabold tracking-wider text-primary">
-                                                    {getInitials(club.name)}
+                                                    {getInitials(standardizeName(club.name))}
                                                 </span>
                                             </div>
                                                 <span className="bg-white/5 border border-border text-[10px] font-semibold px-2 py-1 rounded-full text-muted-foreground">
@@ -79,11 +89,11 @@ const FeaturedClubs = () => {
                                             </div>
 
                                             <h3 className="text-xl font-bold text-foreground mb-2 group-hover:text-primary transition-colors">
-                                                {club.name}
+                                                {standardizeName(club.name)}
                                             </h3>
 
                                             <p className="text-muted-foreground text-sm line-clamp-3 mb-4 flex-grow">
-                                                {club.description || "A community of passionate learners and creators driven to innovate."}
+                                                {club.description?.replace(/AI/gi, 'Smart Systems').replace(/artificial intelligence/gi, 'intelligent systems') || "A community of passionate learners and creators driven to innovate."}
                                             </p>
 
                                             <div className="flex items-center gap-4 pt-4 border-t border-border text-xs text-muted-foreground">

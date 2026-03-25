@@ -5,7 +5,7 @@ import { Box, Typography, Grid, Paper, CircularProgress, Avatar, Stack, Chip } f
 import { motion } from 'framer-motion';
 import { AutoGraph, WarningAmber, EmojiEvents, Stars } from '@mui/icons-material';
 import { supabase } from '../../services/supabaseClient';
-import { useGlobalAIGovernance } from '../../hooks/useAIEngine';
+import { useGlobalAIGovernance } from '../../hooks/useGuideEngine';
 
 const AIReports = () => {
     const { data: gov, isLoading: isGovLoading } = useGlobalAIGovernance();
@@ -32,7 +32,7 @@ const AIReports = () => {
 
                 setData({ dropouts, topStudents, topClubs });
             } catch (err) {
-                console.error("AI Report fetch failed:", err);
+                console.error("Smart Report fetch failed:", err);
             } finally {
                 setIsLoading(false);
             }
@@ -49,7 +49,7 @@ const AIReports = () => {
         <Box sx={{ pb: 8 }}>
             <Box mb={5}>
                 <Typography variant="h4" fontWeight={900} sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
-                    <AutoGraph color="secondary" fontSize="large" /> AI Global Intelligence
+                    <AutoGraph color="secondary" fontSize="large" /> Smart Global Intelligence
                 </Typography>
                 <Typography color="text.secondary">
                     System-wide predictive analytics mapping student engagement risk and organizational performance.
@@ -85,7 +85,7 @@ const AIReports = () => {
                     <Grid item xs={12} lg={8}>
                         <Paper sx={{ p: 4, borderRadius: '24px', border: '1px solid', borderColor: 'divider', height: '100%' }}>
                             <Typography variant="h6" fontWeight={800} mb={3} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <EmojiEvents sx={{ color: '#f59e0b' }} /> AI Engagement Leaderboards
+                                <EmojiEvents sx={{ color: '#f59e0b' }} /> Smart Engagement Leaderboards
                             </Typography>
 
                             <Grid container spacing={4}>

@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../services/supabaseClient';
 import { useAuthStore } from '../../store/authStore';
-import AIAssistant from '../../components/AIAssistant';
+import CampusGuide from '../../components/CampusGuide';
 import {
     AreaChart, Area, PieChart, Pie, Cell,
     XAxis, YAxis, CartesianGrid, ResponsiveContainer,
@@ -159,18 +159,18 @@ const CoordinatorDashboard = () => {
             if (!clubId) return { hasClub: false };
 
             // 2. Fetch all club-specific metrics in parallel
-            const [eventsRes, regsRes, budgetRes] = await Promise.all([
+            const [eventsRes, budgetRes] = await Promise.all([
                 supabase.from('events').select('id, title, approval_status, start_time, budget, created_at').eq('club_id', clubId),
-                supabase.from('registrations').select('id, status').in('event_id', 
-                    (await supabase.from('events').select('id').eq('club_id', clubId)).data?.map(e => e.id) || []
-                ),
                 supabase.from('budget_items').select('amount, type, approved').eq('club_id', clubId)
             ]);
 
-            const now = new Date();
             const events = eventsRes.data || [];
-            const regs = regsRes.data || [];
             const budget = budgetRes.data || [];
+
+            // Optimize: Re-use events list for registration filtering to avoid double queries
+            const { data: regs = [] } = await supabase.from('registrations')
+                .select('id, status')
+                .in('event_id', events.map(e => e.id));
 
             const now = new Date();
             const upcomingEvents = events.filter(e => new Date(e.start_time) > now && e.approval_status === 'approved')

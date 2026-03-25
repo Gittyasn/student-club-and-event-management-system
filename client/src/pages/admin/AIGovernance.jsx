@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Typography, Paper, Switch, CircularProgress, Divider, List, ListItem, ListItemText, ListItemSecondaryAction, Alert } from '@mui/material';
-import { useGlobalAIGovernance, useToggleAIFeature } from '../../hooks/useAIEngine';
+import { useGlobalAIGovernance, useToggleAIFeature } from '../../hooks/useGuideEngine';
 import { AutoAwesome, HealthAndSafety } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 
@@ -15,15 +15,15 @@ const AIGovernance = () => {
         <Box sx={{ maxWidth: 800, mx: 'auto', pb: 8 }}>
             <Box component={motion.div} initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} sx={{ mb: 4 }}>
                 <Typography variant="h4" fontWeight={900} sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
-                    <HealthAndSafety color="primary" fontSize="large" /> AI Governance Engine
+                    <HealthAndSafety color="primary" fontSize="large" /> Smart Systems Governance
                 </Typography>
                 <Typography color="text.secondary">
-                    Globally enable or disable predictive pipelines. When disabled, AI UI elements will automatically disappear without breaking the application, protecting user data and API quota.
+                    Globally enable or disable assistive pipelines. When disabled, automated UI elements will automatically disappear without breaking the application.
                 </Typography>
             </Box>
 
             <Alert severity="info" sx={{ mb: 4, borderRadius: '12px' }}>
-                All predictive algorithms are strictly configured to <strong>Assess and Assist</strong>. The AI will never auto-enforce destructive actions (e.g. dropping a student) on its own.
+                All assistive reasoning systems are strictly configured to <strong>Assess and Assist</strong>. The system will never auto-enforce destructive actions (e.g. dropping a student) on its own.
             </Alert>
 
             <Paper elevation={0} sx={{ borderRadius: '24px', border: '1px solid', borderColor: 'divider', overflow: 'hidden' }}>

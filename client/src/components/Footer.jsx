@@ -11,12 +11,12 @@ const Footer = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
                     {/* Brand Column */}
                     <div>
-                        <div className="flex items-center space-x-2 text-foreground mb-4">
-                            <div className="h-7 w-7 rounded-md border border-border flex items-center justify-center text-[10px] font-black tracking-widest">
-                                NX
+                        <div className="flex items-center space-x-3 text-foreground mb-4">
+                            <div className="h-8 w-8 rounded-lg border border-border flex items-center justify-center p-1.5 bg-background shadow-sm">
+                                <img src="/university_logo.png" alt="University Logo" className="h-full w-full object-contain" />
                             </div>
                             <span className="font-heading font-black text-base tracking-tight" style={{ fontFamily: '"Space Grotesk", sans-serif', letterSpacing: '0.1em' }}>
-                                NEXTGEN EDUTECH <span className="text-primary">UNIVERSITY</span>
+                                NEXTGEN EDUTECH <span className="text-primary-foreground bg-primary px-1.5 py-0.5 rounded ml-1">UNIVERSITY</span>
                             </span>
                         </div>
                         <p className="text-sm leading-relaxed text-muted-foreground mb-6 max-w-xs font-light">

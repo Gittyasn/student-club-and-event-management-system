@@ -1,9 +1,9 @@
 -- 1. Insert Clubs (No 'category' column as per schema)
 INSERT INTO public.clubs (name, description, logo_url)
 VALUES
-    ('Tech Innovators Club', 'A community for tech enthusiasts to build, learn, and innovate together. We organize hackathons, coding workshops, and tech talks.', 'https://images.unsplash.com/photo-1531482615713-2afd69097998?q=80&w=2070&auto=format&fit=crop'),
+    ('Tech Innovators Club', 'A community for tech enthusiasts to build, learn, and innovate together. We organize hackathons, coding workshops, and tech talks.', 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=800'),
     ('Creative Arts Society', 'Unleash your creativity with painting, digital art, and design workshops. Join us to explore the artistic side of campus life.', 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?q=80&w=2071&auto=format&fit=crop'),
-    ('Robotics & AI League', 'Building the future with robots and artificial intelligence. Participate in competitions and hands-on projects.', 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?q=80&w=2070&auto=format&fit=crop'),
+    ('Automation & Smart Systems League', 'Building the future with robotics and high-performance automation systems. Participate in competitions and hands-on projects.', 'https://images.unsplash.com/photo-1581092160562-40aa08e78837?q=80&w=800'),
     ('Debate & Oratory Club', 'Sharpen your public speaking and argumentation skills. We host weekly debates and participate in inter-college tournaments.', 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?q=80&w=2070&auto=format&fit=crop'),
     ('Eco-Warriors', 'Dedicated to sustainability and environmental awareness. Join our green initiatives and campus clean-up drives.', 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?q=80&w=2013&auto=format&fit=crop'),
     ('Music & Jamming Society', 'For musicians and music lovers. Jam sessions, open mics, and concert organizations.', 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=2070&auto=format&fit=crop')
@@ -25,16 +25,16 @@ VALUES
         (SELECT id FROM public.clubs WHERE name = 'Tech Innovators Club')
     ),
     (
-        'AI Workshop: Basics to Advanced',
-        'Learn the fundamentals of Machine Learning and AI in this hands-on workshop.',
+        'Smart Workshop: Basics to Advanced',
+        'Learn the fundamentals of Smart Systems and Automation in this hands-on workshop.',
         NOW() + interval '5 days',
         'Lab 305',
         'normal', -- Adjusted to match enum if needed, or 'workshop' if enum allows. Schema says: check (event_type in ('normal', 'hackathon')) default 'normal'
         'open',
         'approved',
-        'https://images.unsplash.com/photo-1555255707-c07966088b7b?q=80&w=1932&auto=format&fit=crop',
+        'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=800',
         50,
-        (SELECT id FROM public.clubs WHERE name = 'Robotics & AI League')
+        (SELECT id FROM public.clubs WHERE name = 'Automation & Smart Systems League')
     ),
     (
         'Inter-College Debate Championship',

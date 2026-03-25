@@ -8,6 +8,15 @@ import { Input } from '@/components/ui/input';
 import { Search, Calendar, MapPin, ArrowRight, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
+// UI-level Branding Standardizer
+const standardizeName = (name) => {
+    if (!name) return "";
+    return name
+        .replace(/AI Workshop/g, 'Smart Systems Workshop')
+        .replace(/Machine Learning/g, 'Intelligent Systems')
+        .replace(/AI/g, 'Smart Systems');
+};
+
 const UpcomingEvents = () => {
     const { data: events, isLoading } = useEvents({ status: ['registration_open', 'approved'], approval_status: 'approved' });
     const [searchTerm, setSearchTerm] = useState("");
@@ -91,14 +100,16 @@ const UpcomingEvents = () => {
                                         </div>
 
                                         <h3 className="text-lg font-bold text-foreground mb-2 line-clamp-1 group-hover:text-primary transition-colors">
-                                            {event.title}
+                                            {standardizeName(event.title)}
                                         </h3>
 
                                         <div className="flex items-center gap-3 text-[10px] text-muted-foreground mb-3">
                                             <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/5 border border-border">
                                                 <Users className="w-3 h-3 text-primary" />
                                                 <span className="text-muted-foreground">
-                                                    {Math.max((event.max_participants || 0) - (event.registrationsCount || 0), 0)} Seats Left
+                                                    {(event.max_participants || 0) - (event.registrationsCount || 0) > 0 
+                                                        ? `${(event.max_participants || 0) - (event.registrationsCount || 0)} Seats Left`
+                                                        : "Registration Full"}
                                                 </span>
                                             </div>
                                             <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/5 border border-border">
@@ -110,7 +121,7 @@ const UpcomingEvents = () => {
                                         </div>
 
                                         <p className="text-muted-foreground text-xs line-clamp-2 mb-4 flex-grow">
-                                            {event.short_description || event.description || "No description provided."}
+                                            {standardizeName(event.short_description || event.description || "No description provided.")}
                                         </p>
 
                                         <div className="flex items-center gap-4 text-[10px] text-muted-foreground mb-4 border-t border-border pt-3">
@@ -123,7 +134,7 @@ const UpcomingEvents = () => {
                                             {event.club && (
                                                 <div className="flex items-center gap-1.5 ml-auto">
                                                     <Users className="w-3 h-3" />
-                                                    <span className="line-clamp-1">{event.club.name}</span>
+                                                    <span className="line-clamp-1">{standardizeName(event.club.name)}</span>
                                                 </div>
                                             )}
                                         </div>

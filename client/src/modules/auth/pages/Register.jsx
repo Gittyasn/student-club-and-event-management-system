@@ -110,7 +110,7 @@ const Register = () => {
                 <CardHeader className="space-y-1">
                     <CardTitle className="text-2xl font-bold text-center">Create an Account</CardTitle>
                     <CardDescription className="text-center">
-                        Enter your details to register for NEXTGEN EDUTECH
+                        Enter your details to register for NEXTGEN EDUTECH UNIVERSITY
                     </CardDescription>
                 </CardHeader>
                 <CardContent>

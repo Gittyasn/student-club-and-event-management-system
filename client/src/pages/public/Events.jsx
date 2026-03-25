@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { Calendar, Clock, Users, Search, Filter, MapPin, Laptop, Ticket, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { rebrandName } from '../../utils/rebrand';
 
 const Events = () => {
     const { data: events, isLoading, error } = useEvents({ approval_status: 'approved' });
@@ -226,7 +227,7 @@ const Events = () => {
                                         {/* Card Content */}
                                         <div className="p-5 flex flex-col flex-grow">
                                             <h3 className="text-base font-bold text-foreground mb-2 leading-snug group-hover:text-primary transition-colors line-clamp-2">
-                                                {event.title}
+                                                {rebrandName(event.title)}
                                             </h3>
 
                                             {event.short_description && (
@@ -245,7 +246,7 @@ const Events = () => {
                                                 {event.club?.name && (
                                                     <div className="flex items-center gap-2">
                                                         <Users className="h-3.5 w-3.5 text-primary shrink-0" />
-                                                        <span className="truncate">{event.club.name}</span>
+                                                        <span className="truncate">{rebrandName(event.club?.name)}</span>
                                                     </div>
                                                 )}
                                                 <div className="flex items-center gap-2">

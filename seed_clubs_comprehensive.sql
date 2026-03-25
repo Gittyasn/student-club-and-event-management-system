@@ -8,8 +8,8 @@
 -- Academic & Technical Clubs
 insert into public.clubs (name, description, category, status, rating, member_count) values
 ('Coding Club', 'Master coding through hackathons, coding contests, and debugging battles. Learn competitive programming and collaborative development.', 'academic', 'active', 4.7, 245),
-('AI & Data Science Club', 'Explore machine learning, AI seminars, and Kaggle competitions. Build real-world AI solutions.', 'academic', 'active', 4.6, 187),
-('Robotics Club', 'Build robots and compete in tech expos. Learn robotics design, control systems, and automation.', 'technical', 'active', 4.8, 156),
+('Data Analytics & Smart Systems Club', 'Explore intelligent data processing, smart seminars, and hackathons. Build real-world smart solutions.', 'academic', 'active', 4.6, 187),
+('Robotics & Automation Club', 'Build drones and autonomous systems for tech expos. Learn robotics design, control systems, and automation.', 'technical', 'active', 4.8, 156),
 ('Electronics Club', 'Circuit design workshops and hardware hackathons. Get hands-on with circuit design and electronics.', 'technical', 'active', 4.5, 128),
 ('Mathematics Club', 'Math quizzes and problem-solving contests. Sharpen your mathematical thinking.', 'academic', 'active', 4.3, 98),
 ('Research & Innovation Club', 'Paper presentations and project expos. Showcase research and innovative ideas.', 'academic', 'active', 4.4, 112),
@@ -124,8 +124,8 @@ insert into public.events (
   category, mode, location, budget_request, contact_person, contact_email
 )
 select
-  'Machine Learning Workshop',
-  'Hands-on ML workshop covering neural networks, classification, and deployment.',
+  'Smart Automation Workshop',
+  'Hands-on workshop covering neural networks, classification, and industrial deployment of autonomous systems.',
   id,
   (select id from public.profiles where role = 'admin' limit 1),
   timezone('utc'::text, now()) + interval '10 days',
@@ -139,8 +139,8 @@ select
   'Computer Lab A',
   2000,
   'Dr. Anil Kumar',
-  'anil@ai-club.edu'
-from public.clubs where name = 'AI & Data Science Club' limit 1;
+  'anil@smart-club.edu'
+from public.clubs where name = 'Data Analytics & Smart Systems Club' limit 1;
 
 -- Robotics Club Events
 insert into public.events (

@@ -21,12 +21,12 @@ import {
     NotificationsNone, AdminPanelSettings, ChevronRight,
     AppRegistration as RegIcon, FactCheck as AttendanceAdminIcon,
     Leaderboard as ResultsOvIcon, WorkspacePremium as CertAdminIcon,
-    SmartToy as SmartToyIcon, Assessment as AssessmentIcon
+    Shield as ShieldIcon, Assessment as AssessmentIcon
 } from '@mui/icons-material';
 import { useAuthStore } from '../store/authStore';
 import NotificationBell from '../components/NotificationBell';
 import { ModeToggle } from '../components/mode-toggle';
-import AIAssistant from '../components/AIAssistant';
+import CampusGuide from '../components/CampusGuide';
 
 const DRAWER_WIDTH = 260;
 
@@ -54,8 +54,8 @@ const menuItems = [
     { text: 'Certificates', icon: <CertAdminIcon />, path: '/admin/certificates', color: '#fbbf24' },
     { text: 'Broadcast Chat', icon: <AnnouncementIcon />, path: '/admin/broadcast', color: '#ef4444' },
     { text: 'System Alerts', icon: <AnnouncementIcon />, path: '/admin/broadcast-alerts', color: '#ef4444' },
-    { text: 'AI Governance', icon: <SmartToyIcon />, path: '/admin/ai-governance', color: '#8b5cf6' },
-    { text: 'AI Reports', icon: <AssessmentIcon />, path: '/admin/ai-reports', color: '#ec4899' },
+    { text: 'Insights Hub', icon: <ShieldIcon />, path: '/admin/ai-governance', color: '#8b5cf6' },
+    { text: 'Governance Reports', icon: <AssessmentIcon />, path: '/admin/ai-reports', color: '#ec4899' },
     { text: 'Security', icon: <SecurityIcon />, path: '/admin/security', color: '#ef4444' },
     { text: 'Settings', icon: <SettingsIcon />, path: '/admin/settings', color: '#94a3b8' },
 ];
@@ -235,7 +235,7 @@ const AdminLayout = () => {
                 </Box>
 
                 <ModeToggle />
-                <AIAssistant triggerMode="topbar" />
+                <CampusGuide triggerMode="topbar" />
                 <NotificationBell />
 
                 <Box component={motion.div} whileHover={{ scale: 1.05 }} onClick={e => setAnchorEl(e.currentTarget)} sx={{ display: 'flex', alignItems: 'center', gap: 1.5, cursor: 'pointer', px: 2, py: 1, borderRadius: '12px', border: '1px solid', borderColor: 'divider', '&:hover': { bgcolor: 'action.hover' } }}>

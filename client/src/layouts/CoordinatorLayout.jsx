@@ -15,7 +15,7 @@ import {
 import { useAuthStore } from '../store/authStore';
 import NotificationBell from '../components/NotificationBell';
 import { ModeToggle } from '../components/mode-toggle';
-import AIAssistant from '../components/AIAssistant';
+import CampusGuide from '../components/CampusGuide';
 
 const DRAWER_WIDTH = 260;
 const SIDEBAR_BG = 'linear-gradient(180deg, #0b1220 0%, #0f172a 45%, #0b1220 100%)'; // Executive gradient slate
@@ -181,7 +181,7 @@ const CoordinatorLayout = () => {
                     </Typography>
                 </Box>
                 <ModeToggle />
-                <AIAssistant triggerMode="topbar" />
+                <CampusGuide triggerMode="topbar" />
                 <NotificationBell />
                 <Box component={motion.div} whileHover={{ scale: 1.02 }} onClick={e => setAnchorEl(e.currentTarget)}
                     sx={{ display: 'flex', alignItems: 'center', gap: 1.5, cursor: 'pointer', px: 1.5, py: 0.75, borderRadius: '8px', border: '1px solid', borderColor: 'divider', '&:hover': { bgcolor: 'action.hover' } }}>

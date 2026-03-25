@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { rebrandName, rebrandDescription } from '../../utils/rebrand';
 import { useState } from 'react';
 
 const Clubs = () => {
@@ -149,7 +150,7 @@ const Clubs = () => {
                                             <Avatar className="h-16 w-16 border-2 border-background shadow-md">
                                                 <AvatarImage src={club.logo_url} />
                                                 <AvatarFallback className="bg-muted text-primary font-bold text-xl">
-                                                    {club.name.substring(0, 2).toUpperCase()}
+                                                    {rebrandName(club.name).substring(0, 2).toUpperCase()}
                                                 </AvatarFallback>
                                             </Avatar>
                                         </div>
@@ -164,11 +165,11 @@ const Clubs = () => {
                                     </div>
 
                                     <h3 className="text-xl font-bold text-foreground mb-2 group-hover:text-primary transition-colors leading-tight">
-                                        {club.name}
+                                        {rebrandName(club.name)}
                                     </h3>
 
                                     <p className="text-muted-foreground text-sm line-clamp-3 mb-6 flex-grow leading-relaxed">
-                                        {club.description || "No mission statement defined for this collective."}
+                                        {rebrandDescription(club.description) || "No mission statement defined for this collective."}
                                     </p>
 
                                     <div className="flex items-center gap-4 mb-6 text-xs text-muted-foreground font-medium pt-4 border-t border-border">
@@ -199,7 +200,7 @@ const Clubs = () => {
                                                 onClick={() => handleJoinClick(club)}
                                                 disabled={joiningClubId === club.id}
                                             >
-                                                {joiningClubId === club.id ? 'Syncing...' : 'Join Collective'}
+                                                {joiningClubId === club.id ? 'Syncing...' : 'Join Club'}
                                             </Button>
                                         )}
 

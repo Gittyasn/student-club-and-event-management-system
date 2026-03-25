@@ -29,7 +29,7 @@ export const useAuthStore = create(
                 // If we already have a profile in state (from persist), don't set loading to true
                 // This prevents the full-screen flicker on app start
                 set((state) => ({ loading: !state.profile }));
-                
+
                 try {
                     const data = await authService.getCurrentUser();
                     if (data) {
@@ -64,7 +64,14 @@ export const useAuthStore = create(
                     isStudent: false,
                     loading: false
                 });
-                localStorage.removeItem('auth-storage'); // Clear persistence on logout
+                // Absolute sweep of all role-based storage keys to prevent accidental bleed or auto-login
+                const storagePrefixes = ['admin', 'coord', 'student'];
+                storagePrefixes.forEach(prefix => {
+                    localStorage.removeItem(`${prefix}_clubnexus-auth-token`);
+                });
+                localStorage.removeItem('auth-storage-admin');
+                localStorage.removeItem('auth-storage-coord');
+                localStorage.removeItem('auth-storage-student');
             },
         }),
         {
@@ -78,8 +85,8 @@ export const useAuthStore = create(
                 return 'student';
             })()}`,
             storage: createJSONStorage(() => localStorage),
-            partialize: (state) => ({ 
-                user: state.user, 
+            partialize: (state) => ({
+                user: state.user,
                 profile: state.profile,
                 role: state.role,
                 isAdmin: state.isAdmin,

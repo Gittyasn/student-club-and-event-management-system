@@ -219,3 +219,58 @@ export const useStudentAnalytics = () => {
         }
     });
 };
+
+// ─── 🏆 ENGAGEMENT LEADERBOARD (Platform-wide) ─────────────────────────────────
+export const useEngagementLeaderboard = () => {
+    return useQuery({
+        queryKey: ['engagementLeaderboard'],
+        staleTime: 10 * 60 * 1000, // 10 mins cache
+        queryFn: async () => {
+            const [profilesRes, attRes, memRes, certRes, fbRes] = await Promise.all([
+                supabase.from('profiles').select('id, full_name, avatar_url, department').eq('role', 'student'),
+                supabase.from('attendance_records').select('user_id, status'),
+                supabase.from('club_memberships').select('user_id').eq('status', 'approved'),
+                supabase.from('certificates').select('user_id, cert_type').eq('status', 'valid'),
+                supabase.from('feedback').select('user_id'),
+            ]);
+
+            const students = profilesRes.data || [];
+            const attMap = (attRes.data || []).reduce((acc, a) => {
+                if (['present', 'late'].includes(a.status)) acc[a.user_id] = (acc[a.user_id] || 0) + 1;
+                return acc;
+            }, {});
+            const memMap = (memRes.data || []).reduce((acc, m) => {
+                acc[m.user_id] = (acc[m.user_id] || 0) + 1;
+                return acc;
+            }, {});
+            const certMap = (certRes.data || []).reduce((acc, c) => {
+                const weight = c.cert_type === 'winner' ? 20 : c.cert_type === 'merit' ? 12 : 8;
+                acc[c.user_id] = (acc[c.user_id] || 0) + weight;
+                return acc;
+            }, {});
+            const fbMap = (fbRes.data || []).reduce((acc, f) => {
+                acc[f.user_id] = (acc[f.user_id] || 0) + 1;
+                return acc;
+            }, {});
+
+            const leaderboard = students.map(s => {
+                const attended = attMap[s.id] || 0;
+                const members = memMap[s.id] || 0;
+                const certPts = certMap[s.id] || 0;
+                const fb = fbMap[s.id] || 0;
+
+                const score = (attended * 10) + (members * 5) + certPts + (fb * 2);
+                
+                let level = 'Beginner';
+                if (score >= 200) level = 'Campus Leader';
+                else if (score >= 100) level = 'Highly Active';
+                else if (score >= 40) level = 'Active';
+
+                return { ...s, score, level };
+            });
+
+            return leaderboard.sort((a, b) => b.score - a.score).slice(0, 50);
+        }
+    });
+};
+
