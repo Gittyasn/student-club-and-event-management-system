@@ -97,10 +97,11 @@ const StudentAnalytics = () => {
                         <Box sx={{ mt: 2.5, textAlign: 'left' }}>
                             <Typography variant="caption" color="text.secondary" fontWeight={800} textTransform="uppercase">Score Breakdown</Typography>
                             {[
-                                { label: 'Events Attended', pts: d.attended * 10, icon: '📅' },
-                                { label: 'Club Memberships', pts: d.clubsJoined * 5, icon: '👥' },
-                                { label: 'Certificates', pts: d.totalCerts * 8, icon: '🎓' },
-                                { label: 'Feedback Given', pts: d.feedbackCount * 2, icon: '⭐' },
+                                { label: 'Registrations', pts: d.registrationPts, icon: '📝' },
+                                { label: 'Events Attended', pts: d.attendedPts, icon: '📅' },
+                                { label: 'Club Memberships', pts: d.membershipPts, icon: '👥' },
+                                { label: 'Certificates', pts: d.certificatePts, icon: '🎓' },
+                                { label: 'Feedback Given', pts: d.feedbackPts, icon: '⭐' },
                             ].map(row => (
                                 <Box key={row.label} display="flex" justifyContent="space-between" alignItems="center" py={0.5}>
                                     <Typography variant="caption">{row.icon} {row.label}</Typography>

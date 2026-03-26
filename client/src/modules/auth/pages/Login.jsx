@@ -7,7 +7,7 @@ import authService from '@/services/authService';
 import { useAuthStore } from '@/store/authStore';
 
 import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Mail, Lock, LogIn } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -116,13 +116,16 @@ const Login = () => {
         <div className="flex items-center justify-center min-h-[calc(100vh-4rem)] px-4" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1562774053-701939374585?w=1920&q=95&auto=format&fit=crop')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
             <Card className="w-full max-w-md bg-white dark:bg-slate-900 text-card-foreground shadow-2xl border-2 border-slate-200 dark:border-slate-700 rounded-2xl hover:border-blue-400 hover:shadow-blue-200/40 dark:hover:border-blue-500 transition-all duration-300 cursor-default">
                 <CardHeader className="space-y-1">
+                    <div className="flex justify-center mb-4">
+                        <div className="h-12 w-12 bg-primary/10 rounded-2xl flex items-center justify-center border border-primary/20">
+                            <LogIn className="h-6 w-6 text-primary" />
+                        </div>
+                    </div>
                     <CardTitle className="text-2xl font-bold text-center">
-                        {location.pathname.includes('coordinator') ? 'Coordinator Portal' : 'Student Portal'}
+                        Portal Access
                     </CardTitle>
                     <CardDescription className="text-center">
-                        {location.pathname.includes('coordinator') 
-                            ? 'Securely sign in to manage your club and events' 
-                            : 'Securely sign in to your student account'}
+                        Securely sign in to continue to your dashboard
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -133,14 +136,17 @@ const Login = () => {
 
                         <div className="space-y-2">
                             <Label htmlFor="auth-email-field">Email Address</Label>
-                            <Input
-                                id="auth-email-field"
-                                type="email"
-                                placeholder="name@college.edu"
-                                {...register('email')}
-                                autoComplete="off"
-                                className={errors.email ? "border-red-500" : ""}
-                            />
+                            <div className="relative">
+                                <Mail className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                                <Input
+                                    id="auth-email-field"
+                                    type="email"
+                                    placeholder="name@college.edu"
+                                    {...register('email')}
+                                    autoComplete="off"
+                                    className={`${errors.email ? "border-red-500" : ""} pl-10 h-11 bg-slate-50 dark:bg-slate-950`}
+                                />
+                            </div>
                             {errors.email && (
                                 <p className="text-sm text-red-500">{errors.email.message}</p>
                             )}
@@ -155,14 +161,17 @@ const Login = () => {
                                     Forgot password?
                                 </Link>
                             </div>
-                            <Input
-                                id="auth-password-field"
-                                type="password"
-                                placeholder="••••••••"
-                                {...register('password')}
-                                autoComplete="off"
-                                className={errors.password ? "border-red-500" : ""}
-                            />
+                            <div className="relative">
+                                <Lock className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                                <Input
+                                    id="auth-password-field"
+                                    type="password"
+                                    placeholder="Enter password"
+                                    {...register('password')}
+                                    autoComplete="off"
+                                    className={`${errors.password ? "border-red-500" : ""} pl-10 h-11 bg-slate-50 dark:bg-slate-950`}
+                                />
+                            </div>
                             {errors.password && (
                                 <p className="text-sm text-red-500">{errors.password.message}</p>
                             )}
@@ -187,7 +196,10 @@ const Login = () => {
                                     Authenticating...
                                 </>
                             ) : (
-                                'Sign In'
+                                <>
+                                    <LogIn className="mr-2 h-4 w-4" />
+                                    Sign In
+                                </>
                             )}
                         </Button>
                     </form>
@@ -221,7 +233,7 @@ const Login = () => {
                     <p className="text-sm text-muted-foreground">
                         Don&apos;t have an account?{' '}
                         <Link to="/register" className="text-primary hover:underline font-bold">
-                            Join NEXTGEN EDUTECH
+                            Join NEXTGEN EDUTECH UNIVERSITY
                         </Link>
                     </p>
                 </CardFooter>

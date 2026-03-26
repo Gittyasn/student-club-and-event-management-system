@@ -8,30 +8,20 @@ if (!supabaseUrl || !supabaseAnonKey) {
     // Don't throw here to avoid crashing the entire app at module load time
 }
 
-// Determines namespace isolation to allow multiple tabs with different roles
-const getStoragePrefix = () => {
-    if (typeof window === 'undefined') return 'student';
-    const path = window.location.pathname;
-    
-    // Explicitly check for exact starts with, preventing accidental bleeding
-    if (path.startsWith('/admin')) return 'admin';
-    if (path.startsWith('/coordinator')) return 'coord';
-    return 'student'; // Public and Student pages
-};
-
-// Isolated localStorage wrapper matching the Map interface
+// Provides true tab-level isolation: different accounts can exist 
+// in sibling tabs without cross-over during testing.
 const customStorage = {
     getItem: (key) => {
         if (typeof window === 'undefined') return null;
-        return window.localStorage.getItem(`${getStoragePrefix()}_${key}`);
+        return window.sessionStorage.getItem(key);
     },
     setItem: (key, value) => {
         if (typeof window === 'undefined') return;
-        window.localStorage.setItem(`${getStoragePrefix()}_${key}`, value);
+        window.sessionStorage.setItem(key, value);
     },
     removeItem: (key) => {
         if (typeof window === 'undefined') return;
-        window.localStorage.removeItem(`${getStoragePrefix()}_${key}`);
+        window.sessionStorage.removeItem(key);
     }
 };
 

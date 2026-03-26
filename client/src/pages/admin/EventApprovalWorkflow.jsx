@@ -44,8 +44,8 @@ const EventApprovalWorkflow = () => {
     });
 
     // Separate events by status
-    const pendingEvents = events?.filter(e => e.approval_status === 'pending') || [];
-    const approvedEvents = events?.filter(e => e.approval_status === 'approved') || [];
+    const pendingEvents = events?.filter(e => e.approval_status === 'pending' && e.status === 'pending') || [];
+    const approvedEvents = events?.filter(e => e.approval_status === 'approved' && e.status !== 'draft') || [];
     const rejectedEvents = events?.filter(e => e.approval_status === 'rejected') || [];
 
     // Approve event mutation

@@ -173,7 +173,7 @@ const AdminRegister = () => {
                                         <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Password</Label>
                                         <div className="relative">
                                             <Lock className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-                                            <Input {...register('password')} type="password" placeholder="••••••••" className="pl-9 h-10 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-sm" />
+                                            <Input {...register('password')} type="password" placeholder="Create password" className="pl-9 h-10 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-sm" />
                                         </div>
                                         {errors.password && <p className="text-[10px] text-red-500 font-bold">{errors.password.message}</p>}
                                     </div>
@@ -181,7 +181,7 @@ const AdminRegister = () => {
                                         <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Confirm Password</Label>
                                         <div className="relative">
                                             <Lock className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-                                            <Input {...register('confirmPassword')} type="password" placeholder="••••••••" className="pl-9 h-10 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-sm" />
+                                            <Input {...register('confirmPassword')} type="password" placeholder="Confirm password" className="pl-9 h-10 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-sm" />
                                         </div>
                                         {errors.confirmPassword && <p className="text-[10px] text-red-500 font-bold">{errors.confirmPassword.message}</p>}
                                     </div>

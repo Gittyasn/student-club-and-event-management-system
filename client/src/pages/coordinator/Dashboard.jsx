@@ -7,7 +7,6 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../services/supabaseClient';
 import { useAuthStore } from '../../store/authStore';
-import CampusGuide from '../../components/CampusGuide';
 import {
     AreaChart, Area, PieChart, Pie, Cell,
     XAxis, YAxis, CartesianGrid, ResponsiveContainer,
@@ -272,7 +271,7 @@ const CoordinatorDashboard = () => {
                             {stats?.clubName || 'Coordinator Dashboard'}
                         </Typography>
                         <Typography variant="body2" sx={{ color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 1 }}>
-                            {currentDate} â€¢ <Star sx={{ fontSize: 16, color: '#f59e0b' }} /> {stats?.rating || 0}/5 Rating
+                            {currentDate} | <Star sx={{ fontSize: 16, color: '#f59e0b' }} /> {stats?.rating || 0}/5 Rating
                         </Typography>
                     </Box>
                     <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>

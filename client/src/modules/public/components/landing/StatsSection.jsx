@@ -4,8 +4,8 @@ import { useEvents } from '@/hooks/useEvents';
 import { usePublicStats } from '@/hooks/usePublicStats';
 
 const StatsSection = () => {
-    const { data: clubs } = useClubs();
-    const { data: events } = useEvents({ approval_status: 'approved' });
+    const { data: clubs } = useClubs({ publicOnly: true });
+    const { data: events } = useEvents({ publicOnly: true });
     const { data: publicStats } = usePublicStats();
 
     const activeClubs = publicStats?.active_clubs ?? clubs?.length ?? 0;

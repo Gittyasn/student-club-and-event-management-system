@@ -28,7 +28,7 @@ const Certificates = () => {
 
     if (eventLoading || regsLoading || certsLoading) return <CircularProgress sx={{ display: 'block', m: '50px auto' }} />;
 
-    if (!event?.is_certificate_enabled) {
+    if (!event?.certificate_enabled) {
         return (
             <Box textAlign="center" mt={10}>
                 <Typography variant="h5" color="text.secondary">
@@ -63,7 +63,7 @@ const Certificates = () => {
 
     const handleGenerate = () => {
         if (selectedUsers.length === 0) return;
-        generateCertificates.mutate(selectedUsers);
+        generateCertificates.mutate({ userIds: selectedUsers, mode: 'all' });
         setSelectedUsers([]);
     };
 

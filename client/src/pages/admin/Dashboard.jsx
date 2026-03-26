@@ -6,7 +6,6 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../services/supabaseClient';
-import CampusGuide from '../../components/CampusGuide';
 import {
     AreaChart, Area, PieChart, Pie, Cell,
     XAxis, YAxis, CartesianGrid, ResponsiveContainer,
@@ -224,7 +223,7 @@ const AdminDashboard = () => {
                         System Administration
                     </Typography>
                     <Typography variant="body2" sx={{ color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 1 }}>
-                        NEXTGEN EDUTECH UNIVERSITY • {currentDate}
+                        NEXTGEN EDUTECH UNIVERSITY | {currentDate}
                     </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', gap: 2 }}>
@@ -241,10 +240,10 @@ const AdminDashboard = () => {
                     </Paper>
                     <Button
                         variant="contained"
-                        onClick={() => navigate('/admin/users')}
+                        onClick={() => navigate('/admin/approvals')}
                         sx={{ px: 3, py: 1.5, borderRadius: 2 }}
                     >
-                        Directory
+                        Review Approvals
                     </Button>
                 </Box>
             </Box>

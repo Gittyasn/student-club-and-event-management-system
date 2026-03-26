@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../services/supabaseClient';
+import { sendNotification } from '../services/notificationService';
 import { useAuthStore } from '../store/authStore';
 import { toast } from 'sonner';
 import { useCertificateMutations } from './useCertificates';
@@ -202,14 +203,17 @@ export const useAttendanceMutations = (eventId) => {
                     .single();
 
                 if (reg) {
-                    await supabase.from('notifications').insert({
+                    await sendNotification({
                         user_id: reg.user_id,
+                        title: 'Attendance Confirmed',
                         message: `Attendance confirmed for "${reg.event?.title}"${isLate ? ' (Late)' : ''}`,
-                        type: 'success'
+                        type: 'success',
+                        related_id: eventId,
+                        related_type: 'event'
                     });
 
                     if (reg.event?.certificate_enabled) {
-                        try { generateCertificates.mutate([reg.user_id]); } catch { /* non-fatal */ }
+                        try { generateCertificates.mutate({ userIds: [reg.user_id], mode: 'all' }); } catch { /* non-fatal */ }
                     }
                 }
             }
@@ -311,10 +315,9 @@ export const useAttendanceMutations = (eventId) => {
     // ── Lock Attendance ─────────────────────────────────────────────────────
     const lockAttendance = useMutation({
         mutationFn: async () => {
-            const { error } = await supabase
-                .from('events')
-                .update({ attendance_locked: true, attendance_locked_at: new Date().toISOString() })
-                .eq('id', eventId);
+            const { error } = await supabase.rpc('lock_event_attendance', {
+                p_event_id: eventId
+            });
             if (error) throw error;
 
             await supabase.from('audit_logs').insert({
@@ -370,10 +373,9 @@ export const useAdminAttendanceOverrides = () => {
 
     const unlockAttendance = useMutation({
         mutationFn: async (eventId) => {
-            const { error } = await supabase
-                .from('events')
-                .update({ attendance_locked: false, attendance_locked_at: null })
-                .eq('id', eventId);
+            const { error } = await supabase.rpc('unlock_event_attendance', {
+                p_event_id: eventId
+            });
             if (error) throw error;
 
             await supabase.from('audit_logs').insert({

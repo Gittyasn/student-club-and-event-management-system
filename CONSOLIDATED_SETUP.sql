@@ -124,6 +124,7 @@ BEGIN
 END $$;
 
 -- Coordinator Update Access
+DROP POLICY IF EXISTS "Coordinators manage attendance" ON public.attendance_records;
 CREATE POLICY "Coordinators manage attendance" ON public.attendance_records 
 FOR ALL USING (auth.uid() IN (SELECT id FROM profiles WHERE role IN ('coordinator', 'admin')));
 

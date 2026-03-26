@@ -26,30 +26,16 @@ const Announcements = () => {
 
         setLoading(true);
         try {
-            // 1. Fetch all user IDs
-            const { data: profiles, error: profileError } = await supabase
-                .from('profiles')
-                .select('id');
+            const { error } = await supabase.rpc('create_broadcast_notification', {
+                p_title: 'Platform Announcement',
+                p_message: message,
+                p_target_role: 'all',
+                p_target_club_id: null
+            });
+            if (error) throw error;
 
-            if (profileError) throw profileError;
-
-            // 2. Insert notifications for all users
-            if (profiles) {
-                const notifications = profiles.map(p => ({
-                    user_id: p.id,
-                    message,
-                    type
-                }));
-
-                const { error: notifyError } = await supabase
-                    .from('notifications')
-                    .insert(notifications);
-
-                if (notifyError) throw notifyError;
-
-                toast.success(`Announcement sent to ${profiles.length} users!`);
-                setMessage('');
-            }
+            toast.success('Announcement sent to all users!');
+            setMessage('');
         } catch (err) {
             toast.error(err.message || 'Failed to send announcement');
         } finally {

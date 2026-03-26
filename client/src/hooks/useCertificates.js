@@ -1,9 +1,37 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../services/supabaseClient';
+import { sendNotifications } from '../services/notificationService';
 import { useAuthStore } from '../store/authStore';
 import { toast } from 'sonner';
 // eslint-disable-next-line no-unused-vars
 import { generateCertificatePDF, downloadPDF } from '../utils/generateCertificate';
+
+const CERTIFICATE_BUCKET = 'certificates';
+
+const resolveCertificateStoragePath = (value) => {
+    if (!value) return null;
+
+    if (!/^https?:\/\//i.test(value)) return value.replace(/^\/+/, '');
+
+    try {
+        const url = new URL(value);
+        const marker = '/storage/v1/object/';
+        const markerIndex = url.pathname.indexOf(marker);
+        if (markerIndex === -1) return null;
+
+        let remainder = url.pathname.slice(markerIndex + marker.length);
+        if (remainder.startsWith('public/')) remainder = remainder.slice('public/'.length);
+        if (remainder.startsWith('sign/')) remainder = remainder.slice('sign/'.length);
+
+        const bucketPrefix = `${CERTIFICATE_BUCKET}/`;
+        const bucketIndex = remainder.indexOf(bucketPrefix);
+        if (bucketIndex === -1) return null;
+
+        return remainder.slice(bucketIndex + bucketPrefix.length);
+    } catch {
+        return null;
+    }
+};
 
 // ─── Fetch student's own certificates ────────────────────────────────────────
 export const useMyCertificates = () => {
@@ -158,24 +186,15 @@ export const useCertificateMutations = (eventId) => {
     const { user } = useAuthStore();
 
     // ── Helper: get signed or public URL from Storage ─────────
-    const getFileUrl = async (filePath) => {
-        const { data: pub } = supabase.storage.from('certificates').getPublicUrl(filePath);
-        try {
-            const res = await fetch(pub.publicUrl, { method: 'HEAD' });
-            if (res.ok) return pub.publicUrl;
-        // eslint-disable-next-line no-unused-vars
-        } catch (_) { /* fall through */ }
-        const { data: signed } = await supabase.storage.from('certificates').createSignedUrl(filePath, 7 * 24 * 3600);
-        return signed?.signedUrl;
-    };
 
     // ── Helper: check event eligibility ────────────────────────
     const checkEligibility = async () => {
         const { data: ev } = await supabase.from('events')
-            .select('status, attendance_locked, results_published, result_required')
+            .select('status, attendance_locked, results_published, result_required, certificate_enabled')
             .eq('id', eventId).single();
 
         if (!ev) throw new Error('Event not found.');
+        if (!ev.certificate_enabled) throw new Error('Certificates are not enabled for this event.');
         if (ev.result_required && !ev.results_published) throw new Error('Results must be published before generating certificates.');
         return ev;
     };
@@ -274,23 +293,22 @@ export const useCertificateMutations = (eventId) => {
 
                 const filePath = `${eventId}/${userId}_${certType}.pdf`;
                 const { error: uploadErr } = await supabase.storage
-                    .from('certificates').upload(filePath, pdfBlob, { contentType: 'application/pdf', upsert: true });
+                    .from(CERTIFICATE_BUCKET).upload(filePath, pdfBlob, { contentType: 'application/pdf', upsert: true });
                 if (uploadErr) { console.error('Upload failed', userId, uploadErr); continue; }
-
-                const fileUrl = await getFileUrl(filePath);
 
                 const { error: upsertErr } = await supabase.from('certificates').upsert({
                     id: finalCertId,
                     event_id: eventId,
                     user_id: userId,
+                    title: 'Certificate Ready',
                     cert_type: certType,
                     status: 'valid',
                     rank: result?.rank || null,
                     score: result?.score || null,
                     grade: result?.grade || null,
                     prize_title: result?.prize_title || null,
-                    file_url: fileUrl,
-                    certificate_url: fileUrl,
+                    file_url: filePath,
+                    certificate_url: filePath,
                     certificate_number: certNumber,
                     generated_by: user?.id,
                     generated_at: new Date().toISOString()
@@ -299,7 +317,7 @@ export const useCertificateMutations = (eventId) => {
 
                 // Audit log
                 await supabase.from('certificate_logs').insert({
-                    certificate_id: certId, event_id: eventId, student_id: userId,
+                    certificate_id: finalCertId, event_id: eventId, student_id: userId,
                     actor_id: user?.id, action: 'generated',
                     note: `Generated ${certType} certificate. Number: ${certNumber}`
                 });
@@ -307,12 +325,14 @@ export const useCertificateMutations = (eventId) => {
                 notifications.push({
                     user_id: userId,
                     message: `🎓 Your ${certType} certificate for "${ev.title}" is ready!`,
-                    type: 'success'
+                    type: 'success',
+                    related_id: finalCertId,
+                    related_type: 'certificate'
                 });
                 generated++;
             }
 
-            if (notifications.length > 0) await supabase.from('notifications').insert(notifications);
+            if (notifications.length > 0) await sendNotifications(notifications);
             return generated;
         },
         onSuccess: (count) => {
@@ -390,13 +410,28 @@ export const useDownloadCertificate = () => {
         // eslint-disable-next-line no-unused-vars
         mutationFn: async ({ certId, fileUrl, studentName, eventTitle }) => {
             if (!fileUrl) throw new Error('Certificate file not found.');
+            const storagePath = resolveCertificateStoragePath(fileUrl);
             // Log download action
             await supabase.from('certificate_logs').insert({
                 certificate_id: certId, student_id: user?.id, actor_id: user?.id,
                 action: 'downloaded', note: 'Student downloaded certificate.'
             });
-            // Open in new tab (or trigger download)
-            window.open(fileUrl, '_blank');
+
+            if (storagePath) {
+                const { data, error } = await supabase.storage
+                    .from(CERTIFICATE_BUCKET)
+                    .download(storagePath);
+                if (error) throw error;
+
+                const filename = storagePath.split('/').pop() || `certificate-${certId}.pdf`;
+                downloadPDF(data, filename);
+                return;
+            }
+
+            const response = await fetch(fileUrl);
+            if (!response.ok) throw new Error('Failed to download certificate file.');
+            const blob = await response.blob();
+            downloadPDF(blob, `certificate-${certId}.pdf`);
         },
         onError: (err) => toast.error(err.message)
     });

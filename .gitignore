@@ -27,3 +27,10 @@ dist-ssr
 .env
 .env.local
 .env.*.local
+
+# Local validation artifacts
+client/build_log.txt
+client/testOutput.txt
+supabase/tree_db.txt
+test_schema.txt
+users_jsx_content.txt

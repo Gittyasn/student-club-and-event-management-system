@@ -33,6 +33,9 @@ const MyClubs = () => {
     const navigate = useNavigate();
     const [joiningClubId, setJoiningClubId] = useState(null);
 
+    const visibleMembershipStatuses = new Set(['pending', 'approved']);
+    const actionableMembershipStatuses = new Set(['pending', 'approved']);
+
     if (loadingMemberships || loadingClubs) return <CircularProgress sx={{ display: 'block', m: '50px auto' }} />;
 
     const handleLeave = (id) => {
@@ -41,7 +44,12 @@ const MyClubs = () => {
         }
     };
 
-    const joinedClubIds = new Set(memberships?.map(m => m.club_id) || []);
+    const visibleMemberships = memberships?.filter(m => visibleMembershipStatuses.has(m.status)) || [];
+    const joinedClubIds = new Set(
+        (memberships || [])
+            .filter(m => actionableMembershipStatuses.has(m.status))
+            .map(m => m.club_id)
+    );
     const availableClubs = allClubs?.filter(club => !joinedClubIds.has(club.id)) || [];
 
     const getStatusChip = (status, isSub) => {
@@ -80,7 +88,7 @@ const MyClubs = () => {
                     <AutoAwesome color="primary" /> Your Memberships
                 </Typography>
 
-                {(!memberships || memberships.length === 0) ? (
+                {visibleMemberships.length === 0 ? (
                     <Box
                         className="glass-card"
                         sx={{ p: 6, textAlign: 'center', borderRadius: 4, border: '1px dashed rgba(255,255,255,0.1)' }}
@@ -91,7 +99,7 @@ const MyClubs = () => {
                 ) : (
                     <Grid container spacing={3}>
                         <AnimatePresence>
-                            {memberships.map((m, index) => (
+                            {visibleMemberships.map((m, index) => (
                                 <Grid item xs={12} sm={6} md={4} key={m.id}>
                                     <Box
                                         component={motion.div}
@@ -114,7 +122,7 @@ const MyClubs = () => {
                                         <Box sx={{ p: 3, flexGrow: 1 }}>
                                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
                                                 <Typography variant="h5" fontWeight="900" sx={{ letterSpacing: -0.5 }}>{m.club?.name}</Typography>
-                                                {getStatusChip(m.status, m.is_sub_coordinator)}
+                                                {getStatusChip(m.status, false)}
                                             </Box>
                                             <Typography variant="body2" color="text.secondary" fontWeight="500" sx={{ opacity: 0.7 }}>
                                                 Member since {new Date(m.joined_at).toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}

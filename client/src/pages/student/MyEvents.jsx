@@ -152,9 +152,9 @@ const MyEvents = () => {
                                                     </Grid>
                                                     <Grid item xs={6}>
                                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                            <CertIcon sx={{ fontSize: 16, color: reg.event?.is_certificate_enabled ? 'warning.main' : 'text.disabled' }} />
-                                                            <Typography variant="caption" fontWeight="bold" color={reg.event?.is_certificate_enabled ? 'warning.main' : 'text.secondary'}>
-                                                                {reg.event?.is_certificate_enabled ? 'Cert Available' : 'No Certificate'}
+                                                            <CertIcon sx={{ fontSize: 16, color: reg.event?.certificate_enabled ? 'warning.main' : 'text.disabled' }} />
+                                                            <Typography variant="caption" fontWeight="bold" color={reg.event?.certificate_enabled ? 'warning.main' : 'text.secondary'}>
+                                                                {reg.event?.certificate_enabled ? 'Cert Available' : 'No Certificate'}
                                                             </Typography>
                                                         </Box>
                                                     </Grid>
@@ -188,7 +188,7 @@ const MyEvents = () => {
                                                     Cancel
                                                 </Button>
                                             )}
-                                            {isCompleted && reg.attendance_status === 'present' && reg.event?.is_certificate_enabled && (
+                                            {isCompleted && reg.attendance_status === 'present' && reg.event?.certificate_enabled && (
                                                 <Button
                                                     fullWidth
                                                     variant="contained"

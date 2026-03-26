@@ -16,6 +16,7 @@ import {
 } from '@mui/icons-material';
 import { useEvents, useUpdateEventStatus } from '../../hooks/useEvents';
 import { supabase } from '../../services/supabaseClient';
+import { sendNotification } from '../../services/notificationService';
 import { toast } from 'sonner';
 import ApprovalDetails from './ApprovalDetails';
 import ApprovalHistory from './ApprovalHistory';
@@ -23,7 +24,7 @@ import { Tabs, Tab } from '@mui/material';
 
 const EventApprovals = () => {
     // Fetch pending events based on new status lifecycle
-    const { data: events, isLoading, error } = useEvents({ status: 'pending' });
+    const { data: events, isLoading, error } = useEvents({ status: 'pending', approval_status: 'pending' });
     const updateStatusMutation = useUpdateEventStatus();
 
     const [selectedEvent, setSelectedEvent] = useState(null);
@@ -64,10 +65,13 @@ const EventApprovals = () => {
                     setConfirmDialogOpen(false);
 
                     if (selectedEvent.created_by) {
-                        await supabase.from('notifications').insert({
+                        await sendNotification({
                             user_id: selectedEvent.created_by,
+                            title: actionType === 'approve' ? 'Event Approved' : 'Event Rejected',
                             message: `Governance Decision: Your event "${selectedEvent.title}" has been ${actionType}d. ${actionType === 'reject' ? 'Reason: ' + rejectionReason.trim() : ''}`,
-                            type: actionType === 'approve' ? 'success' : 'alert'
+                            type: actionType === 'approve' ? 'success' : 'alert',
+                            related_id: selectedEvent.id,
+                            related_type: 'event'
                         });
                     }
 

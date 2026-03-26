@@ -31,7 +31,7 @@ const standardizeName = (name) => {
 };
 
 const FeaturedClubs = () => {
-    const { data: clubs, isLoading } = useClubs();
+    const { data: clubs, isLoading } = useClubs({ publicOnly: true });
 
     // Select top 3 clubs or random 3 for display
     const displayedClubs = clubs ? clubs.slice(0, 3) : [];

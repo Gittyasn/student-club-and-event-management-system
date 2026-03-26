@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { rebrandName } from '../../utils/rebrand';
 
 const Events = () => {
-    const { data: events, isLoading, error } = useEvents({ approval_status: 'approved' });
+    const { data: events, isLoading, error } = useEvents({ publicOnly: true });
     const [searchTerm, setSearchTerm] = useState('');
     const [eventTypeFilter, setEventTypeFilter] = useState('all');
     const [modeFilter, setModeFilter] = useState('all');
@@ -150,7 +150,7 @@ const Events = () => {
                         </div>
                         <h3 className="text-xl font-bold text-foreground mb-2">Unable to Load Events</h3>
                         <p className="text-muted-foreground text-sm max-w-sm mb-6">
-                            Events are visible after logging in. Please log in or register to browse all available events.
+                            We couldn&apos;t load public events right now. Please try again in a moment.
                         </p>
                         <div className="flex gap-3">
                             <Button variant="outline" asChild>

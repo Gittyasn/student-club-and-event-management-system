@@ -154,10 +154,10 @@ const CreateEvent = () => {
                 budget_requested: data.budget_requested,
                 expense_estimate: data.expense_estimate,
                 event_type: data.event_type,
-                min_team_size: data.event_type === 'hackathon' ? data.min_team_size : 1,
-                max_team_size: data.event_type === 'hackathon' ? data.max_team_size : 1,
                 poster_url: posterUrl || undefined,
+                approval_status: isDraft ? 'draft' : 'pending',
                 status: isDraft ? 'draft' : 'pending',
+                submitted_at: isDraft ? null : new Date().toISOString(),
                 club_id: profile.club_id,
                 created_by: user.id
             };

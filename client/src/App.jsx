@@ -210,6 +210,7 @@ function App() {
                 <Route path="analytics" element={<CoordinatorAnalytics />} />
                 <Route path="members" element={<MembershipManagement />} />
                 <Route path="certificates" element={<CertificatesManager />} />
+                <Route path="events/:id/certificates" element={<CertificatesManager />} />
                 <Route path="clubs/:id/chat" element={<CoordinatorClubChat />} />
                 <Route path="profile" element={<ProfileSettings />} />
                 <Route path="settings" element={<CoordinatorSettings />} />

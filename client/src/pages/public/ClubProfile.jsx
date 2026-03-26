@@ -36,6 +36,7 @@ const ClubProfile = () => {
                     events:events(count)
                 `)
                 .eq('id', id)
+                .eq('status', 'active')
                 .single();
 
             if (clubError) throw clubError;
@@ -46,6 +47,7 @@ const ClubProfile = () => {
                 .select('id, title, start_time, event_type')
                 .eq('club_id', id)
                 .eq('approval_status', 'approved')
+                .in('status', ['approved', 'open', 'registration_open', 'ongoing', 'completed'])
                 .gte('start_time', new Date().toISOString())
                 .order('start_time', { ascending: true })
                 .limit(3);

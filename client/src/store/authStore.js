@@ -64,27 +64,13 @@ export const useAuthStore = create(
                     isStudent: false,
                     loading: false
                 });
-                // Absolute sweep of all role-based storage keys to prevent accidental bleed or auto-login
-                const storagePrefixes = ['admin', 'coord', 'student'];
-                storagePrefixes.forEach(prefix => {
-                    localStorage.removeItem(`${prefix}_clubnexus-auth-token`);
-                });
-                localStorage.removeItem('auth-storage-admin');
-                localStorage.removeItem('auth-storage-coord');
-                localStorage.removeItem('auth-storage-student');
+                // Clean up session storage
+                sessionStorage.removeItem('clubnexus-auth-storage');
             },
         }),
         {
-            // Dynamic storage key based on current route path segment
-            // (match the logic in supabaseClient.js for isolation)
-            name: `auth-storage-${(() => {
-                if (typeof window === 'undefined') return 'student';
-                const path = window.location.pathname;
-                if (path.startsWith('/admin')) return 'admin';
-                if (path.startsWith('/coordinator')) return 'coord';
-                return 'student';
-            })()}`,
-            storage: createJSONStorage(() => localStorage),
+            name: 'clubnexus-auth-storage',
+            storage: createJSONStorage(() => sessionStorage),
             partialize: (state) => ({
                 user: state.user,
                 profile: state.profile,

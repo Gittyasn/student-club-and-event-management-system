@@ -32,12 +32,10 @@ const RankIcon = ({ rank }) => {
 // eslint-disable-next-line no-unused-vars
 const Leaderboard = ({ eventId, roundId, submissions }) => {
     const [liveSubmissions, setLiveSubmissions] = useState(submissions || []);
-    const [prevSubmissions, setPrevSubmissions] = useState(submissions);
 
-    if (submissions !== prevSubmissions) {
-        setPrevSubmissions(submissions);
+    useEffect(() => {
         setLiveSubmissions(submissions || []);
-    }
+    }, [submissions]);
 
     // Real-time subscription for score updates
     useEffect(() => {
@@ -48,12 +46,33 @@ const Leaderboard = ({ eventId, roundId, submissions }) => {
             .on('postgres_changes', {
                 event: '*',
                 schema: 'public',
-                table: 'hackathon_scores'
-            }, async (payload) => {
-                // When a score changes, we could re-fetch or update state
-                // For simplicity in this demo, let's assume we fetch again if something changes
-                // In a production app, we'd find the specific submission and update its total
-                console.log('Real-time score update:', payload);
+                table: 'hackathon_evaluations'
+            }, (payload) => {
+                const evaluation = payload.new;
+                if (!evaluation?.submission_id) return;
+
+                setLiveSubmissions((current) => current.map((submission) => {
+                    if (submission.id !== evaluation.submission_id) {
+                        return submission;
+                    }
+
+                    const evaluations = Array.isArray(submission.evaluations) ? submission.evaluations : [];
+                    const existingIndex = evaluations.findIndex((item) => item.judge_id === evaluation.judge_id);
+
+                    if (existingIndex === -1) {
+                        return {
+                            ...submission,
+                            evaluations: [...evaluations, evaluation]
+                        };
+                    }
+
+                    return {
+                        ...submission,
+                        evaluations: evaluations.map((item, index) =>
+                            index === existingIndex ? { ...item, ...evaluation } : item
+                        )
+                    };
+                }));
             })
             .subscribe();
 

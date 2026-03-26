@@ -60,13 +60,16 @@ const ForgotPassword = () => {
                         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                             <div className="space-y-2">
                                 <Label htmlFor="email">Email Address</Label>
-                                <Input
-                                    id="email"
-                                    type="email"
-                                    placeholder="name@college.edu"
-                                    {...register('email')}
-                                    className={errors.email ? "border-red-500" : ""}
-                                />
+                                <div className="relative">
+                                    <Mail className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                                    <Input
+                                        id="email"
+                                        type="email"
+                                        placeholder="name@college.edu"
+                                        {...register('email')}
+                                        className={`${errors.email ? "border-red-500" : ""} pl-10 h-11 bg-slate-50 dark:bg-slate-950`}
+                                    />
+                                </div>
                                 {errors.email && (
                                     <p className="text-sm text-red-500">{errors.email.message}</p>
                                 )}
@@ -78,7 +81,10 @@ const ForgotPassword = () => {
                                         Sending Link...
                                     </>
                                 ) : (
-                                    'Send Reset Link'
+                                    <>
+                                        <Mail className="mr-2 h-4 w-4" />
+                                        Send Reset Link
+                                    </>
                                 )}
                             </Button>
                         </form>

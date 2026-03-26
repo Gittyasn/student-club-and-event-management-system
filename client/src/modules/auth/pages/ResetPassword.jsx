@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import authService from '@/services/authService';
 
 import { toast } from 'sonner';
-import { Loader2, ShieldCheck } from 'lucide-react';
+import { Loader2, ShieldCheck, Lock } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -85,26 +85,32 @@ const ResetPassword = () => {
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                         <div className="space-y-2">
                             <Label htmlFor="password">New Password</Label>
-                            <Input
-                                id="password"
-                                type="password"
-                                placeholder="••••••••"
-                                {...register('password')}
-                                className={errors.password ? "border-red-500" : ""}
-                            />
+                            <div className="relative">
+                                <Lock className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                                <Input
+                                    id="password"
+                                    type="password"
+                                    placeholder="Create new password"
+                                    {...register('password')}
+                                    className={`${errors.password ? "border-red-500" : ""} pl-10 h-11 bg-slate-50 dark:bg-slate-950`}
+                                />
+                            </div>
                             {errors.password && (
                                 <p className="text-sm text-red-500">{errors.password.message}</p>
                             )}
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="confirmPassword">Confirm New Password</Label>
-                            <Input
-                                id="confirmPassword"
-                                type="password"
-                                placeholder="••••••••"
-                                {...register('confirmPassword')}
-                                className={errors.confirmPassword ? "border-red-500" : ""}
-                            />
+                            <div className="relative">
+                                <Lock className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                                <Input
+                                    id="confirmPassword"
+                                    type="password"
+                                    placeholder="Confirm new password"
+                                    {...register('confirmPassword')}
+                                    className={`${errors.confirmPassword ? "border-red-500" : ""} pl-10 h-11 bg-slate-50 dark:bg-slate-950`}
+                                />
+                            </div>
                             {errors.confirmPassword && (
                                 <p className="text-sm text-red-500">{errors.confirmPassword.message}</p>
                             )}
@@ -116,9 +122,12 @@ const ResetPassword = () => {
                                     Updating Password...
                                 </>
                             ) : (
-                                'Reset Password'
-                            )}
-                        </Button>
+                                    <>
+                                        <ShieldCheck className="mr-2 h-4 w-4" />
+                                        Reset Password
+                                    </>
+                                )}
+                            </Button>
                     </form>
                 </CardContent>
             </Card>

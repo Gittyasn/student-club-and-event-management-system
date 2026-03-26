@@ -111,6 +111,24 @@ export const useNotificationStore = create((set, get) => ({
         });
     },
 
+    updateNotification: (notification) => {
+        const notifications = get().notifications.map(n =>
+            n.id === notification.id ? { ...n, ...notification } : n
+        );
+        set({
+            notifications,
+            unreadCount: notifications.filter(n => !n.is_read).length
+        });
+    },
+
+    removeNotification: (notificationId) => {
+        const notifications = get().notifications.filter(n => n.id !== notificationId);
+        set({
+            notifications,
+            unreadCount: notifications.filter(n => !n.is_read).length
+        });
+    },
+
     broadcastNotification: async (title, message, targetRole = 'all', targetClubId = null) => {
         const { error } = await supabase.rpc('create_broadcast_notification', {
             p_title: title,
@@ -122,24 +140,93 @@ export const useNotificationStore = create((set, get) => ({
     },
 
     subscribeToNotifications: (userId) => {
-        const channel = supabase
-            .channel(`notifications:enterprise:${userId}`)
-            .on(
-                'postgres_changes',
-                {
-                    event: 'INSERT',
-                    schema: 'public',
-                    table: 'notifications',
-                    filter: `user_id=eq.${userId}`
-                },
-                (payload) => {
-                    get().addNotification(payload.new);
+        let active = true;
+        let channel = null;
+        let retryTimeout = null;
+
+        const clearRetry = () => {
+            if (retryTimeout) {
+                clearTimeout(retryTimeout);
+                retryTimeout = null;
+            }
+        };
+
+        const scheduleReconnect = () => {
+            if (!active || retryTimeout) return;
+            retryTimeout = setTimeout(async () => {
+                retryTimeout = null;
+                if (!active) return;
+                if (channel) {
+                    try { await supabase.removeChannel(channel); } catch { /* ignore */ }
+                    channel = null;
                 }
-            )
-            .subscribe();
+                get().fetchNotifications(userId);
+                connect();
+            }, 1500);
+        };
+
+        const connect = () => {
+            if (!active) return;
+
+            channel = supabase
+                .channel(`notifications:enterprise:${userId}:${Date.now()}`)
+                .on(
+                    'postgres_changes',
+                    {
+                        event: 'INSERT',
+                        schema: 'public',
+                        table: 'notifications',
+                        filter: `user_id=eq.${userId}`
+                    },
+                    (payload) => {
+                        get().addNotification(payload.new);
+                    }
+                )
+                .on(
+                    'postgres_changes',
+                    {
+                        event: 'UPDATE',
+                        schema: 'public',
+                        table: 'notifications',
+                        filter: `user_id=eq.${userId}`
+                    },
+                    (payload) => {
+                        get().updateNotification(payload.new);
+                    }
+                )
+                .on(
+                    'postgres_changes',
+                    {
+                        event: 'DELETE',
+                        schema: 'public',
+                        table: 'notifications',
+                        filter: `user_id=eq.${userId}`
+                    },
+                    (payload) => {
+                        get().removeNotification(payload.old.id);
+                    }
+                );
+
+            channel.subscribe((status) => {
+                if (status === 'SUBSCRIBED') {
+                    clearRetry();
+                    return;
+                }
+
+                if (status === 'TIMED_OUT' || status === 'CHANNEL_ERROR' || status === 'CLOSED') {
+                    scheduleReconnect();
+                }
+            });
+        };
+
+        connect();
 
         return () => {
-            supabase.removeChannel(channel);
+            active = false;
+            clearRetry();
+            if (channel) {
+                supabase.removeChannel(channel);
+            }
         };
     }
 }));

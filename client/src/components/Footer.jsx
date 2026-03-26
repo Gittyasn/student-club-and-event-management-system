@@ -59,9 +59,9 @@ const Footer = () => {
                         <h4 className="font-heading font-black text-foreground mb-4 uppercase tracking-widest text-xs" style={{ fontFamily: '"Space Grotesk", sans-serif' }}>Quick Access</h4>
                         <ul className="space-y-2 text-sm font-medium mb-6">
                             {[
-                                { label: 'Student Login', path: '/login' },
-                                { label: 'Coordinator Portal', path: '/login' },
-                                { label: 'Admin Dashboard', path: '/login' },
+                                { label: 'Portal Login', path: '/login' },
+                                { label: 'Club Access', path: '/coordinator/login' },
+                                { label: 'Admin Access', path: '/admin/login' },
                             ].map((item, idx) => (
                                 <li key={idx}>
                                     <Link to={item.path} className="hover:text-primary transition-colors flex items-center gap-2 group text-sm">

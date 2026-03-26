@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../services/supabaseClient';
 
+const PUBLIC_EVENT_STATUSES = ['approved', 'open', 'registration_open', 'ongoing', 'completed'];
+
 const fetchEvents = async (options = {}) => {
     let query = supabase
         .from('events')
@@ -23,13 +25,21 @@ const fetchEvents = async (options = {}) => {
             registration_deadline,
             allow_waitlist,
             visibility,
+            approval_status,
             requires_membership,
             short_description,
             rejection_reason,
-            club:clubs(name),
+            club:clubs(name, status),
             registrations:registrations(count)
         `)
         .order('start_time', { ascending: true });
+
+    if (options.publicOnly) {
+        query = query
+            .eq('approval_status', 'approved')
+            .in('status', PUBLIC_EVENT_STATUSES)
+            .or('visibility.is.null,visibility.eq.public,visibility.eq.true');
+    }
 
     if (options.status) {
         if (Array.isArray(options.status)) {
@@ -63,7 +73,10 @@ const fetchEvents = async (options = {}) => {
         club: Array.isArray(event.club) ? event.club[0] : event.club,
         category: event.category?.name || 'Uncategorized',
         registrationsCount: event.registrations?.[0]?.count || 0
-    }));
+    })).filter((event) => {
+        if (!options.publicOnly) return true;
+        return !event.club?.status || event.club.status === 'active';
+    });
 
     return typedData;
 };
@@ -84,16 +97,26 @@ export const useUpdateEventStatus = () => {
 
             const { data: { user } } = await supabase.auth.getUser();
 
-            if (status === 'approved') {
+            if (status === 'draft') {
+                updates.approval_status = 'draft';
+                updates.submitted_at = null;
+                updates.approved_at = null;
+                updates.rejected_at = null;
+            } else if (status === 'approved') {
+                updates.approval_status = 'approved';
                 updates.approved_at = new Date().toISOString();
                 updates.approved_by = user?.id;
                 updates.rejection_reason = null; // Clear any old rejections
             } else if (status === 'rejected') {
+                updates.approval_status = 'rejected';
                 updates.rejected_at = new Date().toISOString();
                 updates.rejected_by = user?.id;
                 updates.rejection_reason = rejection_reason;
             } else if (status === 'pending') {
+                updates.approval_status = 'pending';
                 updates.submitted_at = new Date().toISOString();
+            } else if (['registration_open', 'registration_closed', 'ongoing', 'completed', 'cancelled', 'archived'].includes(status)) {
+                updates.approval_status = 'approved';
             }
 
             if (resubmission_count !== undefined) {

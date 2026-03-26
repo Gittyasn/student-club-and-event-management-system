@@ -8,7 +8,6 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../services/supabaseClient';
 import { useAuthStore } from '../../store/authStore';
-import CampusGuide from '../../components/CampusGuide';
 import {
     Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
     ResponsiveContainer, Tooltip as RechartsTooltip
@@ -193,11 +192,11 @@ const StudentDashboard = () => {
     const firstChatEventId = data?.recentRegs?.find(r => r.event_id)?.event_id;
     const firstClubId = data?.firstClubId;
     const quickActions = [
-        { icon: <GroupAdd />, title: 'Discover Clubs', path: '/student/clubs' },
-        { icon: <EventAvailable />, title: 'Find Events', path: '/student/events' },
-        { icon: <EmojiEvents />, title: 'Leaderboard', path: '/student/club-leaderboard' },
+        { icon: <GroupAdd />, title: 'Discover Clubs', path: '/student/clubs/discover' },
+        { icon: <EventAvailable />, title: 'Find Events', path: '/student/browse-events' },
+        { icon: <EmojiEvents />, title: 'Leaderboard', path: '/student/leaderboard' },
         { icon: <MilitaryTech />, title: 'Certificates', path: '/student/certificates' },
-        { icon: <Chat />, title: 'Event Chat', path: firstChatEventId ? `/events/${firstChatEventId}/chat` : '/student/events' },
+        { icon: <Chat />, title: 'Event Chat', path: firstChatEventId ? `/events/${firstChatEventId}/chat` : '/student/browse-events' },
         { icon: <Chat />, title: 'Club Chat', path: firstClubId ? `/student/clubs/${firstClubId}/chat` : '/student/clubs' },
     ];
 
@@ -256,23 +255,49 @@ const StudentDashboard = () => {
                 ))}
             </Grid>
 
-            {/* Main Content Rows */}
-            <Grid container spacing={3} sx={{ mb: 4, display: 'flex' }} alignItems="stretch">
-                <Grid item xs={12} md={6} sx={{ display: 'flex', flexDirection: 'column' }}>
-                    <Panel title="Activity Distribution" subtitle="Your engagement across categories">
-                        <Box sx={{ height: 200, width: '100%', mt: 0 }}>
-                            <ResponsiveContainer width="100%" height="100%">
-                                <RadarChart cx="50%" cy="50%" outerRadius="70%" data={data?.radarData || []}>
-                                    <PolarGrid stroke={theme.palette.divider} />
-                                    <PolarAngleAxis dataKey="subject" tick={{ fill: theme.palette.text.secondary, fontSize: 12, fontWeight: 500 }} />
-                                    <PolarRadiusAxis angle={30} domain={[0, 'dataMax + 2']} tick={false} axisLine={false} />
-                                    <Radar name="Activity" dataKey="A" stroke={theme.palette.primary.main} strokeWidth={2} fill={theme.palette.primary.main} fillOpacity={0.2} />
-                                    <RechartsTooltip content={<CustomTooltip />} />
-                                </RadarChart>
-                            </ResponsiveContainer>
+            {/* Quick Actions & Notifications Row */}
+            <Grid container spacing={3} sx={{ display: 'flex' }} alignItems="stretch">
+                <Grid item xs={12} md={7} sx={{ display: 'flex', flexDirection: 'column' }}>
+                    <Panel title="Quick Actions" subtitle="Jump straight into the sections you use most">
+                        <Grid container spacing={2} sx={{ mt: 1 }}>
+                            {quickActions.map((qa, i) => (
+                                <Grid item xs={6} sm={3} key={i}>
+                                    <Paper
+                                        elevation={0}
+                                        onClick={() => navigate(qa.path)}
+                                        sx={{
+                                            p: 2, borderRadius: 2, border: `1px solid ${theme.palette.divider}`, bgcolor: theme.palette.background.default,
+                                            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                                            gap: 1.5, cursor: 'pointer', height: '100%', minHeight: 110,
+                                            transition: 'all 0.2s',
+                                            '&:hover': { borderColor: theme.palette.primary.main, bgcolor: theme.palette.action.hover }
+                                        }}
+                                    >
+                                        <Box sx={{ color: 'text.secondary' }}>
+                                            {qa.icon}
+                                        </Box>
+                                        <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary', textAlign: 'center' }}>{qa.title}</Typography>
+                                    </Paper>
+                                </Grid>
+                            ))}
+                        </Grid>
+                    </Panel>
+                </Grid>
+                <Grid item xs={12} md={5} sx={{ display: 'flex', flexDirection: 'column' }}>
+                    <Panel title="Notifications" subtitle="Recent updates and alerts" action={<Button variant="text" size="small" sx={{ fontWeight: 600 }} onClick={() => navigate('/student/notifications')}>Open Inbox</Button>}>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, py: 4 }}>
+                            <Box sx={{ p: 2, borderRadius: '50%', bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)', mb: 2 }}>
+                                <Notifications sx={{ fontSize: 32, color: 'text.secondary' }} />
+                            </Box>
+                            <Typography variant="body1" sx={{ fontWeight: 600, color: 'text.primary', mb: 0.5 }}>You&apos;re all caught up</Typography>
+                            <Typography variant="body2" sx={{ color: 'text.secondary', textAlign: 'center' }}>No new notifications at this time.</Typography>
                         </Box>
                     </Panel>
                 </Grid>
+            </Grid>
+
+            {/* Main Content Rows */}
+            <Grid container spacing={3} sx={{ mt: 1, mb: 4, display: 'flex' }} alignItems="stretch">
                 <Grid item xs={12} md={6} sx={{ display: 'flex', flexDirection: 'column' }}>
                     <Panel title="Recent Registrations" subtitle="Your latest event signups"
                         action={<Button variant="text" size="small" endIcon={<ChevronRight />} onClick={() => navigate('/student/events')} sx={{ fontWeight: 600 }}>View All</Button>}>
@@ -311,44 +336,18 @@ const StudentDashboard = () => {
                         </Stack>
                     </Panel>
                 </Grid>
-            </Grid>
-
-            {/* Quick Actions & Notifications Row */}
-            <Grid container spacing={3} sx={{ display: 'flex' }} alignItems="stretch">
-                <Grid item xs={12} md={7} sx={{ display: 'flex', flexDirection: 'column' }}>
-                    <Panel title="Quick Actions" subtitle="Navigate to essential modules">
-                        <Grid container spacing={2} sx={{ mt: 1 }}>
-                            {quickActions.map((qa, i) => (
-                                <Grid item xs={6} sm={3} key={i}>
-                                    <Paper
-                                        elevation={0}
-                                        onClick={() => navigate(qa.path)}
-                                        sx={{
-                                            p: 2, borderRadius: 2, border: `1px solid ${theme.palette.divider}`, bgcolor: theme.palette.background.default,
-                                            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                                            gap: 1.5, cursor: 'pointer', height: '100%', minHeight: 110,
-                                            transition: 'all 0.2s',
-                                            '&:hover': { borderColor: theme.palette.primary.main, bgcolor: theme.palette.action.hover }
-                                        }}
-                                    >
-                                        <Box sx={{ color: 'text.secondary' }}>
-                                            {qa.icon}
-                                        </Box>
-                                        <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary', textAlign: 'center' }}>{qa.title}</Typography>
-                                    </Paper>
-                                </Grid>
-                            ))}
-                        </Grid>
-                    </Panel>
-                </Grid>
-                <Grid item xs={12} md={5} sx={{ display: 'flex', flexDirection: 'column' }}>
-                    <Panel title="Notifications" subtitle="Recent updates and alerts" action={<Button variant="text" size="small" sx={{ fontWeight: 600 }}>Mark all read</Button>}>
-                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, py: 4 }}>
-                            <Box sx={{ p: 2, borderRadius: '50%', bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)', mb: 2 }}>
-                                <Notifications sx={{ fontSize: 32, color: 'text.secondary' }} />
-                            </Box>
-                            <Typography variant="body1" sx={{ fontWeight: 600, color: 'text.primary', mb: 0.5 }}>You&apos;re all caught up</Typography>
-                            <Typography variant="body2" sx={{ color: 'text.secondary', textAlign: 'center' }}>No new notifications at this time.</Typography>
+                <Grid item xs={12} md={6} sx={{ display: 'flex', flexDirection: 'column' }}>
+                    <Panel title="Activity Distribution" subtitle="Your engagement across categories">
+                        <Box sx={{ height: 200, width: '100%', mt: 0 }}>
+                            <ResponsiveContainer width="100%" height="100%">
+                                <RadarChart cx="50%" cy="50%" outerRadius="70%" data={data?.radarData || []}>
+                                    <PolarGrid stroke={theme.palette.divider} />
+                                    <PolarAngleAxis dataKey="subject" tick={{ fill: theme.palette.text.secondary, fontSize: 12, fontWeight: 500 }} />
+                                    <PolarRadiusAxis angle={30} domain={[0, 'dataMax + 2']} tick={false} axisLine={false} />
+                                    <Radar name="Activity" dataKey="A" stroke={theme.palette.primary.main} strokeWidth={2} fill={theme.palette.primary.main} fillOpacity={0.2} />
+                                    <RechartsTooltip content={<CustomTooltip />} />
+                                </RadarChart>
+                            </ResponsiveContainer>
                         </Box>
                     </Panel>
                 </Grid>

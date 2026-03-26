@@ -13,7 +13,7 @@ import { rebrandName, rebrandDescription } from '../../utils/rebrand';
 import { useState } from 'react';
 
 const Clubs = () => {
-    const { data: clubs, isLoading, error } = useClubs();
+    const { data: clubs, isLoading, error } = useClubs({ publicOnly: true });
     const { user, profile } = useAuthStore();
     const navigate = useNavigate();
     const joinClubMutation = useJoinClub();

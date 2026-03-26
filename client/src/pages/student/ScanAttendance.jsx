@@ -2,6 +2,7 @@ import { useState, lazy, Suspense } from 'react';
 import { Box, Typography, Paper, CircularProgress, Button, Chip, Stack, Alert } from '@mui/material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../services/supabaseClient';
+import { sendNotification } from '../../services/notificationService';
 import { toast } from 'sonner';
 import { useAuthStore } from '../../store/authStore';
 import { useNavigate } from 'react-router-dom';
@@ -88,10 +89,13 @@ const ScanAttendance = () => {
             if (attErr) throw attErr;
 
             // 6. Notify student
-            await supabase.from('notifications').insert({
+            await sendNotification({
                 user_id: user?.id,
+                title: 'QR Attendance Confirmed',
                 message: `Attendance confirmed for "${event.title}"${isLate ? ` (Late – ${lateMinutes}m)` : '.'}`,
-                type: 'success'
+                type: 'success',
+                related_id: eventId,
+                related_type: 'event'
             });
 
             return { event, isLate, lateMinutes, finalStatus };

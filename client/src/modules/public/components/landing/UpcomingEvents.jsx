@@ -18,7 +18,7 @@ const standardizeName = (name) => {
 };
 
 const UpcomingEvents = () => {
-    const { data: events, isLoading } = useEvents({ status: ['registration_open', 'approved'], approval_status: 'approved' });
+    const { data: events, isLoading } = useEvents({ publicOnly: true, status: ['registration_open', 'approved', 'open'] });
     const [searchTerm, setSearchTerm] = useState("");
     const { user } = useAuthStore();
 

@@ -8,9 +8,14 @@ export const useEventMutations = () => {
 
     const createEvent = useMutation({
         mutationFn: async (newEvent) => {
+            const normalizedEvent = {
+                ...newEvent,
+                approval_status: newEvent.approval_status || (newEvent.status === 'draft' ? 'draft' : 'pending')
+            };
+
             const { data, error } = await supabase
                 .from('events')
-                .insert([newEvent])
+                .insert([normalizedEvent])
                 .select()
                 .single();
 

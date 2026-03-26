@@ -1,6 +1,6 @@
 import { Box, Paper, Typography } from '@mui/material';
 
-const RolePageHeader = ({ title, subtitle, meta, action, kicker = "Student Portal" }) => {
+const RolePageHeader = ({ title, subtitle, meta, action, kicker = "Campus Portal" }) => {
     return (
         <Paper
             elevation={0}

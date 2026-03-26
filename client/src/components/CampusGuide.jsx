@@ -1,18 +1,18 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bot, X, Send, Sparkles, MessageSquare, Calendar, Users, HelpCircle } from 'lucide-react';
+import { X, Send, MessageSquare, Calendar, Users, HelpCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { supabase } from '../services/supabaseClient';
 
 /**
  * CampusGuide Component
- * Smart campus guide connected to Supabase Edge Functions
+ * Campus support assistant connected to Supabase Edge Functions
  */
 const CampusGuide = ({ triggerMode = 'floating' }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState([
-        { role: 'assistant', content: 'Hello! I am your NEXTGEN EDUTECH UNIVERSITY Guide. How can I help you today?' }
+        { role: 'assistant', content: 'Hello. I am the NextGen Edutech University campus assistant. I can help with events, clubs, registrations, and general campus questions.' }
     ]);
     const [input, setInput] = useState('');
     const [isTyping, setIsTyping] = useState(false);
@@ -60,53 +60,22 @@ const CampusGuide = ({ triggerMode = 'floating' }) => {
         setIsTyping(true);
 
         try {
-            // Check if we have an OpenAI Key to use as fallback/primary
-            const openAiKey = import.meta.env.VITE_OPENAI_API_KEY;
-
-            if (openAiKey) {
-                // Prepare context for the system prompt
-                const systemPrompt = `You are the NEXTGEN EDUTECH UNIVERSITY Campus Guide. Be helpful, concise, and friendly. Here is some real-time context: \n\nEvents: ${JSON.stringify(contextData?.events?.slice(0, 5))}\n\nClubs: ${JSON.stringify(contextData?.clubs?.slice(0, 5))}`;
-                
-                const response = await fetch('https://api.openai.com/v1/chat/completions', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${openAiKey}`
-                    },
-                    body: JSON.stringify({
-                        model: 'gpt-4o-mini',
-                        messages: [
-                            { role: 'system', content: systemPrompt },
-                            ...newMessages.map(m => ({ role: m.role, content: m.content }))
-                        ],
-                        temperature: 0.7,
-                        max_tokens: 500,
-                    })
-                });
-
-                if (!response.ok) {
-                    throw new Error(`Service Error: ${response.status}`);
+            // Always route AI requests through the server-side edge function.
+            const { data, error } = await supabase.functions.invoke('chat-assistant', {
+                body: {
+                    messages: newMessages.map(m => ({ role: m.role, content: m.content })),
+                    context: contextData
                 }
+            });
 
-                const data = await response.json();
-                const reply = data.choices[0]?.message?.content || "I couldn't process that request right now.";
-                setMessages(prev => [...prev, { role: 'assistant', content: reply }]);
-            } else {
-                // Fallback attempt to use Edge function if no VITE var is found
-                const { data, error } = await supabase.functions.invoke('chat-assistant', {
-                    body: {
-                        messages: newMessages.map(m => ({ role: m.role, content: m.content })),
-                        context: contextData
-                    }
-                });
+            if (error) throw error;
+            if (data?.error) throw new Error(data.error);
 
-                if (error) throw error;
-                const reply = data.choices[0]?.message?.content || "I couldn't process that request right now.";
-                setMessages(prev => [...prev, { role: 'assistant', content: reply }]);
-            }
+            const reply = data?.choices?.[0]?.message?.content || "I couldn't process that request right now.";
+            setMessages(prev => [...prev, { role: 'assistant', content: reply }]);
         } catch (error) {
             console.error("Guide Error:", error);
-            setMessages(prev => [...prev, { role: 'assistant', content: `Sorry, my engine failed: ${error.message}. Please try again later.` }]);
+            setMessages(prev => [...prev, { role: 'assistant', content: `Sorry, campus support is unavailable right now. ${error.message}. Please try again shortly.` }]);
         } finally {
             setIsTyping(false);
         }
@@ -127,7 +96,7 @@ const CampusGuide = ({ triggerMode = 'floating' }) => {
                     className={isTopbar
                         ? "h-10 w-10 rounded-xl p-0 flex items-center justify-center bg-primary hover:bg-primary/90 transition-all border border-border/50 shadow-lg"
                         : "h-16 w-16 rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] p-0 flex items-center justify-center bg-primary hover:bg-primary/90 transition-all border-0"}
-                    aria-label="Open Campus Guide"
+                    aria-label="Open campus support desk"
                 >
                     {isOpen
                         ? <X className={isTopbar ? "h-5 w-5 text-white" : "h-7 w-7 text-white"} />
@@ -148,14 +117,14 @@ const CampusGuide = ({ triggerMode = 'floating' }) => {
                         style={{ boxShadow: '0 24px 80px -12px rgba(0, 0, 0, 0.25)' }}
                     >
                         {/* Header with Gradient */}
-                        <div className="p-5 bg-gradient-to-r from-primary via-indigo-600 to-purple-600 text-primary-foreground flex items-center justify-between">
+                        <div className="p-5 bg-gradient-to-r from-sky-700 via-blue-700 to-cyan-600 text-primary-foreground flex items-center justify-between">
                             <div className="flex items-center gap-3">
                                 <div className="h-10 w-10 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/20 shadow-inner">
                                     <MessageSquare className="h-5 w-5 text-white" />
                                 </div>
                                 <div className="text-left">
-                                    <h3 className="font-bold text-base tracking-tight leading-none text-white">NextGen Campus Guide</h3>
-                                    <p className="text-[10px] opacity-80 mt-1.5 uppercase tracking-widest font-black text-white/90">Online · NEXTGEN EDUTECH CORE</p>
+                                    <h3 className="font-bold text-base tracking-tight leading-none text-white">Campus Support Desk</h3>
+                                    <p className="text-[10px] opacity-80 mt-1.5 uppercase tracking-widest font-black text-white/90">Online | NextGen Edutech University</p>
                                 </div>
                             </div>
                             <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)} className="text-white hover:bg-white/10 h-9 w-9 rounded-xl">
@@ -219,7 +188,7 @@ const CampusGuide = ({ triggerMode = 'floating' }) => {
                                 <Input
                                     value={input}
                                     onChange={(e) => setInput(e.target.value)}
-                                    placeholder="Type your question..."
+                                    placeholder="Ask about events, clubs, attendance, or certificates"
                                     className="flex-1 focus-visible:ring-primary h-12 text-sm bg-background/50 border-border/60 rounded-xl"
                                     autoComplete="off"
                                 />
@@ -228,7 +197,7 @@ const CampusGuide = ({ triggerMode = 'floating' }) => {
                                 </Button>
                             </form>
                             <p className="text-[10px] text-muted-foreground mt-4 text-center uppercase tracking-[0.2em] font-black opacity-30 select-none">
-                                Powered by NEXTGEN EDUTECH INFRASTRUCTURE
+                                Securely powered by NextGen Edutech University services
                             </p>
                         </div>
                     </motion.div>

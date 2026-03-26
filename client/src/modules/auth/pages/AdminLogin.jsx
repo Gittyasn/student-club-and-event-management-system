@@ -150,7 +150,7 @@ const AdminLogin = () => {
                                         <Input
                                             {...register('password')}
                                             type="password"
-                                            placeholder="••••••••"
+                                            placeholder="Enter password"
                                             className="pl-10 h-11 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 focus:ring-primary"
                                         />
                                     </div>

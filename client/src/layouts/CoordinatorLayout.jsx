@@ -3,7 +3,7 @@ import { Outlet, Link as RouterLink, useNavigate, useLocation } from 'react-rout
 import {
     Box, Drawer, List, Typography, IconButton,
     ListItem, ListItemButton, ListItemIcon, ListItemText,
-    Avatar, Menu, MenuItem
+    Avatar, Menu, MenuItem, Divider
 } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -22,7 +22,6 @@ const SIDEBAR_BG = 'linear-gradient(180deg, #0b1220 0%, #0f172a 45%, #0b1220 100
 
 const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/coordinator', color: '#34d399', exact: true },
-    { text: 'Profile', icon: <ProfileIcon />, path: '/coordinator/profile', color: '#94a3b8' },
     { text: 'My Events', icon: <EventIcon />, path: '/coordinator/events', color: '#60a5fa' },
     { text: 'Submissions', icon: <ApprovalIcon />, path: '/coordinator/submissions', color: '#f87171' },
     { text: 'Create Event', icon: <AddIcon />, path: '/coordinator/events/create', color: '#a78bfa' },
@@ -63,14 +62,14 @@ const SidebarContent = ({ location, profile }) => (
                 justifyContent: 'center'
             }}>
                 <Typography sx={{ color: '#ffffff', fontSize: '1.2rem', fontWeight: 900, letterSpacing: 0.5, lineHeight: 1 }}>
-                    NX
+                    BU
                 </Typography>
             </Box>
             <Typography variant="subtitle1" fontWeight={800} sx={{ color: 'white', letterSpacing: 0.2, lineHeight: 1.1, mt: 0.5 }}>
-                NEXTGEN EDUTECH
+                NEXTGEN EDUTECH UNIVERSITY
             </Typography>
             <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.56)', fontWeight: 700, fontSize: '0.72rem', letterSpacing: 0.6 }}>
-                Faculty Portal
+                Club Operations
             </Typography>
         </Box>
 
@@ -155,6 +154,7 @@ const CoordinatorLayout = () => {
     const navigate = useNavigate();
     const location = useLocation();
 
+    const handleProfileOpen = () => { setAnchorEl(null); navigate('/coordinator/profile'); };
     const handleLogout = async () => { setAnchorEl(null); await logout(); navigate('/coordinator/login'); };
     const drawerSx = { '& .MuiDrawer-paper': { boxSizing: 'border-box', width: DRAWER_WIDTH, border: 'none', background: 'transparent' } };
 
@@ -177,7 +177,7 @@ const CoordinatorLayout = () => {
                         {menuItems.find(m => m.exact ? location.pathname === m.path : location.pathname.startsWith(m.path))?.text || 'Coordinator'}
                     </Typography>
                     <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
-                        NEXTGEN EDUTECH UNIVERSITY · {new Date().toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        NEXTGEN EDUTECH UNIVERSITY | {new Date().toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}
                     </Typography>
                 </Box>
                 <ModeToggle />
@@ -194,7 +194,11 @@ const CoordinatorLayout = () => {
                     </Box>
                 </Box>
                 <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={() => setAnchorEl(null)}
-                    PaperProps={{ sx: { mt: 1 } }}>
+                    PaperProps={{ sx: { mt: 1, minWidth: 180, bgcolor: 'background.paper', color: 'text.primary', border: '1px solid', borderColor: 'divider', borderRadius: '12px' } }}>
+                    <MenuItem onClick={handleProfileOpen} sx={{ gap: 1.5 }}>
+                        <ProfileIcon fontSize="small" /> Profile
+                    </MenuItem>
+                    <Divider sx={{ my: 0.5 }} />
                     <MenuItem onClick={handleLogout} sx={{ color: 'error.main', gap: 1.5 }}>
                         <LogoutIcon fontSize="small" /> Logout
                     </MenuItem>

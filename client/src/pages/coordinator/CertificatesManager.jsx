@@ -110,6 +110,21 @@ const CertificatesManager = () => {
         } finally { setGenerating(false); }
     };
 
+    if (!eventId) {
+        return (
+            <Box sx={{ pb: 6 }}>
+                <RolePageHeader
+                    kicker="Coordinator Suite"
+                    title="Certificates"
+                    subtitle="Choose an event before managing certificates."
+                />
+                <Alert severity="info" sx={{ borderRadius: '12px' }}>
+                    Open certificates from an event action so the manager knows which event to work on.
+                </Alert>
+            </Box>
+        );
+    }
+
     if (isLoading) return <Box display="flex" justifyContent="center" p={8}><CircularProgress /></Box>;
 
     return (

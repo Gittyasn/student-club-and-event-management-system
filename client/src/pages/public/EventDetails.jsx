@@ -30,7 +30,7 @@ import { useHackathonRounds, useHackathonSubmissions, useHackathonJudges } from 
 
 const EventDetails = () => {
     const { id } = useParams();
-    const { data: event, isLoading, error } = useEventById(id);
+    const { data: event, isLoading, error } = useEventById(id, { publicOnly: true });
     const { user, profile } = useAuthStore();
     const navigate = useNavigate();
     const registerMutation = useRegisterEvent();
@@ -61,8 +61,8 @@ const EventDetails = () => {
             <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mb-6">
                 <Info className="w-10 h-10 text-red-500" />
             </div>
-            <h2 className="text-2xl font-bold mb-2">Telemetry failure</h2>
-            <p className="text-muted-foreground max-w-sm mb-8">Unable to resolve event protocol from the central matrix.</p>
+            <h2 className="text-2xl font-bold mb-2">Event unavailable</h2>
+            <p className="text-muted-foreground max-w-sm mb-8">This event is not public or could not be found.</p>
             <Button asChild variant="outline">
                 <RouterLink to="/events"><ArrowLeft className="mr-2 w-4 h-4" /> Return to Grid</RouterLink>
             </Button>
@@ -71,12 +71,12 @@ const EventDetails = () => {
 
     const handleRegister = () => {
         if (!user) {
-            toast.error("Authentication required to access this protocol.");
+            toast.error("Please log in to register for this event.");
             navigate('/login');
             return;
         }
         if (profile?.role !== 'student') {
-            toast.error("Only student clearances can interact with the registration engine.");
+            toast.error("Only student accounts can register for events.");
             return;
         }
         registerMutation.mutate(event.id);
@@ -86,7 +86,7 @@ const EventDetails = () => {
     const isPastDeadline = event.registration_deadline && new Date(event.registration_deadline) < new Date();
     const isOpen = event.status === 'registration_open';
 
-    let buttonText = "Secure Registration";
+    let buttonText = "Register Now";
     let isDisabled = false;
 
     if (!isOpen) {
@@ -171,11 +171,11 @@ const EventDetails = () => {
                             <div className="p-8 md:p-12 space-y-8">
                                 <div>
                                     <h3 className="text-primary font-black uppercase tracking-widest text-sm mb-6 flex items-center gap-2">
-                                        <Info className="w-5 h-5" /> Mission Briefing
+                                        <Info className="w-5 h-5" /> Event Overview
                                     </h3>
                                     <div className="prose prose-sm dark:prose-invert max-w-none">
                                         <p className="text-muted-foreground text-lg leading-relaxed whitespace-pre-line">
-                                            {event.description || "No tactical description matrix provided."}
+                                            {event.description || "Event details will be updated soon."}
                                         </p>
                                     </div>
                                 </div>
@@ -215,8 +215,8 @@ const EventDetails = () => {
                                             {!isRegistered ? (
                                                 <div className="py-20 text-center space-y-4">
                                                     <Lock className="w-16 h-16 text-muted-foreground mx-auto mb-4 opacity-20" />
-                                                    <h3 className="text-2xl font-black">Registration Blocked</h3>
-                                                    <p className="text-muted-foreground">Secure your registration to access the team decentralized workspace.</p>
+                                                    <h3 className="text-2xl font-black">Registration Required</h3>
+                                                    <p className="text-muted-foreground">Register for this event to access the team workspace.</p>
                                                 </div>
                                             ) : userTeam ? (
                                                 <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
@@ -248,14 +248,14 @@ const EventDetails = () => {
 
                     {/* Sidebar Area */}
                     <div className="lg:col-span-4 space-y-6">
-                        {/* Registration Engine Sidebar */}
+                        {/* Registration Sidebar */}
                         <motion.div
                             initial={{ opacity: 0, x: 30 }}
                             animate={{ opacity: 1, x: 0 }}
                             className="bg-primary/5 dark:bg-primary/10 border border-primary/20 rounded-[32px] p-8 shadow-xl"
                         >
                             <h3 className="text-[#0f172a] dark:text-primary font-black uppercase tracking-widest text-sm mb-6 flex items-center gap-2">
-                                <LayoutGrid className="w-5 h-5" /> Registration Engine
+                                <LayoutGrid className="w-5 h-5" /> Registration
                             </h3>
 
                             {isRegistered && (
@@ -298,12 +298,12 @@ const EventDetails = () => {
 
                             {isHackathon && isRegistered && !userTeam && (
                                 <p className="mt-4 text-xs text-center text-muted-foreground font-medium italic">
-                                    &ldquo;Registration clear. Awaiting team collective formation to proceed with the hack.&rdquo;
+                                    You&apos;re registered. Create or join a team to continue.
                                 </p>
                             )}
                         </motion.div>
 
-                        {/* Logistics Sidebar */}
+                        {/* Details Sidebar */}
                         <motion.div
                             initial={{ opacity: 0, x: 30 }}
                             animate={{ opacity: 1, x: 0 }}
@@ -311,7 +311,7 @@ const EventDetails = () => {
                             className="bg-card border border-border rounded-[32px] p-8 shadow-lg"
                         >
                             <h3 className="text-foreground font-black uppercase tracking-widest text-sm mb-8 flex items-center gap-2">
-                                <List className="w-5 h-5" /> Logistics Matrix
+                                <List className="w-5 h-5" /> Event Details
                             </h3>
 
                             <div className="space-y-6">
@@ -332,12 +332,12 @@ const EventDetails = () => {
                                         <MapPin className="w-5 h-5 text-purple-500" />
                                     </div>
                                     <div className="flex-1 overflow-hidden">
-                                        <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest mb-1">Coordinated Location</p>
+                                        <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest mb-1">Location</p>
                                         <p className="text-sm font-bold truncate">
                                             {event.mode === 'online' ? (
                                                 event.meeting_link ? (
                                                     <a href={event.meeting_link} target="_blank" rel="noreferrer" className="text-primary hover:underline flex items-center gap-1">
-                                                        Encrypted Portal <ExternalLink className="w-3 h-3" />
+                                                        Join Meeting <ExternalLink className="w-3 h-3" />
                                                     </a>
                                                 ) : 'Portal TBD'
                                             ) : (event.location || 'TBA')}
@@ -352,7 +352,7 @@ const EventDetails = () => {
                                         <Timer className="w-5 h-5 text-orange-500" />
                                     </div>
                                     <div>
-                                        <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest mb-1">Lock-out Sequence</p>
+                                        <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest mb-1">Registration Deadline</p>
                                         <p className="text-sm font-bold">
                                             {event.registration_deadline ? new Date(event.registration_deadline).toLocaleString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Infinite Deadline'}
                                         </p>
@@ -366,7 +366,7 @@ const EventDetails = () => {
                                         <Users className="w-5 h-5 text-emerald-500" />
                                     </div>
                                     <div className="w-full">
-                                        <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest mb-1">Capacity integrity</p>
+                                        <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest mb-1">Capacity</p>
                                         <div className="flex items-center justify-between mb-2">
                                             <span className="text-sm font-bold">{event.registrations?.[0]?.count || 0} / {event.max_participants || '\u221E'} Secured</span>
                                             <span className="text-[10px] font-black text-muted-foreground">{Math.round(((event.registrations?.[0]?.count || 0) / (event.max_participants || 1)) * 100)}%</span>

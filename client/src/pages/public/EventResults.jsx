@@ -15,7 +15,7 @@ const EventResults = () => {
     const theme = useTheme();
 
     const { data: results, isLoading: resultsLoading } = useEventResults(eventId);
-    const { data: event, isLoading: eventLoading } = useEventById(eventId);
+    const { data: event, isLoading: eventLoading } = useEventById(eventId, { publicOnly: true });
 
     if (resultsLoading || eventLoading) return <Box display="flex" justifyContent="center" alignItems="center" height="60vh"><CircularProgress /></Box>;
 

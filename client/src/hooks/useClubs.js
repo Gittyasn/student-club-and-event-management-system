@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../services/supabaseClient';
 
-const fetchClubs = async () => {
-    const { data, error } = await supabase
+const fetchClubs = async (options = {}) => {
+    let query = supabase
         .from('clubs')
         .select(`
             *,
@@ -11,6 +11,14 @@ const fetchClubs = async () => {
         `)
         .order('name');
 
+    if (options.publicOnly) {
+        query = query
+            .eq('status', 'active')
+            .or('visibility.is.null,visibility.eq.true');
+    }
+
+    const { data, error } = await query;
+
     if (error) {
         throw new Error(error.message);
     }
@@ -18,10 +26,10 @@ const fetchClubs = async () => {
     return data || [];
 };
 
-export const useClubs = () => {
+export const useClubs = (options = {}) => {
     return useQuery({
-        queryKey: ['clubs'],
-        queryFn: fetchClubs,
+        queryKey: ['clubs', options],
+        queryFn: () => fetchClubs(options),
         // Don't auto-retry on failure — a Supabase RLS/join error
         // won't fix itself on retry; retrying just spams the error UI.
         retry: 1,

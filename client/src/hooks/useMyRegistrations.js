@@ -1,7 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../services/supabaseClient';
+import { sendNotification } from '../services/notificationService';
 import { useAuthStore } from '../store/authStore';
 import { toast } from 'sonner';
+
+const ACTIVE_REGISTRATION_STATUSES = ['registered', 'confirmed', 'attended'];
 
 // ─── Student: Fetch own registrations ──────────────────────────────────────
 export const useMyRegistrations = () => {
@@ -115,13 +118,20 @@ export const useRegisterEvent = () => {
                 .from('events')
                 .select(`
                     max_participants, allow_waitlist, status, registration_deadline,
-                    requires_membership, club_id,
-                    registrations(count)
+                    requires_membership, club_id
                 `)
                 .eq('id', id)
                 .single();
 
             if (eventErr || !eventData) throw new Error('Event not found.');
+
+            const { data: registrationRows, error: registrationErr } = await supabase
+                .from('registrations')
+                .select('status')
+                .eq('event_id', id)
+                .in('status', [...ACTIVE_REGISTRATION_STATUSES, 'waitlisted']);
+
+            if (registrationErr) throw registrationErr;
 
             // 3. Status check
             if (!['registration_open', 'approved'].includes(eventData.status)) {
@@ -149,7 +159,12 @@ export const useRegisterEvent = () => {
             }
 
             // 6. Capacity check
-            const currentCount = eventData.registrations?.[0]?.count || 0;
+            const currentCount = (registrationRows || []).filter((registration) =>
+                ACTIVE_REGISTRATION_STATUSES.includes(registration.status)
+            ).length;
+            const waitlistCount = (registrationRows || []).filter((registration) =>
+                registration.status === 'waitlisted'
+            ).length;
             const max = eventData.max_participants;
             const isFull = max && currentCount >= max;
 
@@ -167,7 +182,7 @@ export const useRegisterEvent = () => {
                         status: assignedStatus,
                         registered_at: new Date().toISOString(),
                         cancelled_at: null,
-                        waitlist_position: isFull ? currentCount + 1 : null
+                        waitlist_position: isFull ? waitlistCount + 1 : null
                     })
                     .eq('event_id', id)
                     .eq('user_id', user.id);
@@ -179,18 +194,21 @@ export const useRegisterEvent = () => {
                         event_id: id,
                         user_id: user.id,
                         status: assignedStatus,
-                        waitlist_position: isFull ? currentCount + 1 : null
+                        waitlist_position: isFull ? waitlistCount + 1 : null
                     }]);
                 if (error) throw error;
             }
 
             // 8. Notify
-            await supabase.from('notifications').insert({
+            await sendNotification({
                 user_id: user.id,
+                title: assignedStatus === 'waitlisted' ? 'Waitlist Updated' : 'Registration Confirmed',
                 message: assignedStatus === 'waitlisted'
                     ? 'Added to Waitlist. You will be notified when a slot opens.'
                     : 'Registration Confirmed! You are officially enrolled.',
-                type: assignedStatus === 'waitlisted' ? 'warning' : 'success'
+                type: assignedStatus === 'waitlisted' ? 'info' : 'success',
+                related_id: id,
+                related_type: 'event'
             });
 
             return assignedStatus;

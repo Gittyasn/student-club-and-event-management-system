@@ -73,8 +73,8 @@ const NotificationBell = () => {
             if (notif.related_type === 'club') navigate(`/coordinator/members`);
         } else {
             // Student
-            if (notif.related_type === 'event') navigate(`/student/events/${notif.related_id}`);
-            if (notif.related_type === 'club') navigate(`/student/clubs/${notif.related_id}`);
+            if (notif.related_type === 'event') navigate(`/events/${notif.related_id}`);
+            if (notif.related_type === 'club') navigate(`/student/clubs`);
             if (notif.related_type === 'certificate') navigate(`/student/certificates`);
         }
     };

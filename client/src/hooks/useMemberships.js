@@ -17,11 +17,46 @@ export const useJoinClub = () => {
 
             const initialStatus = autoApprove ? 'approved' : 'pending';
 
-            const { data, error } = await supabase
+            const { data: existingMembership, error: existingError } = await supabase
                 .from('club_memberships')
-                .insert([
-                    { club_id: clubId, user_id: user.id, status: initialStatus }
-                ])
+                .select('id, status')
+                .eq('club_id', clubId)
+                .eq('user_id', user.id)
+                .maybeSingle();
+
+            if (existingError) throw existingError;
+
+            if (existingMembership?.status === 'pending') {
+                throw Object.assign(new Error("You have already requested to join this club."), { code: '23505' });
+            }
+
+            if (existingMembership?.status === 'approved') {
+                throw Object.assign(new Error("You are already a member of this club."), { code: '23505' });
+            }
+
+            let mutation;
+
+            if (existingMembership) {
+                mutation = supabase
+                    .from('club_memberships')
+                    .update({
+                        status: initialStatus,
+                        role: 'member',
+                        removed_at: null,
+                        removal_reason: null,
+                        approved_by: null,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', existingMembership.id);
+            } else {
+                mutation = supabase
+                    .from('club_memberships')
+                    .insert([
+                        { club_id: clubId, user_id: user.id, status: initialStatus }
+                    ]);
+            }
+
+            const { data, error } = await mutation
                 .select()
                 .single();
 
@@ -35,7 +70,7 @@ export const useJoinClub = () => {
         },
         onError: (error) => {
             if (error.code === '23505') {
-                toast.error("You have already requested to join this club.");
+                toast.error(error.message || "You have already requested to join this club.");
             } else {
                 toast.error(error.message || "Failed to join club");
             }
@@ -54,7 +89,7 @@ export const useMyMemberships = () => {
             const { data, error } = await supabase
                 .from('club_memberships')
                 .select(`
-                    id, club_id, user_id, status, joined_at, role,
+                    id, club_id, user_id, status, joined_at,
                     club:clubs(
                         name,
                         events(count)
@@ -76,7 +111,7 @@ export const useClubMemberships = (clubId) => {
             let query = supabase
                 .from('club_memberships')
                 .select(`
-                    id, club_id, user_id, status, joined_at, role,
+                    id, club_id, user_id, status, joined_at,
                     club:clubs(name),
                     profile:profiles!user_id(full_name, email, role)
                 `)
@@ -100,24 +135,7 @@ export const useUpdateMembershipStatus = () => {
 
     return useMutation({
         mutationFn: async ({ id, status, rejection_reason, removal_reason }) => {
-            const { data: { user } } = await supabase.auth.getUser();
-
-            const updates = {
-                status,
-                updated_at: new Date().toISOString()
-            };
-
-            if (status === 'approved') {
-                updates.approved_by = user.id;
-            }
-            if (status === 'rejected' && rejection_reason) {
-                // Assuming we might log this in audit_logs, or just keep it minimal
-                updates.removal_reason = rejection_reason;
-            }
-            if (status === 'removed') {
-                updates.removed_at = new Date().toISOString();
-                updates.removal_reason = removal_reason;
-            }
+            const updates = { status };
 
             const { data, error } = await supabase
                 .from('club_memberships')
@@ -127,11 +145,24 @@ export const useUpdateMembershipStatus = () => {
                 .single();
 
             if (error) throw error;
+
+            if (status === 'rejected' && rejection_reason) {
+                console.info('Membership rejection reason:', rejection_reason);
+            }
+
+            if (status === 'removed' && removal_reason) {
+                console.info('Membership removal reason:', removal_reason);
+            }
+
             return data;
         },
         onSuccess: () => {
             toast.success("Membership status updated!");
             queryClient.invalidateQueries({ queryKey: ['memberships'] });
+            queryClient.invalidateQueries({ queryKey: ['pendingRequests'] });
+            queryClient.invalidateQueries({ queryKey: ['approvedMembers'] });
+            queryClient.invalidateQueries({ queryKey: ['myMemberships'] });
+            queryClient.invalidateQueries({ queryKey: ['clubs'] });
         },
         onError: (error) => {
             toast.error(error.message || "Failed to update membership");
@@ -146,7 +177,7 @@ export const useLeaveClub = () => {
         mutationFn: async (id) => {
             const { error } = await supabase
                 .from('club_memberships')
-                .update({ status: 'left', updated_at: new Date().toISOString() })
+                .update({ status: 'left' })
                 .eq('id', id);
 
             if (error) throw error;
@@ -155,6 +186,7 @@ export const useLeaveClub = () => {
             toast.success("Successfully left the club.");
             queryClient.invalidateQueries({ queryKey: ['myMemberships'] });
             queryClient.invalidateQueries({ queryKey: ['clubProfile'] });
+            queryClient.invalidateQueries({ queryKey: ['clubs'] });
         },
         onError: (error) => {
             toast.error(error.message || "Failed to leave club");
@@ -170,7 +202,7 @@ export const useUpdateMembershipRole = () => {
         mutationFn: async ({ id, role }) => {
             const { data, error } = await supabase
                 .from('club_memberships')
-                .update({ role, updated_at: new Date().toISOString() })
+                .update({ role })
                 .eq('id', id)
                 .select()
                 .single();

@@ -43,6 +43,7 @@ const BrowseEvents = () => {
 
     // We only want students to see events that are strictly open for registration
     const { data: events, isLoading: eventsLoading } = useEvents({
+        approval_status: 'approved',
         status: ['registration_open', 'approved'] // 'approved' as fallback if coordinators don't advance the state manually
     });
 

@@ -12,14 +12,14 @@ export const useChat = (chatType, referenceId) => {
     const { user, profile } = useAuthStore();
     const queryClient = useQueryClient();
     const [realtimeMessages, setRealtimeMessages] = useState([]);
-    const [prevChatId, setPrevChatId] = useState(null);
+    const [realtimeNonce, setRealtimeNonce] = useState(0);
     const channelRef = useRef(null);
     const userId = user?.id;
 
     // 1. Resolve or Create Chat Room ID based on type and refId
     const { data: chatRoom, isLoading: loadingRoom } = useQuery({
         queryKey: ['chatRoom', chatType, referenceId],
-        enabled: !!chatType && !!userId,
+        enabled: !!chatType && !!userId && (chatType === 'broadcast' || !!referenceId),
         staleTime: 5 * 60 * 1000,
         queryFn: async () => {
             if (chatType === 'broadcast') {
@@ -57,10 +57,9 @@ export const useChat = (chatType, referenceId) => {
 
     const chatId = chatRoom?.id;
 
-    if (chatId !== prevChatId) {
-        setPrevChatId(chatId);
+    useEffect(() => {
         setRealtimeMessages([]);
-    }
+    }, [chatId]);
 
     // 2. Fetch Historical Messages
     const { data: historicalMessages = [], isLoading: loadingMessages } = useQuery({
@@ -97,6 +96,11 @@ export const useChat = (chatType, referenceId) => {
                     const { data: sender } = await supabase.from('profiles').select('full_name, avatar_url, role').eq('id', payload.new.sender_id).single();
                     const newMsg = { ...payload.new, profiles: sender };
                     setRealtimeMessages(prev => [...prev, newMsg]);
+                    queryClient.setQueryData(['messages', chatId], old => {
+                        if (!old) return [newMsg];
+                        if (old.some(message => message.id === newMsg.id)) return old;
+                        return [...old, newMsg];
+                    });
                 }
             )
             .on(
@@ -110,14 +114,19 @@ export const useChat = (chatType, referenceId) => {
                     );
                 }
             )
-            .subscribe();
+            .subscribe((status) => {
+                if (['CHANNEL_ERROR', 'TIMED_OUT', 'CLOSED'].includes(status)) {
+                    toast.error('Chat connection interrupted. Reconnecting...');
+                    setRealtimeNonce((value) => value + 1);
+                }
+            });
 
         channelRef.current = channel;
 
         return () => {
             if (channelRef.current) supabase.removeChannel(channelRef.current);
         };
-    }, [chatId, queryClient]);
+    }, [chatId, queryClient, realtimeNonce]);
 
     // 4. Mutations
     const sendMessage = useMutation({

@@ -3,7 +3,7 @@ import { Outlet, Link as RouterLink, useNavigate, useLocation } from 'react-rout
 import {
     Box, Drawer, List, Typography, IconButton,
     ListItem, ListItemButton, ListItemIcon, ListItemText,
-    Avatar, Menu, MenuItem
+    Avatar, Menu, MenuItem, Divider
 } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -13,7 +13,7 @@ import {
     FactCheck as AttendanceIcon, Notifications as NotifyIcon,
     Person as ProfileIcon, Leaderboard as LeaderboardIcon,
     ChevronRight, EmojiEvents as ResultsIcon,
-    Assessment as AnalyticsIcon
+    Assessment as AnalyticsIcon, Settings as SettingsIcon
 } from '@mui/icons-material';
 import { useAuthStore } from '../store/authStore';
 import NotificationBell from '../components/NotificationBell';
@@ -25,7 +25,6 @@ const SIDEBAR_BG = 'linear-gradient(180deg, #0b1220 0%, #0f172a 45%, #0b1220 100
 
 const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/student', color: '#a78bfa', exact: true },
-    { text: 'Profile', icon: <ProfileIcon />, path: '/student/profile', color: '#94a3b8' },
     { text: 'Browse Events', icon: <EventIcon />, path: '/student/browse-events', color: '#8b5cf6' },
     { text: 'My Events', icon: <RegistrationIcon />, path: '/student/events', color: '#60a5fa' },
     { text: 'Registrations', icon: <RegistrationIcon />, path: '/student/registrations', color: '#34d399' },
@@ -69,14 +68,14 @@ const SidebarContent = ({ location, profile }) => (
                 justifyContent: 'center'
             }}>
                 <Typography sx={{ color: '#ffffff', fontSize: '1.2rem', fontWeight: 900, letterSpacing: 0.5, lineHeight: 1 }}>
-                    NX
+                    BU
                 </Typography>
             </Box>
             <Typography variant="subtitle1" fontWeight={800} sx={{ color: 'white', letterSpacing: 0.2, lineHeight: 1.1, mt: 0.5 }}>
-                NEXTGEN EDUTECH
+                NEXTGEN EDUTECH UNIVERSITY
             </Typography>
             <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.56)', fontWeight: 700, fontSize: '0.72rem', letterSpacing: 0.6 }}>
-                Student Journey
+                Campus Portal
             </Typography>
         </Box>
 
@@ -161,6 +160,8 @@ const StudentLayout = () => {
     const navigate = useNavigate();
     const location = useLocation();
 
+    const handleProfileOpen = () => { setAnchorEl(null); navigate('/student/profile'); };
+    const handleSettingsOpen = () => { setAnchorEl(null); navigate('/student/settings'); };
     const handleLogout = async () => { setAnchorEl(null); await logout(); navigate('/login'); };
     const drawerSx = { '& .MuiDrawer-paper': { boxSizing: 'border-box', width: DRAWER_WIDTH, border: 'none', background: 'transparent' } };
 
@@ -180,10 +181,10 @@ const StudentLayout = () => {
                 </IconButton>
                 <Box sx={{ flex: 1 }}>
                     <Typography variant="h6" fontWeight={800} sx={{ color: 'text.primary', fontSize: { xs: '1.1rem', md: '1.35rem' }, lineHeight: 1 }}>
-                        {menuItems.find(m => m.exact ? location.pathname === m.path : location.pathname.startsWith(m.path))?.text || 'NEXTGEN EDUTECH'}
+                        {menuItems.find(m => m.exact ? location.pathname === m.path : location.pathname.startsWith(m.path))?.text || 'NEXTGEN EDUTECH UNIVERSITY'}
                     </Typography>
                     <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, fontSize: '0.8rem', letterSpacing: 0.2 }}>
-                        NEXTGEN EDUTECH UNIVERSITY • {new Date().toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        NEXTGEN EDUTECH UNIVERSITY | {new Date().toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}
                     </Typography>
                 </Box>
                 <ModeToggle />
@@ -200,7 +201,14 @@ const StudentLayout = () => {
                     </Box>
                 </Box>
                 <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={() => setAnchorEl(null)}
-                    PaperProps={{ sx: { bgcolor: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', mt: 1 } }}>
+                    PaperProps={{ sx: { bgcolor: 'background.paper', color: 'text.primary', border: '1px solid', borderColor: 'divider', borderRadius: '12px', mt: 1, minWidth: 190 } }}>
+                    <MenuItem onClick={handleProfileOpen} sx={{ gap: 1.5, borderRadius: '8px', mx: 0.5 }}>
+                        <ProfileIcon fontSize="small" /> Profile
+                    </MenuItem>
+                    <MenuItem onClick={handleSettingsOpen} sx={{ gap: 1.5, borderRadius: '8px', mx: 0.5 }}>
+                        <SettingsIcon fontSize="small" /> Preferences
+                    </MenuItem>
+                    <Divider sx={{ my: 0.5 }} />
                     <MenuItem onClick={handleLogout} sx={{ color: '#ef4444', gap: 1.5, borderRadius: '8px', mx: 0.5 }}>
                         <LogoutIcon fontSize="small" /> Logout
                     </MenuItem>

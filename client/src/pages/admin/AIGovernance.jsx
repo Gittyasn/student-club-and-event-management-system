@@ -15,15 +15,15 @@ const AIGovernance = () => {
         <Box sx={{ maxWidth: 800, mx: 'auto', pb: 8 }}>
             <Box component={motion.div} initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} sx={{ mb: 4 }}>
                 <Typography variant="h4" fontWeight={900} sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
-                    <HealthAndSafety color="primary" fontSize="large" /> Smart Systems Governance
+                    <HealthAndSafety color="primary" fontSize="large" /> Assistance Controls
                 </Typography>
                 <Typography color="text.secondary">
-                    Globally enable or disable assistive pipelines. When disabled, automated UI elements will automatically disappear without breaking the application.
+                    Control the guided assistance features used across analytics, reporting, and campus support tools without affecting the rest of the platform.
                 </Typography>
             </Box>
 
             <Alert severity="info" sx={{ mb: 4, borderRadius: '12px' }}>
-                All assistive reasoning systems are strictly configured to <strong>Assess and Assist</strong>. The system will never auto-enforce destructive actions (e.g. dropping a student) on its own.
+                These features only assist staff with insights and summaries. They do not automatically perform destructive actions or change student records on their own.
             </Alert>
 
             <Paper elevation={0} sx={{ borderRadius: '24px', border: '1px solid', borderColor: 'divider', overflow: 'hidden' }}>
@@ -34,11 +34,11 @@ const AIGovernance = () => {
                                 <ListItemText
                                     primary={
                                         <Typography variant="subtitle1" fontWeight={800} textTransform="capitalize" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                            {feature.feature_key.replace('_', ' ')}
+                                            {feature.feature_key.replaceAll('_', ' ')}
                                             {feature.is_enabled && <AutoAwesome sx={{ fontSize: 16, color: '#8b5cf6' }} />}
                                         </Typography>
                                     }
-                                    secondary={feature.description || 'System intelligence module.'}
+                                    secondary={feature.description || 'Operational assistance module.'}
                                     secondaryTypographyProps={{ sx: { mt: 0.5, fontWeight: 500 } }}
                                 />
                                 <ListItemSecondaryAction>

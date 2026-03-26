@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
-import { MailCheck, Loader2 } from 'lucide-react';
+import { MailCheck, Loader2, Mail } from 'lucide-react';
 import authService from '@/services/authService';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -44,14 +44,17 @@ const VerifyEmail = () => {
                 <CardContent className="space-y-4">
                     <div className="space-y-2">
                         <label htmlFor="verify-email" className="text-sm font-semibold text-slate-700 dark:text-slate-300">Email Address</label>
-                        <Input
-                            id="verify-email"
-                            type="email"
-                            placeholder="name@college.edu"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            className="h-10 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-sm"
-                        />
+                        <div className="relative">
+                            <Mail className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                            <Input
+                                id="verify-email"
+                                type="email"
+                                placeholder="name@college.edu"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                className="pl-10 h-11 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-sm"
+                            />
+                        </div>
                     </div>
                     <Button className="w-full h-11 transition-all" onClick={handleResend} disabled={isSending}>
                         {isSending ? (
@@ -60,7 +63,10 @@ const VerifyEmail = () => {
                                 Transmitting...
                             </>
                         ) : (
-                            'Resend Verification Email'
+                            <>
+                                <MailCheck className="mr-2 h-4 w-4" />
+                                Resend Verification Email
+                            </>
                         )}
                     </Button>
                     <p className="text-[11px] text-muted-foreground text-center italic">

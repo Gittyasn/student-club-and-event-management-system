@@ -47,10 +47,10 @@ const NotificationCenter = () => {
 
         if (profile?.role === 'coordinator') {
             if (notif.related_type === 'event') navigate(`/coordinator/events`);
-            if (notif.related_type === 'club') navigate(`/coordinator/membership`);
+            if (notif.related_type === 'club') navigate(`/coordinator/members`);
         } else {
-            if (notif.related_type === 'event') navigate(`/student/events/${notif.related_id}`);
-            if (notif.related_type === 'club') navigate(`/student/clubs/${notif.related_id}`);
+            if (notif.related_type === 'event') navigate(`/events/${notif.related_id}`);
+            if (notif.related_type === 'club') navigate(`/student/clubs`);
             if (notif.related_type === 'certificate') navigate(`/student/certificates`);
         }
     };

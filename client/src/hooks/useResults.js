@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../services/supabaseClient';
+import { sendNotification, sendNotifications } from '../services/notificationService';
 import { useAuthStore } from '../store/authStore';
 import { toast } from 'sonner';
 import { generateCertificatePDF } from '../utils/generateCertificate';
@@ -192,11 +193,14 @@ export const usePublishResults = (eventId) => {
                 .in('status', ['registered', 'confirmed']);
 
             if (regs?.length > 0) {
-                await supabase.from('notifications').insert(
+                await sendNotifications(
                     regs.map(r => ({
                         user_id: r.user_id,
+                        title: 'Results Published',
                         message: `Results published for "${ev.title}"! Check your ranking now.`,
-                        type: 'info'
+                        type: 'info',
+                        related_id: eventId,
+                        related_type: 'event'
                     }))
                 );
             }
@@ -439,10 +443,13 @@ async function _generateCertificatesForEvent(eventId, eventTitle) {
                 const { data: { publicUrl } } = supabase.storage.from('certificates').getPublicUrl(fileName);
                 await supabase.from('certificates').update({ certificate_url: publicUrl }).eq('id', cert.id);
 
-                await supabase.from('notifications').insert({
+                await sendNotification({
                     user_id: att.user_id,
+                    title: 'Certificate Ready',
                     message: `Your certificate for "${eventTitle}" is ready to download!`,
-                    type: 'success'
+                    type: 'success',
+                    related_id: eventId,
+                    related_type: 'certificate'
                 });
             } catch (err) {
                 console.error('Certificate generation failed for', att.user_id, err);

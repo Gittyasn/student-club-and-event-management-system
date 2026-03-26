@@ -15,10 +15,17 @@ serve(async (req) => {
     }
 
     try {
+        if (!OPENAI_API_KEY) {
+            return new Response(JSON.stringify({ error: 'OPENAI_API_KEY is not configured for the chat assistant.' }), {
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                status: 500,
+            })
+        }
+
         const { messages, context } = await req.json()
 
         // Build the system prompt using Supabase context data
-        const systemPrompt = `You are a helpful university AI assistant for Bandaru University.
+        const systemPrompt = `You are a helpful university AI assistant for NextGen Edutech University.
 Current university context:
 Events: ${JSON.stringify(context?.events || [])}
 Clubs: ${JSON.stringify(context?.clubs || [])}
@@ -43,6 +50,15 @@ Use the above real context from our Supabase database to answer the user's quest
         })
 
         const data = await response.json()
+
+        if (!response.ok) {
+            const upstreamMessage = data?.error?.message || 'OpenAI request failed.'
+            return new Response(JSON.stringify({ error: upstreamMessage }), {
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                status: response.status,
+            })
+        }
+
         return new Response(JSON.stringify(data), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             status: 200,
