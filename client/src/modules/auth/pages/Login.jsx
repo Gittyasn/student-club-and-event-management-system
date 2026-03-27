@@ -97,8 +97,6 @@ const Login = () => {
             setIsLoading(false);
         }
     };
-
-
     const handleGoogleLogin = async () => {
         setIsGoogleLoading(true);
         try {
@@ -113,22 +111,22 @@ const Login = () => {
 
 
     return (
-        <div className="flex items-center justify-center min-h-[calc(100vh-4rem)] px-4" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1562774053-701939374585?w=1920&q=95&auto=format&fit=crop')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
-            <Card className="w-full max-w-md bg-white dark:bg-slate-900 text-card-foreground shadow-2xl border-2 border-slate-200 dark:border-slate-700 rounded-2xl hover:border-blue-400 hover:shadow-blue-200/40 dark:hover:border-blue-500 transition-all duration-300 cursor-default">
-                <CardHeader className="space-y-1">
-                    <div className="flex justify-center mb-4">
-                        <div className="h-12 w-12 bg-primary/10 rounded-2xl flex items-center justify-center border border-primary/20">
-                            <LogIn className="h-6 w-6 text-primary" />
+        <div className="flex items-center justify-center min-h-[calc(100vh-4rem)] px-4 py-3" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1562774053-701939374585?w=1920&q=95&auto=format&fit=crop')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
+            <Card className="w-full max-w-md bg-white/95 dark:bg-slate-900/95 backdrop-blur text-card-foreground shadow-2xl border-2 border-slate-200 dark:border-slate-700 rounded-2xl">
+                <CardHeader className="space-y-1 pb-3">
+                    <div className="flex justify-center mb-1">
+                        <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-500/20 via-cyan-500/15 to-violet-500/20 flex items-center justify-center border border-blue-500/20">
+                            <LogIn className="h-5 w-5 text-blue-600 dark:text-blue-300" />
                         </div>
                     </div>
                     <CardTitle className="text-2xl font-bold text-center">
-                        Portal Access
+                        Sign In
                     </CardTitle>
-                    <CardDescription className="text-center">
-                        Securely sign in to continue to your dashboard
+                    <CardDescription className="text-center text-sm">
+                        Enter your credentials to continue.
                     </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-3">
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" autoComplete="off">
                         {/* Hidden dummy fields to intercept browser autofill */}
                         <input type="text" name="email_autofill_prevent" style={{ display: 'none' }} tabIndex="-1" />
@@ -137,14 +135,16 @@ const Login = () => {
                         <div className="space-y-2">
                             <Label htmlFor="auth-email-field">Email Address</Label>
                             <div className="relative">
-                                <Mail className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                                <div className="absolute left-3 top-2.5 flex h-5 w-5 items-center justify-center rounded-md bg-sky-500/15 text-sky-600 dark:text-sky-300">
+                                    <Mail className="h-3 w-3" />
+                                </div>
                                 <Input
                                     id="auth-email-field"
                                     type="email"
                                     placeholder="name@college.edu"
                                     {...register('email')}
                                     autoComplete="off"
-                                    className={`${errors.email ? "border-red-500" : ""} pl-10 h-11 bg-slate-50 dark:bg-slate-950`}
+                                    className={`${errors.email ? "border-red-500" : ""} pl-11 h-10 bg-slate-50 dark:bg-slate-950`}
                                 />
                             </div>
                             {errors.email && (
@@ -162,14 +162,16 @@ const Login = () => {
                                 </Link>
                             </div>
                             <div className="relative">
-                                <Lock className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                                <div className="absolute left-3 top-2.5 flex h-5 w-5 items-center justify-center rounded-md bg-violet-500/15 text-violet-600 dark:text-violet-300">
+                                    <Lock className="h-3 w-3" />
+                                </div>
                                 <Input
                                     id="auth-password-field"
                                     type="password"
                                     placeholder="Enter password"
                                     {...register('password')}
                                     autoComplete="off"
-                                    className={`${errors.password ? "border-red-500" : ""} pl-10 h-11 bg-slate-50 dark:bg-slate-950`}
+                                    className={`${errors.password ? "border-red-500" : ""} pl-11 h-10 bg-slate-50 dark:bg-slate-950`}
                                 />
                             </div>
                             {errors.password && (
@@ -189,7 +191,7 @@ const Login = () => {
                             </Label>
                         </div>
 
-                        <Button className="w-full h-11" type="submit" disabled={isLoading}>
+                        <Button className="w-full h-10" type="submit" disabled={isLoading}>
                             {isLoading ? (
                                 <>
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -215,7 +217,7 @@ const Login = () => {
 
                     <Button
                         variant="outline"
-                        className="w-full h-11 border-border bg-background hover:bg-muted"
+                        className="w-full h-10 border-border bg-background hover:bg-muted"
                         onClick={handleGoogleLogin}
                         disabled={isGoogleLoading}
                     >
@@ -229,11 +231,11 @@ const Login = () => {
                         )}
                     </Button>
                 </CardContent>
-                <CardFooter className="flex justify-center border-t border-border py-4 mt-4">
+                <CardFooter className="flex justify-center border-t border-border py-3 mt-3">
                     <p className="text-sm text-muted-foreground">
                         Don&apos;t have an account?{' '}
                         <Link to="/register" className="text-primary hover:underline font-bold">
-                            Join NEXTGEN EDUTECH UNIVERSITY
+                            Create account
                         </Link>
                     </p>
                 </CardFooter>

@@ -1,11 +1,13 @@
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet, useLocation, matchPath } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 
 const PublicLayout = () => {
     const location = useLocation();
-    const authPaths = ['/login', '/coordinator/login', '/register', '/admin/login', '/admin/register', '/forgot-password', '/reset-password', '/unauthorized', '/events'];
+    const authPaths = ['/login', '/coordinator/login', '/register', '/admin/login', '/admin/register', '/forgot-password', '/reset-password', '/verify-email', '/unauthorized', '/events'];
     const isAuthPage = authPaths.includes(location.pathname);
+    const isClubProfilePage = Boolean(matchPath('/clubs/:id', location.pathname));
+    const shouldHideFooter = isAuthPage || isClubProfilePage;
 
     return (
         <div className={`min-h-screen bg-background flex flex-col antialiased text-foreground overflow-x-hidden ${!isAuthPage ? 'app-style' : ''}`}> 
@@ -14,7 +16,7 @@ const PublicLayout = () => {
             <main className="flex-grow flex flex-col overflow-x-hidden">
                 <Outlet />
             </main>
-            {!isAuthPage && <Footer />}
+            {!shouldHideFooter && <Footer />}
         </div>
     );
 };

@@ -27,6 +27,7 @@ import { useAuthStore } from '../store/authStore';
 import NotificationBell from '../components/NotificationBell';
 import { ModeToggle } from '../components/mode-toggle';
 import CampusGuide from '../components/CampusGuide';
+import ProfileQuickViewDialog from '../components/ProfileQuickViewDialog';
 
 const DRAWER_WIDTH = 260;
 
@@ -199,11 +200,14 @@ const SidebarContent = ({ location, profile }) => (
 const AdminLayout = () => {
     const [mobileOpen, setMobileOpen] = useState(false);
     const [anchorEl, setAnchorEl] = useState(null);
+    const [profileDialogOpen, setProfileDialogOpen] = useState(false);
     const { logout, profile } = useAuthStore();
     const navigate = useNavigate();
     const location = useLocation();
 
-    const handleProfileOpen = () => { setAnchorEl(null); navigate('/admin/profile'); };
+    const handleProfilePreviewOpen = () => { setAnchorEl(null); setProfileDialogOpen(true); };
+    const handleProfilePreviewClose = () => setProfileDialogOpen(false);
+    const handleProfileEdit = () => { setProfileDialogOpen(false); navigate('/admin/profile'); };
     const handleLogout = async () => { setAnchorEl(null); await logout(); navigate('/admin/login'); };
 
     const drawerSx = { '& .MuiDrawer-paper': { boxSizing: 'border-box', width: DRAWER_WIDTH, border: 'none', background: 'transparent' } };
@@ -239,7 +243,7 @@ const AdminLayout = () => {
                 <NotificationBell />
 
                 <Box component={motion.div} whileHover={{ scale: 1.05 }} onClick={e => setAnchorEl(e.currentTarget)} sx={{ display: 'flex', alignItems: 'center', gap: 1.5, cursor: 'pointer', px: 2, py: 1, borderRadius: '12px', border: '1px solid', borderColor: 'divider', '&:hover': { bgcolor: 'action.hover' } }}>
-                    <Avatar sx={{ width: 30, height: 30, background: 'linear-gradient(135deg, #3b82f6, #a855f7)', fontSize: '0.8rem', fontWeight: 900 }}>
+                    <Avatar src={profile?.avatar_url || undefined} sx={{ width: 30, height: 30, background: 'linear-gradient(135deg, #3b82f6, #a855f7)', fontSize: '0.8rem', fontWeight: 900 }}>
                         {profile?.full_name?.charAt(0) || 'A'}
                     </Avatar>
                     <Box sx={{ display: { xs: 'none', md: 'block' } }}>
@@ -252,7 +256,7 @@ const AdminLayout = () => {
 
                 <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={() => setAnchorEl(null)}
                     PaperProps={{ sx: { bgcolor: 'background.paper', color: 'text.primary', border: '1px solid', borderColor: 'divider', borderRadius: '12px', mt: 1, minWidth: 180 } }}>
-                    <MenuItem onClick={handleProfileOpen} sx={{ gap: 1.5, borderRadius: '8px', mx: 0.5 }}>
+                    <MenuItem onClick={handleProfilePreviewOpen} sx={{ gap: 1.5, borderRadius: '8px', mx: 0.5 }}>
                         <ProfileIcon fontSize="small" /> Profile
                     </MenuItem>
                     <Divider sx={{ my: 0.5 }} />
@@ -260,6 +264,12 @@ const AdminLayout = () => {
                         <LogoutIcon fontSize="small" /> Logout
                     </MenuItem>
                 </Menu>
+                <ProfileQuickViewDialog
+                    open={profileDialogOpen}
+                    onClose={handleProfilePreviewClose}
+                    profile={profile}
+                    onEdit={handleProfileEdit}
+                />
             </Box>
 
             {/* Sidebar */}

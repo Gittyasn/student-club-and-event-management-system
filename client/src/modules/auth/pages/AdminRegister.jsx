@@ -83,18 +83,18 @@ const AdminRegister = () => {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center p-4 transition-colors duration-300" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1562774053-701939374585?w=1920&q=95&auto=format&fit=crop')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
+        <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-3 transition-colors duration-300" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1562774053-701939374585?w=1920&q=95&auto=format&fit=crop')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
             <motion.div
                 initial={{ opacity: 0, scale: 0.98 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.5 }}
-                className="w-full max-w-[420px]"
+                className="w-full max-w-[460px]"
             >
-                <Card className="bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 shadow-2xl overflow-hidden rounded-2xl hover:border-blue-400 hover:shadow-blue-200/40 dark:hover:border-blue-500 transition-all duration-300 cursor-default">
-                    <CardHeader className="space-y-2 pt-6 pb-4 text-center border-b dark:border-slate-800">
+                <Card className="bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 shadow-2xl overflow-hidden rounded-lg hover:border-blue-400 hover:shadow-blue-200/40 dark:hover:border-blue-500 transition-all duration-300 cursor-default">
+                    <CardHeader className="space-y-2 pt-5 pb-3 text-center border-b dark:border-slate-800">
                         <div className="flex justify-center">
-                            <div className="h-12 w-12 bg-primary/10 rounded-2xl flex items-center justify-center border border-primary/20">
-                                <UserPlus className="h-6 w-6 text-primary" />
+                            <div className="h-10 w-10 bg-primary/10 rounded-lg flex items-center justify-center border border-primary/20">
+                                <UserPlus className="h-5 w-5 text-primary" />
                             </div>
                         </div>
                         <CardTitle className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">Create Admin Account</CardTitle>
@@ -103,11 +103,11 @@ const AdminRegister = () => {
                         </CardDescription>
                     </CardHeader>
 
-                    <CardContent className="px-6 pt-5 pb-4">
-                        <div className="space-y-3">
+                    <CardContent className="px-5 pt-4 pb-3">
+                        <div className="space-y-2.5">
                             <Button
                                 variant="outline"
-                                className="w-full h-10 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 font-semibold text-sm"
+                                className="w-full h-9 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 font-semibold text-sm"
                                 onClick={handleGoogleLogin}
                                 disabled={isGoogleLoading}
                             >
@@ -124,13 +124,13 @@ const AdminRegister = () => {
                                 </div>
                             </div>
 
-                            <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <form onSubmit={handleSubmit(onSubmit)} className="space-y-2.5">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
                                     <div className="space-y-1">
                                         <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Full Name</Label>
                                         <div className="relative">
                                             <User className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-                                            <Input {...register('fullName')} placeholder="Dr. John Smith" className="pl-9 h-10 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-sm" />
+                                            <Input {...register('fullName')} placeholder="Dr. John Smith" className="pl-9 h-9 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-sm" />
                                         </div>
                                         {errors.fullName && <p className="text-[10px] text-red-500 font-bold">{errors.fullName.message}</p>}
                                     </div>
@@ -138,42 +138,52 @@ const AdminRegister = () => {
                                         <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Official Email</Label>
                                         <div className="relative">
                                             <Mail className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-                                            <Input {...register('email')} type="email" placeholder="admin@university.edu" className="pl-9 h-10 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-sm" />
+                                            <Input {...register('email')} type="email" placeholder="admin@university.edu" className="pl-9 h-9 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-sm" />
                                         </div>
                                         {errors.email && <p className="text-[10px] text-red-500 font-bold">{errors.email.message}</p>}
                                     </div>
                                 </div>
 
-                                <div className="space-y-1">
-                                    <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Administrative Role</Label>
-                                    <div className="relative">
-                                        <Briefcase className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-                                        <select
-                                            {...register('department')}
-                                            className="flex h-10 w-full pl-9 rounded-md border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary appearance-none"
-                                        >
-                                            <option value="" disabled>Select Role</option>
-                                            <option value="Principal">Principal</option>
-                                            <option value="Vice Principal">Vice Principal</option>
-                                            <option value="HOD - Computer Science">HOD - Computer Science</option>
-                                            <option value="HOD - Electronics">HOD - Electronics</option>
-                                            <option value="HOD - Mechanical">HOD - Mechanical</option>
-                                            <option value="HOD - IT">HOD - Information Technology</option>
-                                            <option value="Dean of Student Affairs">Dean of Student Affairs</option>
-                                            <option value="Student Activity Coordinator">Student Activity Coordinator</option>
-                                            <option value="Exam Controller">Exam Controller</option>
-                                            <option value="System Administrator">System Administrator</option>
-                                        </select>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                                    <div className="space-y-1">
+                                        <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Administrative Role</Label>
+                                        <div className="relative">
+                                            <Briefcase className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                                            <select
+                                                {...register('department')}
+                                                className="flex h-9 w-full pl-9 rounded-md border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary appearance-none"
+                                            >
+                                                <option value="" disabled>Select Role</option>
+                                                <option value="Principal">Principal</option>
+                                                <option value="Vice Principal">Vice Principal</option>
+                                                <option value="HOD - Computer Science">HOD - Computer Science</option>
+                                                <option value="HOD - Electronics">HOD - Electronics</option>
+                                                <option value="HOD - Mechanical">HOD - Mechanical</option>
+                                                <option value="HOD - IT">HOD - Information Technology</option>
+                                                <option value="Dean of Student Affairs">Dean of Student Affairs</option>
+                                                <option value="Student Activity Coordinator">Student Activity Coordinator</option>
+                                                <option value="Exam Controller">Exam Controller</option>
+                                                <option value="System Administrator">System Administrator</option>
+                                            </select>
+                                        </div>
+                                        {errors.department && <p className="text-[10px] text-red-500 font-bold">{errors.department.message}</p>}
                                     </div>
-                                    {errors.department && <p className="text-[10px] text-red-500 font-bold">{errors.department.message}</p>}
+                                    <div className="space-y-1">
+                                        <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Admin Access Key</Label>
+                                        <div className="relative">
+                                            <Lock className="absolute left-3 top-2.5 h-4 w-4 text-red-400" />
+                                            <Input {...register('registrationKey')} type="password" placeholder="Enter System Key" className="pl-9 h-9 bg-red-50/10 dark:bg-red-950/20 border-red-200 dark:border-red-900 text-sm font-bold text-red-600 dark:text-red-400" />
+                                        </div>
+                                        {errors.registrationKey && <p className="text-[10px] text-red-500 font-bold">{errors.registrationKey.message}</p>}
+                                    </div>
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
                                     <div className="space-y-1">
                                         <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Password</Label>
                                         <div className="relative">
                                             <Lock className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-                                            <Input {...register('password')} type="password" placeholder="Create password" className="pl-9 h-10 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-sm" />
+                                            <Input {...register('password')} type="password" placeholder="Create password" className="pl-9 h-9 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-sm" />
                                         </div>
                                         {errors.password && <p className="text-[10px] text-red-500 font-bold">{errors.password.message}</p>}
                                     </div>
@@ -181,34 +191,25 @@ const AdminRegister = () => {
                                         <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Confirm Password</Label>
                                         <div className="relative">
                                             <Lock className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-                                            <Input {...register('confirmPassword')} type="password" placeholder="Confirm password" className="pl-9 h-10 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-sm" />
+                                            <Input {...register('confirmPassword')} type="password" placeholder="Confirm password" className="pl-9 h-9 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-sm" />
                                         </div>
                                         {errors.confirmPassword && <p className="text-[10px] text-red-500 font-bold">{errors.confirmPassword.message}</p>}
                                     </div>
                                 </div>
 
-                                <div className="space-y-1">
-                                    <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Admin Access Key</Label>
-                                    <div className="relative">
-                                        <Lock className="absolute left-3 top-2.5 h-4 w-4 text-red-400" />
-                                        <Input {...register('registrationKey')} type="password" placeholder="Enter System Key" className="pl-9 h-10 bg-red-50/10 dark:bg-red-950/20 border-red-200 dark:border-red-900 text-sm font-bold text-red-600 dark:text-red-400" />
-                                    </div>
-                                    {errors.registrationKey && <p className="text-[10px] text-red-500 font-bold">{errors.registrationKey.message}</p>}
-                                    <p className="text-[9px] text-slate-500 italic">Required to authorize administrative privileges.</p>
-                                </div>
-
                                 <Button
                                     type="submit"
                                     disabled={isLoading}
-                                    className="w-full h-10 text-sm font-bold transition-all hover:translate-y-[-1px] shadow-lg shadow-primary/20 mt-1"
+                                    className="w-full h-9 text-sm font-bold transition-all hover:translate-y-[-1px] shadow-lg shadow-primary/20 mt-1"
                                 >
                                     {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : 'Create Admin Account'}
                                 </Button>
+                                <p className="text-[9px] text-center text-slate-500 italic">Required to authorize administrative privileges.</p>
                             </form>
                         </div>
                     </CardContent>
 
-                    <CardFooter className="bg-slate-50/50 dark:bg-slate-950/30 border-t dark:border-slate-800 py-3 px-6 flex justify-center">
+                    <CardFooter className="bg-slate-50/50 dark:bg-slate-950/30 border-t dark:border-slate-800 py-3 px-5 flex justify-center">
                         <div className="text-sm text-slate-500 dark:text-slate-400">
                             Already have an account?{' '}
                             <Link to="/admin/login" className="text-primary hover:underline font-bold">

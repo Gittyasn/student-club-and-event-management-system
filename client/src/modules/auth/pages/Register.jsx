@@ -8,6 +8,7 @@ import { useAuthStore } from '@/store/authStore';
 
 import { toast } from 'sonner';
 import { Loader2, User, Mail, Lock, Briefcase, GraduationCap, UserPlus } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -105,35 +106,43 @@ const Register = () => {
     ];
 
     return (
-        <div className="flex items-center justify-center min-h-[calc(100vh-4rem)] px-4 py-8" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1562774053-701939374585?w=1920&q=95&auto=format&fit=crop')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
-            <Card className="w-full max-w-lg bg-white dark:bg-slate-900 text-card-foreground shadow-2xl border-2 border-slate-200 dark:border-slate-700 rounded-2xl hover:border-blue-400 hover:shadow-blue-200/40 dark:hover:border-blue-500 transition-all duration-300 cursor-default">
-                <CardHeader className="space-y-1">
-                    <div className="flex justify-center mb-4">
-                        <div className="h-12 w-12 bg-primary/10 rounded-2xl flex items-center justify-center border border-primary/20">
-                            <UserPlus className="h-6 w-6 text-primary" />
+        <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-2 transition-colors duration-300" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1562774053-701939374585?w=1920&q=95&auto=format&fit=crop')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
+            <motion.div
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5 }}
+                className="w-full max-w-[460px]"
+            >
+            <Card className="w-full bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 shadow-2xl overflow-hidden rounded-lg hover:border-blue-400 hover:shadow-blue-200/40 dark:hover:border-blue-500 transition-all duration-300 cursor-default">
+                <CardHeader className="space-y-1 pb-1 pt-4">
+                    <div className="flex justify-center mb-0.5">
+                        <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-emerald-500/20 via-cyan-500/15 to-blue-500/20 flex items-center justify-center border border-emerald-500/20">
+                            <UserPlus className="h-4 w-4 text-emerald-600 dark:text-emerald-300" />
                         </div>
                     </div>
-                    <CardTitle className="text-2xl font-bold text-center">Create an Account</CardTitle>
-                    <CardDescription className="text-center">
-                        Enter your details to register for NEXTGEN EDUTECH UNIVERSITY
+                    <CardTitle className="text-xl font-bold text-center">Create Account</CardTitle>
+                    <CardDescription className="text-center text-xs">
+                        Set up your profile to continue into the platform.
                     </CardDescription>
                 </CardHeader>
-                <CardContent>
-                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" autoComplete="off">
+                <CardContent className="pb-0 px-5 pt-3">
+                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-2" autoComplete="off">
                         {/* Intercept browser autofill */}
                         <input type="text" name="registry_prevent" style={{ display: 'none' }} tabIndex="-1" />
                         <input type="password" name="registry_p_prevent" style={{ display: 'none' }} tabIndex="-1" />
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-2 gap-2">
                             <div className="space-y-2">
                                 <Label htmlFor="reg-fullname">Full Name</Label>
                                 <div className="relative">
-                                    <User className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                                    <div className="absolute left-3 top-2 flex h-5 w-5 items-center justify-center rounded-md bg-blue-500/15 text-blue-600 dark:text-blue-300">
+                                        <User className="h-3 w-3" />
+                                    </div>
                                     <Input
                                         id="reg-fullname"
                                         placeholder="John Doe"
                                         {...register('fullName')}
                                         autoComplete="off"
-                                        className={`${errors.fullName ? "border-red-500" : ""} pl-10 h-11 bg-slate-50 dark:bg-slate-950`}
+                                        className={`${errors.fullName ? "border-red-500" : ""} pl-11 h-9 bg-slate-50 dark:bg-slate-950`}
                                     />
                                 </div>
                                 {errors.fullName && (
@@ -143,14 +152,16 @@ const Register = () => {
                             <div className="space-y-2">
                                 <Label htmlFor="reg-email">Email</Label>
                                 <div className="relative">
-                                    <Mail className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                                    <div className="absolute left-3 top-2 flex h-5 w-5 items-center justify-center rounded-md bg-sky-500/15 text-sky-600 dark:text-sky-300">
+                                        <Mail className="h-3 w-3" />
+                                    </div>
                                     <Input
                                         id="reg-email"
                                         type="email"
                                         placeholder="name@example.com"
                                         {...register('email')}
                                         autoComplete="off"
-                                        className={`${errors.email ? "border-red-500" : ""} pl-10 h-11 bg-slate-50 dark:bg-slate-950`}
+                                        className={`${errors.email ? "border-red-500" : ""} pl-11 h-9 bg-slate-50 dark:bg-slate-950`}
                                     />
                                 </div>
                                 {errors.email && (
@@ -159,15 +170,17 @@ const Register = () => {
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-2 gap-2">
                             <div className="space-y-2">
                                 <Label htmlFor="role">I am a...</Label>
                                 <div className="relative">
-                                    <Briefcase className="absolute left-3 top-3 h-4 w-4 text-slate-400 pointer-events-none" />
+                                    <div className="absolute left-3 top-2 flex h-5 w-5 items-center justify-center rounded-md bg-amber-500/15 text-amber-600 dark:text-amber-300 pointer-events-none">
+                                        <Briefcase className="h-3 w-3" />
+                                    </div>
                                     <select
                                         id="role"
                                         {...register('role')}
-                                        className="flex h-11 w-full rounded-md border border-border bg-background pl-10 pr-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 text-foreground"
+                                        className="flex h-9 w-full rounded-md border border-border bg-background pl-11 pr-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 text-foreground"
                                     >
                                         <option value="student">Student</option>
                                         <option value="coordinator">Coordinator</option>
@@ -181,11 +194,13 @@ const Register = () => {
                             <div className="space-y-2">
                                 <Label htmlFor="department">Department</Label>
                                 <div className="relative">
-                                    <GraduationCap className="absolute left-3 top-3 h-4 w-4 text-slate-400 pointer-events-none" />
+                                    <div className="absolute left-3 top-2 flex h-5 w-5 items-center justify-center rounded-md bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 pointer-events-none">
+                                        <GraduationCap className="h-3 w-3" />
+                                    </div>
                                     <select
                                         id="department"
                                         {...register('department')}
-                                        className="flex h-11 w-full rounded-md border border-border bg-background pl-10 pr-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 text-foreground"
+                                        className="flex h-9 w-full rounded-md border border-border bg-background pl-11 pr-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 text-foreground"
                                     >
                                         <option value="">Select Department</option>
                                         {departments.map((dept) => (
@@ -200,54 +215,84 @@ const Register = () => {
                         </div>
 
                         {selectedRole === 'student' && (
-                            <div className="space-y-2">
-                                <Label htmlFor="year">Year of Study</Label>
-                                <div className="relative">
-                                    <GraduationCap className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
-                                    <Input
-                                        id="year"
-                                        type="number"
-                                        min="1"
-                                        max="4"
-                                        placeholder="1-4"
-                                        {...register('year')}
-                                        className={`${errors.year ? "border-red-500" : ""} pl-10 h-11 bg-slate-50 dark:bg-slate-950`}
-                                    />
+                            <div className="grid grid-cols-2 gap-2">
+                                <div className="space-y-2">
+                                    <Label htmlFor="year">Year of Study</Label>
+                                    <div className="relative">
+                                        <div className="absolute left-3 top-2 flex h-5 w-5 items-center justify-center rounded-md bg-rose-500/15 text-rose-600 dark:text-rose-300">
+                                            <GraduationCap className="h-3 w-3" />
+                                        </div>
+                                        <Input
+                                            id="year"
+                                            type="number"
+                                            min="1"
+                                            max="4"
+                                            placeholder="1-4"
+                                            {...register('year')}
+                                            className={`${errors.year ? "border-red-500" : ""} pl-11 h-9 bg-slate-50 dark:bg-slate-950`}
+                                        />
+                                    </div>
+                                    {errors.year && (
+                                        <p className="text-sm text-red-500">{errors.year.message}</p>
+                                    )}
                                 </div>
-                                {errors.year && (
-                                    <p className="text-sm text-red-500">{errors.year.message}</p>
-                                )}
+                                <div className="space-y-2">
+                                    <Label htmlFor="reg-password">Password</Label>
+                                    <div className="relative">
+                                        <div className="absolute left-3 top-2 flex h-5 w-5 items-center justify-center rounded-md bg-violet-500/15 text-violet-600 dark:text-violet-300">
+                                            <Lock className="h-3 w-3" />
+                                        </div>
+                                        <Input
+                                            id="reg-password"
+                                            type="password"
+                                            placeholder="Create password"
+                                            {...register('password')}
+                                            autoComplete="new-password"
+                                            className={`${errors.password ? "border-red-500" : ""} pl-11 h-9 bg-slate-50 dark:bg-slate-950`}
+                                        />
+                                    </div>
+                                    {errors.password && (
+                                        <p className="text-sm text-red-500">{errors.password.message}</p>
+                                    )}
+                                </div>
                             </div>
                         )}
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {selectedRole !== 'student' && (
                             <div className="space-y-2">
                                 <Label htmlFor="reg-password">Password</Label>
                                 <div className="relative">
-                                    <Lock className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                                    <div className="absolute left-3 top-2 flex h-5 w-5 items-center justify-center rounded-md bg-violet-500/15 text-violet-600 dark:text-violet-300">
+                                        <Lock className="h-3 w-3" />
+                                    </div>
                                     <Input
                                         id="reg-password"
                                         type="password"
                                         placeholder="Create password"
                                         {...register('password')}
                                         autoComplete="new-password"
-                                        className={`${errors.password ? "border-red-500" : ""} pl-10 h-11 bg-slate-50 dark:bg-slate-950`}
+                                        className={`${errors.password ? "border-red-500" : ""} pl-11 h-9 bg-slate-50 dark:bg-slate-950`}
                                     />
                                 </div>
                                 {errors.password && (
                                     <p className="text-sm text-red-500">{errors.password.message}</p>
                                 )}
                             </div>
+                        )}
+
+                        <div className="space-y-2">
                             <div className="space-y-2">
                                 <Label htmlFor="reg-confirmPassword">Confirm Password</Label>
                                 <div className="relative">
-                                    <Lock className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                                    <div className="absolute left-3 top-2 flex h-5 w-5 items-center justify-center rounded-md bg-fuchsia-500/15 text-fuchsia-600 dark:text-fuchsia-300">
+                                        <Lock className="h-3 w-3" />
+                                    </div>
                                     <Input
                                         id="reg-confirmPassword"
                                         type="password"
                                         placeholder="Confirm password"
                                         {...register('confirmPassword')}
-                                        className={`${errors.confirmPassword ? "border-red-500" : ""} pl-10 h-11 bg-slate-50 dark:bg-slate-950`}
+                                        className={`${errors.confirmPassword ? "border-red-500" : ""} pl-11 h-9 bg-slate-50 dark:bg-slate-950`}
                                     />
                                 </div>
                                 {errors.confirmPassword && (
@@ -255,7 +300,7 @@ const Register = () => {
                                 )}
                             </div>
                         </div>
-                        <Button className="w-full" type="submit" disabled={isLoading}>
+                        <Button className="w-full h-9" type="submit" disabled={isLoading}>
                             {isLoading ? (
                                 <>
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -270,7 +315,7 @@ const Register = () => {
                         </Button>
                     </form>
 
-                    <div className="relative">
+                    <div className="relative my-2">
                         <div className="absolute inset-0 flex items-center">
                             <span className="w-full border-t border-border" />
                         </div>
@@ -281,7 +326,7 @@ const Register = () => {
 
                     <Button
                         variant="outline"
-                        className="w-full h-11 border-border bg-background hover:bg-muted"
+                        className="w-full h-9 border-border bg-background hover:bg-muted"
                         onClick={handleGoogleRegister}
                         disabled={isGoogleLoading}
                     >
@@ -295,7 +340,7 @@ const Register = () => {
                         )}
                     </Button>
                 </CardContent>
-                <CardFooter className="flex justify-center mt-4 border-t border-border pt-4">
+                <CardFooter className="flex justify-center mt-1 border-t border-border pt-3 pb-4">
                     <p className="text-sm text-muted-foreground">
                         Already have an account?{' '}
                         <Link to="/login" className="text-primary hover:underline font-medium">
@@ -304,6 +349,7 @@ const Register = () => {
                     </p>
                 </CardFooter>
             </Card>
+            </motion.div>
         </div>
     );
 };

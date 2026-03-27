@@ -16,6 +16,7 @@ import { useAuthStore } from '../store/authStore';
 import NotificationBell from '../components/NotificationBell';
 import { ModeToggle } from '../components/mode-toggle';
 import CampusGuide from '../components/CampusGuide';
+import ProfileQuickViewDialog from '../components/ProfileQuickViewDialog';
 
 const DRAWER_WIDTH = 260;
 const SIDEBAR_BG = 'linear-gradient(180deg, #0b1220 0%, #0f172a 45%, #0b1220 100%)'; // Executive gradient slate
@@ -150,11 +151,14 @@ const SidebarContent = ({ location, profile }) => (
 const CoordinatorLayout = () => {
     const [mobileOpen, setMobileOpen] = useState(false);
     const [anchorEl, setAnchorEl] = useState(null);
+    const [profileDialogOpen, setProfileDialogOpen] = useState(false);
     const { logout, profile } = useAuthStore();
     const navigate = useNavigate();
     const location = useLocation();
 
-    const handleProfileOpen = () => { setAnchorEl(null); navigate('/coordinator/profile'); };
+    const handleProfilePreviewOpen = () => { setAnchorEl(null); setProfileDialogOpen(true); };
+    const handleProfilePreviewClose = () => setProfileDialogOpen(false);
+    const handleProfileEdit = () => { setProfileDialogOpen(false); navigate('/coordinator/profile'); };
     const handleLogout = async () => { setAnchorEl(null); await logout(); navigate('/coordinator/login'); };
     const drawerSx = { '& .MuiDrawer-paper': { boxSizing: 'border-box', width: DRAWER_WIDTH, border: 'none', background: 'transparent' } };
 
@@ -185,7 +189,7 @@ const CoordinatorLayout = () => {
                 <NotificationBell />
                 <Box component={motion.div} whileHover={{ scale: 1.02 }} onClick={e => setAnchorEl(e.currentTarget)}
                     sx={{ display: 'flex', alignItems: 'center', gap: 1.5, cursor: 'pointer', px: 1.5, py: 0.75, borderRadius: '8px', border: '1px solid', borderColor: 'divider', '&:hover': { bgcolor: 'action.hover' } }}>
-                    <Avatar sx={{ width: 30, height: 30, bgcolor: 'primary.main', fontSize: '0.8rem', fontWeight: 700 }}>
+                    <Avatar src={profile?.avatar_url || undefined} sx={{ width: 30, height: 30, bgcolor: 'primary.main', fontSize: '0.8rem', fontWeight: 700 }}>
                         {profile?.full_name?.charAt(0) || 'C'}
                     </Avatar>
                     <Box sx={{ display: { xs: 'none', md: 'block' } }}>
@@ -195,7 +199,7 @@ const CoordinatorLayout = () => {
                 </Box>
                 <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={() => setAnchorEl(null)}
                     PaperProps={{ sx: { mt: 1, minWidth: 180, bgcolor: 'background.paper', color: 'text.primary', border: '1px solid', borderColor: 'divider', borderRadius: '12px' } }}>
-                    <MenuItem onClick={handleProfileOpen} sx={{ gap: 1.5 }}>
+                    <MenuItem onClick={handleProfilePreviewOpen} sx={{ gap: 1.5 }}>
                         <ProfileIcon fontSize="small" /> Profile
                     </MenuItem>
                     <Divider sx={{ my: 0.5 }} />
@@ -203,6 +207,12 @@ const CoordinatorLayout = () => {
                         <LogoutIcon fontSize="small" /> Logout
                     </MenuItem>
                 </Menu>
+                <ProfileQuickViewDialog
+                    open={profileDialogOpen}
+                    onClose={handleProfilePreviewClose}
+                    profile={profile}
+                    onEdit={handleProfileEdit}
+                />
             </Box>
 
             {/* Sidebar */}

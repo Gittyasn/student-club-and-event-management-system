@@ -91,7 +91,7 @@ const authService = {
             // Fetch profile and check status
             const { data: profile, error: profileError } = await supabase
                 .from('profiles')
-                .select('id, email, full_name, role, department, year, account_status, club_id')
+                .select('id, email, full_name, role, department, year, account_status, club_id, avatar_url, phone, bio, social_links, login_history')
                 .eq('id', authData.user.id)
                 .maybeSingle();
 
@@ -162,7 +162,7 @@ const authService = {
 
         const { data: profile, error } = await supabase
             .from('profiles')
-            .select('id, email, full_name, role, department, year, account_status, club_id')
+            .select('id, email, full_name, role, department, year, account_status, club_id, avatar_url, phone, bio, social_links')
             .eq('id', session.user.id)
             .maybeSingle();
 

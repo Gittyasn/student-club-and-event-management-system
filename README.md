@@ -4,6 +4,8 @@ A comprehensive management system for university clubs and events, built with Re
 
 ## Project Structure
 - `/client`: Frontend application (React + Vite + Material UI)
+- `/docs`: Project guides, route maps, reports, and setup notes
+- `/supabase`: Edge functions, migrations, and manual support patches
 - `supabase_schema.sql`: Master database schema and security policies
 
 ## 🚀 Getting Started
@@ -56,6 +58,11 @@ Run a deep check of TypeScript types without building:
 cd client
 npx tsc -b
 ```
+
+## Project Notes
+
+- Technical stack summary: `TECH_STACK.md`
+- Extended deployment/setup/reference docs: `docs/`
 
 ## 👥 Roles & Access
 - **Admin**: Full system control, event approvals, global settings.

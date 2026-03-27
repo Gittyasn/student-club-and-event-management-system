@@ -13,7 +13,34 @@ export default defineConfig({
     },
     server: {
         port: 3000,
-        open: true,
+        open: false,
+        warmup: {
+            clientFiles: [
+                './src/main.jsx',
+                './src/App.jsx',
+                './src/modules/public/pages/Home.jsx',
+                './src/modules/auth/pages/Login.jsx',
+                './src/modules/auth/pages/Register.jsx',
+            ],
+        },
+    },
+    optimizeDeps: {
+        include: [
+            'react',
+            'react-dom',
+            'react-router-dom',
+            '@tanstack/react-query',
+            '@supabase/supabase-js',
+            '@mui/material',
+            '@mui/icons-material',
+            '@mui/x-data-grid',
+            'framer-motion',
+            'lucide-react',
+            'react-hook-form',
+            '@hookform/resolvers/zod',
+            'zod',
+            'sonner',
+        ],
     },
     build: {
         chunkSizeWarningLimit: 1000,
@@ -79,7 +106,7 @@ export default defineConfig({
                         normalizedId.includes('/node_modules/use-callback-ref/') ||
                         normalizedId.includes('/node_modules/use-sidecar/')
                     ) {
-                        return 'vendor-ui-primitives'
+                        return 'vendor-misc'
                     }
                     if (
                         normalizedId.includes('/node_modules/react-hook-form/') ||
