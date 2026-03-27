@@ -32,7 +32,7 @@ const AdminResults = () => {
                     remarks,
                     created_at,
                     event:events(id, title, club:clubs(name)),
-                    team:teams(name),
+                    team:teams(team_name),
                     user:profiles!results_user_id_fkey(full_name, email)
                 `)
                 .order('rank', { ascending: true });
@@ -95,10 +95,10 @@ const AdminResults = () => {
                                     <TableCell>
                                         <Stack direction="row" spacing={1} alignItems="center">
                                             <Avatar sx={{ width: 32, height: 32, fontSize: 14 }}>
-                                                {(result.team?.name || result.user?.full_name || '?').charAt(0)}
+                                                {(result.team?.team_name || result.user?.full_name || '?').charAt(0)}
                                             </Avatar>
                                             <Typography variant="body2">
-                                                {result.team?.name || result.user?.full_name || 'Unknown'}
+                                                {result.team?.team_name || result.user?.full_name || 'Unknown'}
                                             </Typography>
                                         </Stack>
                                     </TableCell>
