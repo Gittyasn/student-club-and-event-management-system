@@ -57,12 +57,6 @@ export const useChat = (chatType, referenceId) => {
 
     const chatId = chatRoom?.id;
 
-    const [prevChatId, setPrevChatId] = useState(null);
-    if (chatId !== prevChatId) {
-        setPrevChatId(chatId);
-        setRealtimeMessages([]);
-    }
-
     // 2. Fetch Historical Messages
     const { data: historicalMessages = [], isLoading: loadingMessages } = useQuery({
         queryKey: ['messages', chatId],
@@ -201,7 +195,9 @@ export const useChat = (chatType, referenceId) => {
     // Combine Historical + Realtime avoiding duplicates
     const allMessagesMap = new Map();
     historicalMessages.forEach(m => allMessagesMap.set(m.id, m));
-    realtimeMessages.forEach(m => allMessagesMap.set(m.id, { ...allMessagesMap.get(m.id), ...m }));
+    realtimeMessages
+        .filter(message => message.chat_id === chatId)
+        .forEach(m => allMessagesMap.set(m.id, { ...allMessagesMap.get(m.id), ...m }));
 
     // Sort array by created_at
     const displayMessages = Array.from(allMessagesMap.values()).sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
