@@ -57,9 +57,11 @@ export const useChat = (chatType, referenceId) => {
 
     const chatId = chatRoom?.id;
 
-    useEffect(() => {
+    const [prevChatId, setPrevChatId] = useState(null);
+    if (chatId !== prevChatId) {
+        setPrevChatId(chatId);
         setRealtimeMessages([]);
-    }, [chatId]);
+    }
 
     // 2. Fetch Historical Messages
     const { data: historicalMessages = [], isLoading: loadingMessages } = useQuery({

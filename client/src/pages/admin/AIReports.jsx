@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { Box, Typography, Grid, Paper, CircularProgress, Avatar, Stack, Chip } from '@mui/material';
 import { AutoGraph, WarningAmber, EmojiEvents, Stars } from '@mui/icons-material';
 import { useQuery } from '@tanstack/react-query';

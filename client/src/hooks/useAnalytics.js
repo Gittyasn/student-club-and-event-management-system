@@ -11,7 +11,7 @@ const CERTIFICATE_WEIGHTS = {
     participation: 8,
 };
 
-const monthLabel = (value) => new Date(value).toLocaleString('default', { month: 'short', year: '2-digit' });
+
 
 const buildMonthSeries = (months = 6) => {
     const now = new Date();
@@ -164,10 +164,7 @@ export const useAdminAnalytics = () => {
                 .sort((a, b) => b.count - a.count)
                 .slice(0, 8);
 
-            const clubsById = clubs.reduce((acc, club) => {
-                acc[club.id] = club;
-                return acc;
-            }, {});
+
 
             const eventIdsByClubId = events.reduce((acc, event) => {
                 if (!acc[event.club_id]) acc[event.club_id] = [];

@@ -10,8 +10,7 @@ import {
     CardContent,
     Grid,
     Stack,
-    Button,
-    useTheme
+    Button
 } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import { Star as StarIcon, EmojiEvents as TrophyIcon, Visibility as ViewIcon } from '@mui/icons-material';
@@ -20,7 +19,7 @@ import { useAdminFeedbackOverview } from '../../hooks/useFeedback';
 const AdminFeedback = () => {
     const navigate = useNavigate();
     const { data, isLoading, isError, error } = useAdminFeedbackOverview();
-    const theme = useTheme();
+
 
     if (isLoading) return (
         <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" height="60vh" gap={2}>

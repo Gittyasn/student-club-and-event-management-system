@@ -33,9 +33,11 @@ const RankIcon = ({ rank }) => {
 const Leaderboard = ({ eventId, roundId, submissions }) => {
     const [liveSubmissions, setLiveSubmissions] = useState(submissions || []);
 
-    useEffect(() => {
+    const [prevSubmissions, setPrevSubmissions] = useState(submissions);
+    if (submissions !== prevSubmissions) {
+        setPrevSubmissions(submissions);
         setLiveSubmissions(submissions || []);
-    }, [submissions]);
+    }
 
     // Real-time subscription for score updates
     useEffect(() => {

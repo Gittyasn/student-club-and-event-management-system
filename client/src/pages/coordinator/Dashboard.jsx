@@ -214,7 +214,7 @@ const CoordinatorDashboard = () => {
                 pendingEvents: events.filter(e => e.approval_status === 'pending').length,
                 totalParticipants: totalRegs,
                 attendanceRate,
-                upcomingEvents, timeline, budgetPie, income, expenses, pendingParams
+                upcomingEvents, timeline, budgetPie, income, expenses, pendingParams, hasBudgetData
             };
         }
     });

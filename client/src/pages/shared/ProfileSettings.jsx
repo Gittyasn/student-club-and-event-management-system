@@ -1,23 +1,21 @@
 import { 
     Box, Typography, Paper, Grid, TextField, Button, Avatar, 
-    Divider, MenuItem, IconButton, Chip, useTheme, Stack,
+    MenuItem, IconButton, Chip, useTheme, Stack,
     Tab, Tabs, InputAdornment, Skeleton, Tooltip, Fade
 } from '@mui/material';
 import { useAuthStore } from '../../store/authStore';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../services/supabaseClient';
 import { toast } from 'sonner';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { 
     Save as SaveIcon, 
     PhotoCamera as PhotoIcon, 
     LockOutlined as LockIcon, 
     VerifiedUser as SecurityIcon,
     PhoneIphone as PhoneIcon,
-    BadgeOutlined as BioIcon,
     School as SchoolIcon,
     Language as SocialIcon,
-    AlternateEmail as EmailIcon,
     AccountCircle as UserIcon,
     Verified as VerifiedIcon,
     AdminPanelSettings as AdminIcon,
@@ -37,7 +35,7 @@ const ProfileSettings = () => {
     const theme = useTheme();
     const queryClient = useQueryClient();
     const [tabValue, setTabValue] = useState(0);
-    const [isSaving, setIsSaving] = useState(false);
+
     
     const [formData, setFormData] = useState({
         full_name: '',
@@ -54,7 +52,9 @@ const ProfileSettings = () => {
         confirmPassword: ''
     });
 
-    useEffect(() => {
+    const [prevProfile, setPrevProfile] = useState(null);
+    if (profile !== prevProfile) {
+        setPrevProfile(profile);
         if (profile) {
             setFormData({
                 full_name: profile.full_name || '',
@@ -66,7 +66,7 @@ const ProfileSettings = () => {
                 social_links: profile.social_links || { twitter: '', linkedin: '', github: '' }
             });
         }
-    }, [profile]);
+    }
 
     const updateProfile = useMutation({
         mutationFn: async (updatedData) => {
@@ -124,7 +124,7 @@ const ProfileSettings = () => {
     );
 
     const isStudent = profile.role === 'student';
-    const isCoordinator = profile.role === 'coordinator';
+
 
     return (
         <Box sx={{ pb: 8, maxWidth: 1200, mx: 'auto' }}>

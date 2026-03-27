@@ -3,7 +3,6 @@ import { supabase } from '../services/supabaseClient';
 import { sendNotifications } from '../services/notificationService';
 import { useAuthStore } from '../store/authStore';
 import { toast } from 'sonner';
-// eslint-disable-next-line no-unused-vars
 import { generateCertificatePDF, downloadPDF } from '../utils/generateCertificate';
 
 const CERTIFICATE_BUCKET = 'certificates';
