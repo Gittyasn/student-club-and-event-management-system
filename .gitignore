@@ -32,5 +32,6 @@ dist-ssr
 client/build_log.txt
 client/testOutput.txt
 supabase/tree_db.txt
+supabase/.temp/
 test_schema.txt
 users_jsx_content.txt

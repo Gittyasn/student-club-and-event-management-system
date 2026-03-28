@@ -5,6 +5,57 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { supabase } from '../services/supabaseClient';
 
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY;
+const assistantFunctionUrl = supabaseUrl ? `${supabaseUrl}/functions/v1/chat-assistant` : null;
+
+const diagnoseAssistantFailure = async (payload) => {
+    if (!assistantFunctionUrl || !supabaseAnonKey) {
+        return 'Campus support is not configured because Supabase environment values are missing in the client setup.';
+    }
+
+    try {
+        const response = await fetch(assistantFunctionUrl, {
+            method: 'POST',
+            headers: {
+                apikey: supabaseAnonKey,
+                Authorization: `Bearer ${supabaseAnonKey}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload),
+        });
+
+        let errorBody = null;
+        try {
+            errorBody = await response.json();
+        } catch {
+            errorBody = null;
+        }
+
+        if (response.status === 404) {
+            return 'Campus support is not deployed in Supabase yet. Deploy the "chat-assistant" Edge Function to enable AI replies.';
+        }
+
+        const detailedMessage = errorBody?.error || errorBody?.message || '';
+
+        if (detailedMessage.includes('OPENAI_API_KEY')) {
+            return 'Campus support is deployed, but the OPENAI_API_KEY secret is missing in Supabase Edge Functions.';
+        }
+
+        if (detailedMessage) {
+            return `Campus support is unavailable right now. ${detailedMessage}`;
+        }
+
+        if (!response.ok) {
+            return `Campus support is unavailable right now. Edge Function returned status ${response.status}.`;
+        }
+    } catch {
+        return 'Campus support could not reach the Supabase Edge Function endpoint.';
+    }
+
+    return 'Campus support is unavailable right now. Please try again shortly.';
+};
+
 /**
  * CampusGuide Component
  * Campus support assistant connected to Supabase Edge Functions
@@ -75,7 +126,11 @@ const CampusGuide = ({ triggerMode = 'floating' }) => {
             setMessages(prev => [...prev, { role: 'assistant', content: reply }]);
         } catch (error) {
             console.error("Guide Error:", error);
-            setMessages(prev => [...prev, { role: 'assistant', content: `Sorry, campus support is unavailable right now. ${error.message}. Please try again shortly.` }]);
+            const diagnosticMessage = await diagnoseAssistantFailure({
+                messages: newMessages.map(m => ({ role: m.role, content: m.content })),
+                context: contextData,
+            });
+            setMessages(prev => [...prev, { role: 'assistant', content: diagnosticMessage }]);
         } finally {
             setIsTyping(false);
         }

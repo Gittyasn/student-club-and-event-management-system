@@ -72,7 +72,7 @@
 - ✅ AIAssistant.jsx component on all authenticated pages
 - ✅ Floating action button in bottom-right
 - ✅ Context-aware AI responses
-- ✅ OpenAI GPT-4o-mini integration with API key configured
+- ✅ OpenAI GPT-4o-mini integration through Supabase Edge Function secret
 
 **AI Features**:
 - AttendancePrediction.jsx - Predict no-show rates
@@ -148,8 +148,10 @@
 ```
 VITE_SUPABASE_URL=https://thvsjqghttadnqzhqskx.supabase.co
 VITE_SUPABASE_KEY=<valid-anon-key>
-VITE_OPENAI_API_KEY=<valid-api-key>
 ```
+
+**Supabase Secret**:
+`OPENAI_API_KEY` should be stored in Supabase Edge Function secrets, not in the frontend `.env` file.
 
 ---
 
