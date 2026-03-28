@@ -1,11 +1,13 @@
 import { Box, Typography, Grid, Button, Stack, Divider, Paper, useTheme } from '@mui/material';
 import {
     Group as UsersIcon, Category as ClubIcon, Event as EventIcon,
-    HourglassEmpty as PendingIcon, Shield, Insights, PeopleAlt
+    HourglassEmpty as PendingIcon, Shield, PeopleAlt
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../services/supabaseClient';
+import LoadingDots from '../../components/LoadingDots';
+import { fetchAuditLogs } from '../../services/auditLogService';
 import {
     AreaChart, Area, PieChart, Pie, Cell,
     XAxis, YAxis, CartesianGrid, ResponsiveContainer,
@@ -135,7 +137,7 @@ const AdminDashboard = () => {
                 supabase.from('events').select('id, approval_status, start_time, created_at').order('created_at', { ascending: true }),
                 supabase.from('registrations').select('id, status, created_at'),
                 supabase.from('budget_items').select('amount, type, approved'),
-                supabase.from('audit_logs').select('id, action, target_table, created_at, actor:profiles(full_name)').order('created_at', { ascending: false }).limit(6),
+                fetchAuditLogs({ limit: 6 }),
             ]);
 
             const now = new Date();
@@ -159,12 +161,6 @@ const AdminDashboard = () => {
                 ? Math.round((registrations.data.filter(r => r.status === 'attended').length / registrations.data.length) * 100)
                 : 0;
 
-            let recentAuditFormatted = undefined;
-            if (auditLogs?.data) {
-                // Remove duplicates based on action and target_table roughly to get cleaner feed right now
-                recentAuditFormatted = auditLogs.data;
-            }
-
             return {
                 totalUsers, students, coordinators,
                 totalClubs: clubs.data?.length || 0,
@@ -178,17 +174,12 @@ const AdminDashboard = () => {
                     { name: 'Coordinators', value: coordinators },
                 ],
                 topClubs: (clubs.data || []).slice(0, 5).map(c => ({ ...c, score: Math.round((c.rating || 0) * 20) })),
-                recentAudit: recentAuditFormatted || [],
+                recentAudit: auditLogs || [],
             };
         }
     });
 
-    if (isLoading) return (
-        <Box display="flex" alignItems="center" justifyContent="center" height="60vh" gap={2}>
-            <Insights sx={{ fontSize: 32, color: 'text.secondary', animation: 'spin 2s linear infinite' }} />
-            <Typography sx={{ fontWeight: 500, color: 'text.secondary' }}>Loading administrative data...</Typography>
-        </Box>
-    );
+    if (isLoading) return <LoadingDots label="Loading administrative data..." minHeight="60vh" />;
 
     const kpis = [
         { title: 'Total Users', value: data?.totalUsers, icon: <UsersIcon fontSize="small" />, subtitle: 'Active accounts' },
@@ -373,7 +364,7 @@ const AdminDashboard = () => {
                                         <Typography variant="body2" sx={{ color: 'text.primary' }}>
                                             <span style={{ fontWeight: 600 }}>{log.actor?.full_name || 'System Operator'}</span> executed
                                             <span style={{ fontWeight: 600, color: theme.palette.primary.main }}> {log.action} </span>
-                                            on {log.target_table}
+                                            across the platform
                                         </Typography>
                                         <Typography variant="caption" sx={{ color: 'text.secondary', mt: 0.5, display: 'block' }}>
                                             {new Date(log.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}

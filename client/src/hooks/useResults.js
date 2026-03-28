@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../services/supabaseClient';
 import { sendNotification, sendNotifications } from '../services/notificationService';
+import { writeAuditLog } from '../services/auditLogService';
 import { useAuthStore } from '../store/authStore';
 import { toast } from 'sonner';
 import { generateCertificatePDF } from '../utils/generateCertificate';
@@ -328,7 +329,7 @@ export const useAdminResultOverride = () => {
                 event_id: eventId, actor_id: user?.id,
                 action: 'unlocked', note: 'Admin unlocked results for editing.'
             });
-            await supabase.from('audit_logs').insert({
+            await writeAuditLog({
                 user_id: user?.id, action: 'results_unlocked', target_id: eventId
             });
         },
@@ -351,7 +352,7 @@ export const useAdminResultOverride = () => {
                 new_data: { ...before, ...changes },
                 note: reason || 'Admin correction'
             });
-            await supabase.from('audit_logs').insert({
+            await writeAuditLog({
                 user_id: user?.id, action: 'result_override', target_id: resultId,
                 meta: { reason, changes }
             });

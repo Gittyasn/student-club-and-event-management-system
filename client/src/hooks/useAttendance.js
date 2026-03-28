@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../services/supabaseClient';
 import { sendNotification } from '../services/notificationService';
+import { writeAuditLog } from '../services/auditLogService';
 import { useAuthStore } from '../store/authStore';
 import { toast } from 'sonner';
 import { useCertificateMutations } from './useCertificates';
@@ -320,7 +321,7 @@ export const useAttendanceMutations = (eventId) => {
             });
             if (error) throw error;
 
-            await supabase.from('audit_logs').insert({
+            await writeAuditLog({
                 user_id: user?.id, action: 'attendance_locked', target_id: eventId,
                 meta: { locked_at: new Date().toISOString() }
             });
@@ -378,7 +379,7 @@ export const useAdminAttendanceOverrides = () => {
             });
             if (error) throw error;
 
-            await supabase.from('audit_logs').insert({
+            await writeAuditLog({
                 user_id: user?.id, action: 'attendance_unlocked', target_id: eventId,
                 meta: { unlocked_at: new Date().toISOString() }
             });
@@ -413,7 +414,7 @@ export const useAdminAttendanceOverrides = () => {
                 action_note: reason || 'Admin correction'
             });
 
-            await supabase.from('audit_logs').insert({
+            await writeAuditLog({
                 user_id: user?.id, action: 'admin_attendance_override', target_id: eventId,
                 meta: { student_id: userId, from: existing?.status, to: newStatus, reason }
             });

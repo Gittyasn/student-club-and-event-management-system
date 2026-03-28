@@ -1,12 +1,13 @@
 import { Box, Typography, Grid, Chip, Button, Divider, Paper, useTheme } from '@mui/material';
 import {
     Event as EventIcon, HowToReg as RegIcon, HourglassEmpty as PendingIcon,
-    Star, FactCheck, DateRange, Campaign, Insights, Category
+    Star, FactCheck, DateRange, Campaign, Category
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../services/supabaseClient';
 import { useAuthStore } from '../../store/authStore';
+import LoadingDots from '../../components/LoadingDots';
 import {
     AreaChart, Area, PieChart, Pie, Cell,
     XAxis, YAxis, CartesianGrid, ResponsiveContainer,
@@ -219,12 +220,7 @@ const CoordinatorDashboard = () => {
         }
     });
 
-    if (isLoading) return (
-        <Box display="flex" alignItems="center" justifyContent="center" height="60vh" gap={2}>
-            <Insights sx={{ fontSize: 32, color: 'text.secondary', animation: 'spin 2s linear infinite' }} />
-            <Typography sx={{ fontWeight: 500, color: 'text.secondary' }}>Loading club insights...</Typography>
-        </Box>
-    );
+    if (isLoading) return <LoadingDots label="Loading club insights..." minHeight="60vh" />;
 
     if (stats?.hasClub === false) return (
         <Paper elevation={0} sx={{ py: 8, textAlign: 'center', border: `1px solid ${theme.palette.divider}`, borderRadius: 2 }}>

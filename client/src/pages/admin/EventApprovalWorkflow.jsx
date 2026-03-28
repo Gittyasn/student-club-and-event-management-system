@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../services/supabaseClient';
 import { useAuthStore } from '../../store/authStore';
+import LoadingDots from '../../components/LoadingDots';
+import { writeAuditLog as persistAuditLog } from '../../services/auditLogService';
 import {
     // eslint-disable-next-line no-unused-vars
     Box, Paper, Typography, Button, Table, TableBody, TableCell,
@@ -92,8 +94,8 @@ const EventApprovalWorkflow = () => {
         }
     });
 
-    const writeAuditLog = async ({ action, event }) => {
-        await supabase.from('audit_logs').insert({
+    const logApprovalAction = async ({ action, event }) => {
+        await persistAuditLog({
             actor_id: profile?.id,
             action,
             module: 'Event Approval',
@@ -118,7 +120,7 @@ const EventApprovalWorkflow = () => {
             { eventId: selectedEvent.id, reason },
             {
                 onSuccess: async () => {
-                    await writeAuditLog({
+                    await logApprovalAction({
                         action: 'reject_event',
                         event: { ...selectedEvent, approval_status: 'rejected', status: selectedEvent.status }
                     });
@@ -215,7 +217,7 @@ const EventApprovalWorkflow = () => {
                         startIcon={<ApproveIcon />}
                         onClick={() => approveMutation.mutate(event.id, {
                             onSuccess: async () => {
-                                await writeAuditLog({
+                                await logApprovalAction({
                                     action: 'approve_event',
                                     event: { ...event, approval_status: 'approved', status: 'registration_open' }
                                 });
@@ -253,7 +255,7 @@ const EventApprovalWorkflow = () => {
         );
     }
 
-    if (isLoading) return <CircularProgress />;
+    if (isLoading) return <LoadingDots label="Loading event workflow..." minHeight="30vh" />;
 
     return (
         <Box sx={{ pb: 6 }}>

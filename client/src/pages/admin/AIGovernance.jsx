@@ -1,60 +1,156 @@
-import React from 'react';
-import { Box, Typography, Paper, Switch, CircularProgress, Divider, List, ListItem, ListItemText, ListItemSecondaryAction, Alert } from '@mui/material';
-import { useGlobalAIGovernance, useToggleAIFeature } from '../../hooks/useGuideEngine';
-import { AutoAwesome, HealthAndSafety } from '@mui/icons-material';
+import {
+    Alert,
+    Box,
+    Chip,
+    Paper,
+    Stack,
+    Switch,
+    Typography,
+} from '@mui/material';
+import {
+    AutoAwesome,
+    HealthAndSafety,
+    Insights,
+    Policy,
+    Psychology,
+} from '@mui/icons-material';
 import { motion } from 'framer-motion';
+import { useGlobalAIGovernance, useToggleAIFeature } from '../../hooks/useGuideEngine';
+import LoadingDots from '../../components/LoadingDots';
+
+const FEATURE_ICONS = {
+    dropout_detection: <Insights />,
+    engagement_prediction: <AutoAwesome />,
+    sentiment_analysis: <Psychology />,
+};
 
 const AIGovernance = () => {
     const { data: features, isLoading } = useGlobalAIGovernance();
     const { mutate: toggleFeature } = useToggleAIFeature();
 
-    if (isLoading) return <Box display="flex" justifyContent="center" p={8}><CircularProgress /></Box>;
-    if (!features) return null;
+    if (isLoading) {
+        return <LoadingDots minHeight="50vh" label="Loading governance controls..." />;
+    }
+
+    if (!features?.length) {
+        return (
+            <Alert severity="info" sx={{ borderRadius: '16px' }}>
+                No governance features are available yet.
+            </Alert>
+        );
+    }
 
     return (
-        <Box sx={{ maxWidth: 800, mx: 'auto', pb: 8 }}>
-            <Box component={motion.div} initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} sx={{ mb: 4 }}>
-                <Typography variant="h4" fontWeight={900} sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
-                    <HealthAndSafety color="primary" fontSize="large" /> Assistance Controls
+        <Box sx={{ pb: 8 }}>
+            <Box
+                component={motion.div}
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                sx={{
+                    mb: 4,
+                    p: { xs: 3, md: 4 },
+                    borderRadius: '24px',
+                    background: (theme) =>
+                        theme.palette.mode === 'dark'
+                            ? 'linear-gradient(135deg, #0f172a 0%, #1d4ed8 100%)'
+                            : 'linear-gradient(135deg, #ffffff 0%, #eff6ff 100%)',
+                    border: '1px solid',
+                    borderColor: 'divider',
+                }}
+            >
+                <Typography variant="overline" sx={{ color: '#2563eb', fontWeight: 900, letterSpacing: 2.2 }}>
+                    AI CONTROL CENTER
                 </Typography>
-                <Typography color="text.secondary">
-                    Control the guided assistance features used across analytics, reporting, and campus support tools without affecting the rest of the platform.
+                <Typography variant="h4" fontWeight={900} sx={{ mt: 0.5, display: 'flex', alignItems: 'center', gap: 1.25 }}>
+                    <HealthAndSafety color="primary" fontSize="large" />
+                    Assistance Governance
+                </Typography>
+                <Typography color="text.secondary" fontWeight={600}>
+                    Manage which guidance features are active across reporting, analytics, and the campus support assistant.
                 </Typography>
             </Box>
 
-            <Alert severity="info" sx={{ mb: 4, borderRadius: '12px' }}>
-                These features only assist staff with insights and summaries. They do not automatically perform destructive actions or change student records on their own.
+            <Alert
+                severity="info"
+                icon={<Policy fontSize="inherit" />}
+                sx={{ mb: 4, borderRadius: '18px', '& .MuiAlert-message': { fontWeight: 600 } }}
+            >
+                These features provide suggestions and summaries only. They do not automatically modify student records or execute destructive actions.
             </Alert>
 
-            <Paper elevation={0} sx={{ borderRadius: '24px', border: '1px solid', borderColor: 'divider', overflow: 'hidden' }}>
-                <List disablePadding>
-                    {features.map((feature, index) => (
-                        <React.Fragment key={feature.feature_key}>
-                            <ListItem sx={{ py: 3, px: 4 }}>
-                                <ListItemText
-                                    primary={
-                                        <Typography variant="subtitle1" fontWeight={800} textTransform="capitalize" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Stack spacing={2.5}>
+                {features.map((feature) => {
+                    const enabled = Boolean(feature.is_enabled);
+                    const icon = FEATURE_ICONS[feature.feature_key] || <AutoAwesome />;
+
+                    return (
+                        <Paper
+                            key={feature.feature_key}
+                            sx={{
+                                p: 3,
+                                borderRadius: '20px',
+                                border: '1px solid',
+                                borderColor: 'divider',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                gap: 2,
+                                flexWrap: 'wrap',
+                            }}
+                        >
+                            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, flex: 1, minWidth: 260 }}>
+                                <Box
+                                    sx={{
+                                        width: 48,
+                                        height: 48,
+                                        borderRadius: '14px',
+                                        display: 'grid',
+                                        placeItems: 'center',
+                                        bgcolor: enabled ? 'primary.main' : 'action.hover',
+                                        color: enabled ? '#fff' : 'text.secondary',
+                                        flexShrink: 0,
+                                    }}
+                                >
+                                    {icon}
+                                </Box>
+                                <Box sx={{ minWidth: 0 }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', mb: 0.5 }}>
+                                        <Typography variant="h6" fontWeight={800} sx={{ textTransform: 'capitalize' }}>
                                             {feature.feature_key.replaceAll('_', ' ')}
-                                            {feature.is_enabled && <AutoAwesome sx={{ fontSize: 16, color: '#8b5cf6' }} />}
                                         </Typography>
+                                        <Chip
+                                            size="small"
+                                            label={enabled ? 'Enabled' : 'Paused'}
+                                            color={enabled ? 'success' : 'default'}
+                                            variant={enabled ? 'filled' : 'outlined'}
+                                            sx={{ fontWeight: 700 }}
+                                        />
+                                    </Box>
+                                    <Typography color="text.secondary" fontWeight={500}>
+                                        {feature.description || 'Operational assistance module.'}
+                                    </Typography>
+                                </Box>
+                            </Box>
+
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, ml: 'auto' }}>
+                                <Typography variant="body2" fontWeight={700} color={enabled ? 'success.main' : 'text.secondary'}>
+                                    {enabled ? 'Live' : 'Disabled'}
+                                </Typography>
+                                <Switch
+                                    checked={enabled}
+                                    onChange={(event) =>
+                                        toggleFeature({
+                                            featureKey: feature.feature_key,
+                                            isEnabled: event.target.checked,
+                                        })
                                     }
-                                    secondary={feature.description || 'Operational assistance module.'}
-                                    secondaryTypographyProps={{ sx: { mt: 0.5, fontWeight: 500 } }}
+                                    color="primary"
                                 />
-                                <ListItemSecondaryAction>
-                                    <Switch
-                                        edge="end"
-                                        checked={Boolean(feature.is_enabled)}
-                                        onChange={(e) => toggleFeature({ featureKey: feature.feature_key, isEnabled: e.target.checked })}
-                                        color="secondary"
-                                    />
-                                </ListItemSecondaryAction>
-                            </ListItem>
-                            {index !== features.length - 1 && <Divider />}
-                        </React.Fragment>
-                    ))}
-                </List>
-            </Paper>
+                            </Box>
+                        </Paper>
+                    );
+                })}
+            </Stack>
         </Box>
     );
 };

@@ -4,6 +4,8 @@ import React, { useMemo } from 'react';
 import { Box, Typography, Paper, Grid, Card, CardContent, CircularProgress, Chip, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Stack } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../services/supabaseClient';
+import LoadingDots from '../../components/LoadingDots';
+import { fetchAuditLogs } from '../../services/auditLogService';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie } from 'recharts';
 import { AssignmentTurnedIn, Block, TrendingUp, AccessTime } from '@mui/icons-material';
 
@@ -29,27 +31,16 @@ const ApprovalHistory = () => {
     // Fetch Audit Logs specifically for Event Approvals/Rejections
     const { data: logs, isLoading: logsLoading } = useQuery({
         queryKey: ['governance_logs'],
-        queryFn: async () => {
-            const { data, error } = await supabase
-                .from('audit_logs')
-                .select(`
-                    id, action, created_at, meta, target_id,
-                    profiles(full_name, email)
-                `)
-                .in('action', ['approve_event', 'reject_event'])
-                .order('created_at', { ascending: false });
-            if (error) throw error;
-            return data;
-        }
+        queryFn: async () => fetchAuditLogs({ actions: ['approve_event', 'reject_event'], limit: 200 }),
     });
 
-    // Fetch Events to correlate metrics (like SLA, resubmissions)
+    // Fetch Events to correlate metrics (like SLA and rejection patterns)
     const { data: events, isLoading: eventsLoading } = useQuery({
         queryKey: ['governance_events'],
         queryFn: async () => {
             const { data, error } = await supabase
                 .from('events')
-                .select('id, title, submitted_at, approved_at, rejected_at, status, resubmission_count, club:clubs(name)')
+                .select('id, title, submitted_at, approved_at, status, club:clubs(name)')
                 .in('status', ['approved', 'rejected', 'registration_open', 'registration_closed', 'ongoing', 'completed', 'archived']);
             if (error) throw error;
             return data;
@@ -96,7 +87,7 @@ const ApprovalHistory = () => {
 
         // Find most rejected club
         const clubRejections = {};
-        events.filter(e => e.status === 'rejected' || e.resubmission_count > 0).forEach(e => {
+        events.filter(e => e.status === 'rejected').forEach(e => {
             const name = e.club?.name || 'Unknown';
             clubRejections[name] = (clubRejections[name] || 0) + 1;
         });
@@ -115,7 +106,7 @@ const ApprovalHistory = () => {
         };
     }, [logs, events]);
 
-    if (logsLoading || eventsLoading) return <Box display="flex" justifyContent="center" p={4}><CircularProgress /></Box>;
+    if (logsLoading || eventsLoading) return <LoadingDots label="Loading governance history..." minHeight="30vh" />;
 
     return (
         <Box sx={{ mt: 2 }}>
@@ -211,14 +202,14 @@ const ApprovalHistory = () => {
                                             />
                                         </TableCell>
                                         <TableCell sx={{ fontWeight: 700 }}>
-                                            {log.meta?.title || 'Unknown Event'}
+                                            {log.action === 'approve_event' ? 'Event approved' : 'Event rejected'}
                                         </TableCell>
                                         <TableCell sx={{ color: 'text.secondary', fontSize: '0.85rem' }}>
-                                            {log.profiles?.full_name || 'System'}
+                                            {log.actor?.full_name || 'System'}
                                         </TableCell>
                                         <TableCell>
                                             <Typography variant="caption" sx={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', maxWidth: 200 }}>
-                                                {log.meta?.reason || 'Standard Processing'}
+                                                {log.action === 'approve_event' ? 'Approved through governance workflow.' : 'Rejected through governance workflow.'}
                                             </Typography>
                                         </TableCell>
                                     </TableRow>

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import {
     Box, Typography, Paper, Table, TableBody, TableCell,
     TableContainer, TableHead, TableRow, Button, Chip,
-    CircularProgress, Stack, Dialog, DialogTitle,
+    Stack, Dialog, DialogTitle,
     DialogContent, DialogContentText, DialogActions,
     // eslint-disable-next-line no-unused-vars
     CardMedia, TextField, Collapse, IconButton, Grid, Divider
@@ -17,6 +17,8 @@ import {
 import { useEvents, useUpdateEventStatus } from '../../hooks/useEvents';
 import { supabase } from '../../services/supabaseClient';
 import { sendNotification } from '../../services/notificationService';
+import LoadingDots from '../../components/LoadingDots';
+import { writeAuditLog } from '../../services/auditLogService';
 import { toast } from 'sonner';
 import ApprovalDetails from './ApprovalDetails';
 import ApprovalHistory from './ApprovalHistory';
@@ -76,7 +78,7 @@ const EventApprovals = () => {
                     }
 
                     const { data: { user } } = await supabase.auth.getUser();
-                    await supabase.from('audit_logs').insert({
+                    await writeAuditLog({
                         actor_id: user?.id,
                         action: `${actionType}_event`,
                         target_table: 'events',
@@ -94,7 +96,7 @@ const EventApprovals = () => {
         );
     };
 
-    if (isLoading) return <Box display="flex" justifyContent="center" p={4}><CircularProgress /></Box>;
+    if (isLoading) return <LoadingDots label="Loading approval queue..." minHeight="30vh" />;
     if (error) return <Typography color="error">Telemetry disconnected. Failed to load node data.</Typography>;
 
     return (

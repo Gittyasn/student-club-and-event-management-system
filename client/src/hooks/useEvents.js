@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../services/supabaseClient';
+import { writeAuditLog } from '../services/auditLogService';
 
 const PUBLIC_EVENT_STATUSES = ['approved', 'open', 'registration_open', 'ongoing', 'completed'];
 
@@ -134,7 +135,7 @@ export const useUpdateEventStatus = () => {
 
             // Log to audit log
             try {
-                await supabase.from('audit_logs').insert({
+                await writeAuditLog({
                     actor_id: user?.id,
                     action: `event_${status}`,
                     module: 'events',

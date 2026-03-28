@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../services/supabaseClient';
+import { fetchAuditLogs, writeAuditLog } from '../services/auditLogService';
 import { toast } from 'sonner';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -27,27 +28,7 @@ export const useSecurityKPIs = () =>
 export const useAuditLogs = (limit = 200) =>
     useQuery({
         queryKey: ['auditLogs', limit],
-        queryFn: async () => {
-            const { data, error } = await supabase
-                .from('audit_logs')
-                .select(`
-                    id,
-                    action,
-                    module,
-                    target_table,
-                    target_id,
-                    old_value,
-                    new_value,
-                    meta,
-                    ip_address,
-                    created_at,
-                    actor:profiles!actor_id(full_name, email, role)
-                `)
-                .order('created_at', { ascending: false })
-                .limit(limit);
-            if (error) throw error;
-            return data || [];
-        },
+        queryFn: async () => fetchAuditLogs({ limit }),
         refetchInterval: 60_000,
     });
 
@@ -56,7 +37,7 @@ export const useAuditLog = () => {
     return useMutation({
         mutationFn: async ({ action, module, targetTable, targetId, oldValue, newValue, meta }) => {
             const { data: { user } } = await supabase.auth.getUser();
-            const { error } = await supabase.from('audit_logs').insert({
+            await writeAuditLog({
                 actor_id: user?.id,
                 user_id: user?.id,
                 action,
@@ -67,7 +48,6 @@ export const useAuditLog = () => {
                 new_value: newValue,
                 meta,
             });
-            if (error) throw error;
         },
     });
 };

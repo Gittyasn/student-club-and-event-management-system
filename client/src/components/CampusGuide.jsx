@@ -167,8 +167,8 @@ const CampusGuide = ({ triggerMode = 'floating' }) => {
                         animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
                         exit={{ opacity: 0, y: isTopbar ? -20 : 40, scale: 0.95, filter: 'blur(10px)' }}
                         className={isTopbar
-                            ? "fixed top-24 right-4 md:right-8 w-[350px] md:w-[410px] h-[580px] bg-background/80 backdrop-blur-xl border border-border/60 shadow-2xl rounded-3xl z-[1400] overflow-hidden flex flex-col"
-                            : "fixed bottom-24 right-6 w-[360px] md:w-[420px] h-[620px] bg-background/80 backdrop-blur-xl border border-border/60 shadow-2xl rounded-3xl z-[9999] overflow-hidden flex flex-col"}
+                            ? "fixed top-24 right-4 md:right-8 w-[320px] md:w-[360px] h-[560px] bg-background/80 backdrop-blur-xl border border-border/60 shadow-2xl rounded-3xl z-[1400] overflow-hidden flex flex-col"
+                            : "fixed bottom-24 right-6 w-[330px] md:w-[380px] h-[600px] bg-background/80 backdrop-blur-xl border border-border/60 shadow-2xl rounded-3xl z-[9999] overflow-hidden flex flex-col"}
                         style={{ boxShadow: '0 24px 80px -12px rgba(0, 0, 0, 0.25)' }}
                     >
                         {/* Header with Gradient */}

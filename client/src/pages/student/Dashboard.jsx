@@ -2,12 +2,13 @@ import { Box, Typography, Grid, Chip, Button, Stack, Paper, useTheme } from '@mu
 import {
     Event as EventIcon, EmojiEvents, Category, Notifications,
     LocalActivity, MilitaryTech, Star, ChevronRight,
-    AccessTime, GroupAdd, EventAvailable, Insights, Chat
+    AccessTime, GroupAdd, EventAvailable, Chat
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../services/supabaseClient';
 import { useAuthStore } from '../../store/authStore';
+import LoadingDots from '../../components/LoadingDots';
 import {
     Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
     ResponsiveContainer, Tooltip as RechartsTooltip
@@ -132,8 +133,8 @@ const StudentDashboard = () => {
         queryFn: async () => {
             const [memberships, regs, certs] = await Promise.all([
                 supabase.from('club_memberships').select('role, club:clubs(id, name, category)').eq('user_id', user.id),
-                supabase.from('registrations').select('status, event_id, created_at, event:events(title, start_time, end_time)').eq('user_id', user.id),
-                supabase.from('certificates').select('id, issue_date').eq('user_id', user.id),
+                supabase.from('registrations').select('status, attendance_status, event_id, created_at, event:events(title, start_time, end_time)').eq('user_id', user.id),
+                supabase.from('certificates').select('id').eq('user_id', user.id),
             ]);
 
             const clubCount = memberships.data?.length || 0;
@@ -175,12 +176,7 @@ const StudentDashboard = () => {
         }
     });
 
-    if (isLoading) return (
-        <Box display="flex" alignItems="center" justifyContent="center" height="60vh" gap={2}>
-            <Insights sx={{ fontSize: 32, color: 'text.secondary', animation: 'spin 2s linear infinite' }} />
-            <Typography sx={{ fontWeight: 500, color: 'text.secondary' }}>Loading dashboard data...</Typography>
-        </Box>
-    );
+    if (isLoading) return <LoadingDots label="Loading dashboard data..." minHeight="60vh" />;
 
     const kpis = [
         { title: 'Active Clubs', value: data?.clubCount, icon: <Category fontSize="small" />, subtitle: 'Current memberships' },

@@ -1,7 +1,7 @@
 // eslint-disable-next-line no-unused-vars
 import React, { useState, useMemo } from 'react';
 import {
-    Box, Typography, Grid, Paper, Card, CardContent, CircularProgress,
+    Box, Typography, Grid, Paper, Card, CardContent,
     // eslint-disable-next-line no-unused-vars
     Chip, Avatar, TextField, InputAdornment, Stack, Button,
     Dialog, DialogTitle, DialogContent, DialogActions, Select,
@@ -21,6 +21,7 @@ import {
     BarChart, Bar, XAxis, YAxis, Tooltip as ReTip, ResponsiveContainer,
     CartesianGrid, PieChart, Pie, Cell, Legend, AreaChart, Area
 } from 'recharts';
+import LoadingDots from '../../components/LoadingDots';
 
 // eslint-disable-next-line no-unused-vars
 const STAT_COLORS = { good: '#10b981', warn: '#f59e0b', danger: '#ef4444', blue: '#3b82f6', purple: '#8b5cf6' };
@@ -134,7 +135,7 @@ const ResultsOverview = () => {
         return [Object.values(map)];
     }, [allResults]);
 
-    if (loadingAnalytics) return <Box display="flex" justifyContent="center" p={8}><CircularProgress /></Box>;
+    if (loadingAnalytics) return <LoadingDots minHeight="50vh" label="Loading results overview..." />;
     const ana = analytics || {};
 
     return (
@@ -157,19 +158,19 @@ const ResultsOverview = () => {
 
             {/* Platform Stats */}
             <Grid container spacing={2.5} sx={{ mb: 5 }}>
-                <Grid item xs={6} md={2}><StatCard title="Total Results" value={ana.totalResults ?? 0} color="#3b82f6" icon={<Assessment />} /></Grid>
-                <Grid item xs={6} md={2}><StatCard title="Winners" value={ana.totalWinners ?? 0} color="#fbbf24" icon={<TrophyIcon />} /></Grid>
-                <Grid item xs={6} md={2}><StatCard title="Ranked" value={ana.totalRanked ?? 0} color="#8b5cf6" icon={<People />} /></Grid>
-                <Grid item xs={6} md={2}><StatCard title="Avg Score" value={`${ana.avgScore ?? 0}%`} color="#10b981" icon={<TrendingUp />} /></Grid>
-                <Grid item xs={6} md={2}><StatCard title="Rank-Based" value={(ana.typeBreakdown || []).find(t => t.name === 'Rank-Based')?.value ?? 0} color="#6366f1" icon={<TrophyIcon />} /></Grid>
-                <Grid item xs={6} md={2}><StatCard title="Score-Based" value={(ana.typeBreakdown || []).find(t => t.name === 'Score-Based')?.value ?? 0} color="#10b981" icon={<Assessment />} /></Grid>
+                <Grid item xs={12} sm={6} md={4} lg={2} sx={{ display: 'flex' }}><StatCard title="Total Results" value={ana.totalResults ?? 0} color="#3b82f6" icon={<Assessment />} /></Grid>
+                <Grid item xs={12} sm={6} md={4} lg={2} sx={{ display: 'flex' }}><StatCard title="Winners" value={ana.totalWinners ?? 0} color="#fbbf24" icon={<TrophyIcon />} /></Grid>
+                <Grid item xs={12} sm={6} md={4} lg={2} sx={{ display: 'flex' }}><StatCard title="Ranked" value={ana.totalRanked ?? 0} color="#8b5cf6" icon={<People />} /></Grid>
+                <Grid item xs={12} sm={6} md={4} lg={2} sx={{ display: 'flex' }}><StatCard title="Avg Score" value={`${ana.avgScore ?? 0}%`} color="#10b981" icon={<TrendingUp />} /></Grid>
+                <Grid item xs={12} sm={6} md={4} lg={2} sx={{ display: 'flex' }}><StatCard title="Rank-Based" value={(ana.typeBreakdown || []).find(t => t.name === 'Rank-Based')?.value ?? 0} color="#6366f1" icon={<TrophyIcon />} /></Grid>
+                <Grid item xs={12} sm={6} md={4} lg={2} sx={{ display: 'flex' }}><StatCard title="Score-Based" value={(ana.typeBreakdown || []).find(t => t.name === 'Score-Based')?.value ?? 0} color="#10b981" icon={<Assessment />} /></Grid>
             </Grid>
 
             {/* Charts Grid */}
             <Grid container spacing={4} sx={{ mb: 5 }}>
                 {/* Monthly trend */}
-                <Grid item xs={12} lg={8}>
-                    <Paper sx={{ p: 3, borderRadius: '20px', border: '1px solid', borderColor: 'divider' }}>
+                <Grid item xs={12} lg={8} sx={{ display: 'flex' }}>
+                    <Paper sx={{ p: 3, borderRadius: '20px', border: '1px solid', borderColor: 'divider', width: '100%' }}>
                         <Typography variant="h6" fontWeight={900} gutterBottom>Monthly Results Published</Typography>
                         <ResponsiveContainer width="100%" height={280}>
                             <AreaChart data={monthlyTrend} margin={{ left: -10 }}>
@@ -196,8 +197,8 @@ const ResultsOverview = () => {
                 </Grid>
 
                 {/* Type pie */}
-                <Grid item xs={12} lg={4}>
-                    <Paper sx={{ p: 3, borderRadius: '20px', border: '1px solid', borderColor: 'divider', height: '100%' }}>
+                <Grid item xs={12} lg={4} sx={{ display: 'flex' }}>
+                    <Paper sx={{ p: 3, borderRadius: '20px', border: '1px solid', borderColor: 'divider', height: '100%', width: '100%' }}>
                         <Typography variant="h6" fontWeight={900} gutterBottom>Result Types</Typography>
                         <ResponsiveContainer width="100%" height={240}>
                             <PieChart>
@@ -212,8 +213,8 @@ const ResultsOverview = () => {
                 </Grid>
 
                 {/* Score Distribution */}
-                <Grid item xs={12} md={6}>
-                    <Paper sx={{ p: 3, borderRadius: '20px', border: '1px solid', borderColor: 'divider' }}>
+                <Grid item xs={12} md={6} sx={{ display: 'flex' }}>
+                    <Paper sx={{ p: 3, borderRadius: '20px', border: '1px solid', borderColor: 'divider', width: '100%' }}>
                         <Typography variant="h6" fontWeight={900} gutterBottom>Score Distribution Buckets</Typography>
                         <ResponsiveContainer width="100%" height={220}>
                             <BarChart data={ana.scoreDistribution || []}>
@@ -231,8 +232,8 @@ const ResultsOverview = () => {
                 </Grid>
 
                 {/* Top Performers */}
-                <Grid item xs={12} md={6}>
-                    <Paper sx={{ p: 3, borderRadius: '20px', border: '1px solid', borderColor: 'divider' }}>
+                <Grid item xs={12} md={6} sx={{ display: 'flex' }}>
+                    <Paper sx={{ p: 3, borderRadius: '20px', border: '1px solid', borderColor: 'divider', width: '100%' }}>
                         <Typography variant="h6" fontWeight={900} gutterBottom>Top 10 Performers</Typography>
                         <Box sx={{ maxHeight: 220, overflow: 'auto' }}>
                             {topPerformers.map((r, i) => (
@@ -296,13 +297,13 @@ const ResultsOverview = () => {
                                         <Typography variant="caption" color="text.secondary">{r.event?.club?.name}</Typography>
                                     </TableCell>
                                     <TableCell>
-                                        {r.rank ? <Chip label={`#${r.rank}`} size="small" color={r.rank <= 3 ? 'warning' : 'default'} sx={{ fontWeight: 800 }} /> : '—'}
+                                        {r.rank ? <Chip label={`#${r.rank}`} size="small" color={r.rank <= 3 ? 'warning' : 'default'} sx={{ fontWeight: 800 }} /> : 'ï¿½'}
                                     </TableCell>
                                     <TableCell>
-                                        {r.score !== null ? <Typography variant="body2" fontWeight={700}>{r.score}{r.max_score ? `/${r.max_score}` : ''}</Typography> : '—'}
+                                        {r.score !== null ? <Typography variant="body2" fontWeight={700}>{r.score}{r.max_score ? `/${r.max_score}` : ''}</Typography> : 'ï¿½'}
                                     </TableCell>
                                     <TableCell>
-                                        {r.prize_title ? <Chip label={r.prize_title} size="small" sx={{ fontWeight: 700, fontSize: '0.65rem' }} /> : '—'}
+                                        {r.prize_title ? <Chip label={r.prize_title} size="small" sx={{ fontWeight: 700, fontSize: '0.65rem' }} /> : 'ï¿½'}
                                     </TableCell>
                                     <TableCell>
                                         <Chip label={r.status} size="small"

@@ -101,11 +101,10 @@ import ProtectedRoute from './routes/ProtectedRoute';
 
 import ScrollToHashElement from './components/ScrollToHashElement';
 import { AppThemeProvider } from './components/AppThemeProvider';
+import LoadingDots from './components/LoadingDots';
 
 const LoadingFallback = () => (
-  <div className="flex items-center justify-center h-screen bg-background">
-    <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-  </div>
+  <LoadingDots minHeight="100vh" label="Loading workspace..." />
 );
 
 function App() {

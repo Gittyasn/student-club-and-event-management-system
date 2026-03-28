@@ -1,23 +1,33 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
-    Box, Typography, Grid, Paper, Table, TableBody, TableCell,
-    TableContainer, TableHead, TableRow, Chip, Avatar,
-    // eslint-disable-next-line no-unused-vars
-    CircularProgress, useTheme, Tab, Tabs, LinearProgress,
-    ToggleButton, ToggleButtonGroup
+    Alert,
+    Avatar,
+    Box,
+    Chip,
+    Grid,
+    Paper,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    ToggleButton,
+    ToggleButtonGroup,
+    Typography,
+    useTheme,
 } from '@mui/material';
 import {
     EmojiEvents as TrophyIcon,
-    Groups as PeopleIcon,
     Event as EventIcon,
+    Groups as PeopleIcon,
+    WorkspacePremium as PremiumIcon,
     Star as StarIcon,
-    // eslint-disable-next-line no-unused-vars
-    TrendingUp,
-    WorkspacePremium
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../services/supabaseClient';
+import LoadingDots from '../../components/LoadingDots';
 
 const CATEGORY_COLORS = {
     Technical: '#3b82f6',
@@ -25,278 +35,431 @@ const CATEGORY_COLORS = {
     Sports: '#10b981',
     'Social Service': '#f59e0b',
     Arts: '#ef4444',
-    General: '#6b7280',
+    General: '#64748b',
 };
 
+const rankColor = (rank) => (rank === 1 ? '#f59e0b' : rank === 2 ? '#94a3b8' : rank === 3 ? '#b45309' : '#64748b');
+
 const RankBadge = ({ rank }) => {
-    const medals = { 1: '🥇', 2: '🥈', 3: '🥉' };
-    if (medals[rank]) {
-        return (
-            <Typography fontSize="1.8rem" lineHeight={1}>{medals[rank]}</Typography>
-        );
-    }
-    return (
-        <Box sx={{
-            width: 36, height: 36, borderRadius: '50%',
-            bgcolor: 'action.selected', display: 'flex', alignItems: 'center', justifyContent: 'center'
-        }}>
-            <Typography variant="body2" fontWeight={700} color="text.secondary">#{rank}</Typography>
+    const color = rankColor(rank);
+    return rank <= 3 ? (
+        <Box
+            sx={{
+                width: 42,
+                height: 42,
+                borderRadius: '14px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                bgcolor: `${color}18`,
+                color,
+                border: `1px solid ${color}33`,
+            }}
+        >
+            <PremiumIcon fontSize="small" />
         </Box>
+    ) : (
+        <Box
+            sx={{
+                width: 42,
+                height: 42,
+                borderRadius: '14px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                bgcolor: 'action.hover',
+                color: 'text.secondary',
+                border: '1px solid',
+                borderColor: 'divider',
+            }}
+        >
+            <Typography variant="body2" fontWeight={800}>
+                #{rank}
+            </Typography>
+        </Box>
+    );
+};
+
+const ClubHighlightCard = ({ club, rank }) => {
+    const color = rankColor(rank);
+    return (
+        <Paper
+            component={motion.div}
+            whileHover={{ y: -4 }}
+            sx={{
+                p: 3,
+                height: '100%',
+                borderRadius: '20px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 2,
+                border: `1px solid ${color}26`,
+                background: `linear-gradient(180deg, ${color}10 0%, transparent 100%)`,
+            }}
+        >
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
+                <RankBadge rank={rank} />
+                <Chip
+                    label={`#${rank} Ranked`}
+                    size="small"
+                    sx={{
+                        bgcolor: `${color}18`,
+                        color,
+                        border: `1px solid ${color}30`,
+                        fontWeight: 800,
+                    }}
+                />
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <Avatar src={club.logo_url || undefined} sx={{ width: 52, height: 52, bgcolor: `${color}18`, color, fontWeight: 900 }}>
+                    {club.name?.charAt(0)}
+                </Avatar>
+                <Box sx={{ minWidth: 0 }}>
+                    <Typography variant="subtitle1" fontWeight={900} color="text.primary" noWrap>
+                        {club.name}
+                    </Typography>
+                    <Chip
+                        label={club.category || 'General'}
+                        size="small"
+                        sx={{
+                            mt: 0.75,
+                            bgcolor: `${CATEGORY_COLORS[club.category] || CATEGORY_COLORS.General}18`,
+                            color: CATEGORY_COLORS[club.category] || CATEGORY_COLORS.General,
+                            fontWeight: 700,
+                        }}
+                    />
+                </Box>
+            </Box>
+            <Typography variant="h4" fontWeight={900} sx={{ color }}>
+                {Math.round(club.score)}
+                <Typography component="span" variant="body2" sx={{ ml: 1, color: 'text.secondary', fontWeight: 700 }}>
+                    score
+                </Typography>
+            </Typography>
+            <Grid container spacing={1.25}>
+                {[
+                    { label: 'Members', value: club.memberCount, icon: <PeopleIcon sx={{ fontSize: 15 }} /> },
+                    { label: 'Events', value: club.eventCount, icon: <EventIcon sx={{ fontSize: 15 }} /> },
+                    { label: 'Rating', value: club.avgRating, icon: <StarIcon sx={{ fontSize: 15 }} /> },
+                ].map((item) => (
+                    <Grid item xs={4} key={item.label}>
+                        <Box
+                            sx={{
+                                height: '100%',
+                                p: 1.25,
+                                borderRadius: '14px',
+                                border: '1px solid',
+                                borderColor: 'divider',
+                                bgcolor: 'background.paper',
+                                textAlign: 'center',
+                            }}
+                        >
+                            <Box sx={{ display: 'flex', justifyContent: 'center', color, mb: 0.5 }}>{item.icon}</Box>
+                            <Typography variant="body1" fontWeight={900} color="text.primary">
+                                {item.value}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary" fontWeight={700}>
+                                {item.label}
+                            </Typography>
+                        </Box>
+                    </Grid>
+                ))}
+            </Grid>
+        </Paper>
     );
 };
 
 const ClubLeaderboard = () => {
     const theme = useTheme();
     const [filter, setFilter] = useState('all');
-    // eslint-disable-next-line no-unused-vars
-    const [tab, setTab] = useState(0);
 
-    const { data: clubs, isLoading } = useQuery({
+    const { data: clubs = [], isLoading, error } = useQuery({
         queryKey: ['clubLeaderboard'],
+        retry: 1,
         queryFn: async () => {
             const [clubsRes, membershipsRes, eventsRes, feedbackRes] = await Promise.all([
-                supabase.from('clubs').select('id, name, category, status, logo_url, rating').eq('status', 'active'),
-                supabase.from('club_memberships').select('club_id, status').eq('status', 'approved'),
+                supabase
+                    .from('clubs')
+                    .select('id, name, category, status, logo_url, rating, created_at')
+                    .in('status', ['active', 'Active']),
+                supabase.from('club_memberships').select('club_id, status').in('status', ['approved', 'active', 'core_member', 'sub_coordinator']),
                 supabase.from('events').select('id, club_id, approval_status').eq('approval_status', 'approved'),
-                supabase.from('feedback').select('rating, event_id, events(club_id)')
+                supabase.from('feedback').select('rating, event:events(club_id)'),
             ]);
 
+            if (clubsRes.error) throw clubsRes.error;
+            if (membershipsRes.error) throw membershipsRes.error;
+            if (eventsRes.error) throw eventsRes.error;
+            if (feedbackRes.error) throw feedbackRes.error;
+
             const memberMap = {};
-            membershipsRes.data?.forEach(m => {
-                memberMap[m.club_id] = (memberMap[m.club_id] || 0) + 1;
+            membershipsRes.data?.forEach((membership) => {
+                memberMap[membership.club_id] = (memberMap[membership.club_id] || 0) + 1;
             });
 
             const eventMap = {};
-            eventsRes.data?.forEach(e => {
-                eventMap[e.club_id] = (eventMap[e.club_id] || 0) + 1;
+            eventsRes.data?.forEach((event) => {
+                eventMap[event.club_id] = (eventMap[event.club_id] || 0) + 1;
             });
 
             const ratingMap = {};
             const ratingCountMap = {};
-            feedbackRes.data?.forEach(f => {
-                const cid = f.events?.club_id;
-                if (cid) {
-                    ratingMap[cid] = (ratingMap[cid] || 0) + f.rating;
-                    ratingCountMap[cid] = (ratingCountMap[cid] || 0) + 1;
-                }
+            feedbackRes.data?.forEach((entry) => {
+                const clubId = entry.event?.club_id;
+                if (!clubId) return;
+                ratingMap[clubId] = (ratingMap[clubId] || 0) + (entry.rating || 0);
+                ratingCountMap[clubId] = (ratingCountMap[clubId] || 0) + 1;
             });
 
-            return (clubsRes.data || []).map(c => ({
-                ...c,
-                memberCount: memberMap[c.id] || 0,
-                eventCount: eventMap[c.id] || 0,
-                avgRating: ratingCountMap[c.id]
-                    ? (ratingMap[c.id] / ratingCountMap[c.id]).toFixed(1)
-                    : '—',
-                score: (memberMap[c.id] || 0) * 2 + (eventMap[c.id] || 0) * 5 +
-                    (ratingCountMap[c.id] ? (ratingMap[c.id] / ratingCountMap[c.id]) * 10 : 0)
-            })).sort((a, b) => b.score - a.score);
-        }
+            return (clubsRes.data || [])
+                .map((club) => {
+                    const memberCount = memberMap[club.id] || 0;
+                    const eventCount = eventMap[club.id] || 0;
+                    const avgRatingNumber = ratingCountMap[club.id]
+                        ? ratingMap[club.id] / ratingCountMap[club.id]
+                        : 0;
+
+                    return {
+                        ...club,
+                        memberCount,
+                        eventCount,
+                        avgRatingNumber,
+                        avgRating: avgRatingNumber ? avgRatingNumber.toFixed(1) : '0.0',
+                        score: (memberCount * 2) + (eventCount * 5) + (avgRatingNumber * 10),
+                    };
+                })
+                .sort((a, b) => b.score - a.score);
+        },
     });
 
-    const categories = ['all', ...new Set((clubs || []).map(c => c.category).filter(Boolean))];
-    const filtered = filter === 'all' ? clubs : clubs?.filter(c => c.category === filter);
-    const maxScore = filtered?.[0]?.score || 1;
-
-    if (isLoading) return (
-        <Box display="flex" justifyContent="center" alignItems="center" height="60vh">
-            <CircularProgress size={50} />
-        </Box>
+    const categories = useMemo(
+        () => ['all', ...new Set(clubs.map((club) => club.category).filter(Boolean))],
+        [clubs]
     );
+    const filtered = useMemo(
+        () => (filter === 'all' ? clubs : clubs.filter((club) => club.category === filter)),
+        [clubs, filter]
+    );
+    const maxScore = filtered[0]?.score || 1;
+    const topThree = filtered.slice(0, 3);
+
+    if (isLoading) {
+        return <LoadingDots minHeight="50vh" label="Loading club rankings..." />;
+    }
+
+    if (error) {
+        return (
+            <Alert severity="error" sx={{ borderRadius: '18px' }}>
+                Club leaderboard could not be loaded right now. {error.message}
+            </Alert>
+        );
+    }
 
     return (
         <Box sx={{ pb: 6 }}>
-            {/* Header */}
-            <Box
+            <Paper
                 component={motion.div}
-                initial={{ opacity: 0, y: -20 }}
+                initial={{ opacity: 0, y: -16 }}
                 animate={{ opacity: 1, y: 0 }}
                 sx={{
-                    mb: 4, p: 4, borderRadius: '20px',
-                    background: 'linear-gradient(135deg, #f59e0b20 0%, #ef444415 100%)',
-                    border: '2px solid #f59e0b30'
+                    mb: 4,
+                    p: { xs: 3, md: 4 },
+                    borderRadius: '24px',
+                    background: theme.palette.mode === 'dark'
+                        ? 'linear-gradient(135deg, rgba(245,158,11,0.18) 0%, rgba(15,23,42,0.92) 100%)'
+                        : 'linear-gradient(135deg, rgba(254,240,138,0.5) 0%, rgba(255,255,255,0.96) 100%)',
                 }}
             >
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
-                    <TrophyIcon sx={{ fontSize: 40, color: '#f59e0b' }} />
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', gap: 3 }}>
                     <Box>
-                        <Typography variant="h3" fontWeight={900} sx={{
-                            background: 'linear-gradient(135deg, #f59e0b, #ef4444)',
-                            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
-                            letterSpacing: -1.5
-                        }}>
-                            Club Leaderboard
-                        </Typography>
-                        <Typography color="text.secondary" sx={{ fontSize: '1rem', fontWeight: 500 }}>
-                            Rankings based on members, events, and community feedback
-                        </Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
+                            <Box
+                                sx={{
+                                    width: 48,
+                                    height: 48,
+                                    borderRadius: '16px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    bgcolor: 'rgba(245,158,11,0.14)',
+                                    color: '#f59e0b',
+                                }}
+                            >
+                                <TrophyIcon />
+                            </Box>
+                            <Box>
+                                <Typography variant="h4" fontWeight={900} color="text.primary">
+                                    Club Leaderboard
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary" fontWeight={600}>
+                                    Rankings based on memberships, approved events, and feedback quality.
+                                </Typography>
+                            </Box>
+                        </Box>
                     </Box>
-                </Box>
-            </Box>
-
-            {/* Top 3 Podium */}
-            {filtered && filtered.length >= 3 && (
-                <Grid container spacing={2} sx={{ mb: 4 }}>
-                    {[filtered[1], filtered[0], filtered[2]].map((club, i) => {
-                        const actualRank = i === 0 ? 2 : i === 1 ? 1 : 3;
-                        // eslint-disable-next-line no-unused-vars
-                        const heights = [200, 240, 180];
-                        const colors = ['#9ca3af', '#f59e0b', '#cd7f32'];
-                        return (
-                            <Grid item xs={4} key={club.id}>
+                    <Grid container spacing={1.5} sx={{ width: { xs: '100%', md: 320 } }}>
+                        {[
+                            { label: 'Tracked Clubs', value: filtered.length, color: '#3b82f6' },
+                            { label: 'Top Score', value: Math.round(maxScore), color: '#f59e0b' },
+                        ].map((item) => (
+                            <Grid item xs={6} key={item.label}>
                                 <Box
-                                    component={motion.div}
-                                    initial={{ opacity: 0, y: 30 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: i * 0.15 }}
                                     sx={{
-                                        display: 'flex', flexDirection: 'column', alignItems: 'center',
-                                        p: 3, borderRadius: '20px', textAlign: 'center',
-                                        background: `linear-gradient(135deg, ${colors[i]}15, ${colors[i]}05)`,
-                                        border: `2px solid ${colors[i]}40`,
-                                        transition: 'all 0.3s',
-                                        '&:hover': { transform: 'translateY(-4px)', boxShadow: `0 12px 32px ${colors[i]}25` }
+                                        p: 1.5,
+                                        borderRadius: '16px',
+                                        border: '1px solid',
+                                        borderColor: 'divider',
+                                        bgcolor: 'background.paper',
+                                        height: '100%',
                                     }}
                                 >
-                                    <RankBadge rank={actualRank} />
-                                    <Avatar sx={{ width: 56, height: 56, mt: 1.5, bgcolor: `${colors[i]}30`, fontSize: '1.5rem', fontWeight: 900, color: colors[i] }}>
-                                        {club.name.charAt(0)}
-                                    </Avatar>
-                                    <Typography variant="subtitle1" fontWeight={800} sx={{ mt: 1 }}>{club.name}</Typography>
-                                    <Chip label={club.category || 'General'} size="small" sx={{ mt: 0.5, bgcolor: `${CATEGORY_COLORS[club.category] || '#6b7280'}20`, color: CATEGORY_COLORS[club.category] || '#6b7280', fontWeight: 700 }} />
-                                    <Typography variant="h6" fontWeight={900} sx={{ mt: 1.5, color: colors[i] }}>
-                                        {Math.round(club.score)} pts
+                                    <Typography variant="caption" color="text.secondary" fontWeight={800}>
+                                        {item.label}
                                     </Typography>
-                                    <Box sx={{ display: 'flex', gap: 2, mt: 1 }}>
-                                        <Box sx={{ textAlign: 'center' }}>
-                                            <Typography variant="caption" color="text.secondary">Members</Typography>
-                                            <Typography variant="body2" fontWeight={700}>{club.memberCount}</Typography>
-                                        </Box>
-                                        <Box sx={{ textAlign: 'center' }}>
-                                            <Typography variant="caption" color="text.secondary">Events</Typography>
-                                            <Typography variant="body2" fontWeight={700}>{club.eventCount}</Typography>
-                                        </Box>
-                                        <Box sx={{ textAlign: 'center' }}>
-                                            <Typography variant="caption" color="text.secondary">Rating</Typography>
-                                            <Typography variant="body2" fontWeight={700}>⭐ {club.avgRating}</Typography>
-                                        </Box>
-                                    </Box>
+                                    <Typography variant="h5" fontWeight={900} sx={{ color: item.color }}>
+                                        {item.value}
+                                    </Typography>
                                 </Box>
                             </Grid>
-                        );
-                    })}
-                </Grid>
-            )}
+                        ))}
+                    </Grid>
+                </Box>
+            </Paper>
 
-            {/* Category Filter */}
-            <Box sx={{ mb: 3, overflowX: 'auto' }}>
-                <ToggleButtonGroup value={filter} exclusive onChange={(_, v) => v && setFilter(v)} size="small">
-                    {categories.map(cat => (
-                        <ToggleButton key={cat} value={cat} sx={{
-                            textTransform: 'capitalize', fontWeight: 700, borderRadius: '20px !important', mx: 0.5,
-                            border: '1.5px solid !important', px: 2
-                        }}>
-                            {cat === 'all' ? '🌐 All' : cat}
+            <Box sx={{ mb: 3, overflowX: 'auto', pb: 0.5 }}>
+                <ToggleButtonGroup
+                    value={filter}
+                    exclusive
+                    onChange={(_, nextValue) => nextValue && setFilter(nextValue)}
+                    size="small"
+                >
+                    {categories.map((category) => (
+                        <ToggleButton
+                            key={category}
+                            value={category}
+                            sx={{
+                                textTransform: 'capitalize',
+                                fontWeight: 700,
+                                px: 2,
+                                color: 'text.primary',
+                                borderColor: 'divider',
+                            }}
+                        >
+                            {category === 'all' ? 'All categories' : category}
                         </ToggleButton>
                     ))}
                 </ToggleButtonGroup>
             </Box>
 
-            {/* Full Rankings Table */}
-            <Paper elevation={0} sx={{
-                borderRadius: '16px',
-                background: `linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%)`,
-                border: `2px solid ${theme.palette.primary.main}20`, overflow: 'hidden'
-            }}>
-                <TableContainer>
-                    <Table>
-                        <TableHead>
-                            <TableRow sx={{ '& th': { fontWeight: 800, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: 0.8, opacity: 0.7 } }}>
-                                <TableCell>Rank</TableCell>
-                                <TableCell>Club</TableCell>
-                                <TableCell>Category</TableCell>
-                                <TableCell align="center">Members</TableCell>
-                                <TableCell align="center">Events</TableCell>
-                                <TableCell align="center">Rating</TableCell>
-                                <TableCell>Score Progress</TableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {(filtered || []).map((club, idx) => (
-                                <TableRow
-                                    key={club.id}
-                                    component={motion.tr}
-                                    initial={{ opacity: 0, x: -20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{ delay: idx * 0.04 }}
-                                    sx={{ '&:hover': { bgcolor: 'action.hover' }, transition: 'all 0.2s' }}
-                                >
-                                    <TableCell><RankBadge rank={idx + 1} /></TableCell>
-                                    <TableCell>
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                                            <Avatar sx={{ width: 40, height: 40, bgcolor: `${CATEGORY_COLORS[club.category] || '#6b7280'}25`, color: CATEGORY_COLORS[club.category] || '#6b7280', fontWeight: 900 }}>
-                                                {club.name.charAt(0)}
-                                            </Avatar>
-                                            <Box>
-                                                <Typography variant="body2" fontWeight={700}>{club.name}</Typography>
-                                                {idx < 3 && <WorkspacePremium sx={{ fontSize: 14, color: ['#f59e0b', '#9ca3af', '#cd7f32'][idx] }} />}
-                                            </Box>
-                                        </Box>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Chip label={club.category || 'General'} size="small" sx={{
-                                            bgcolor: `${CATEGORY_COLORS[club.category] || '#6b7280'}20`,
-                                            color: CATEGORY_COLORS[club.category] || '#6b7280', fontWeight: 700
-                                        }} />
-                                    </TableCell>
-                                    <TableCell align="center">
-                                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
-                                            <PeopleIcon sx={{ fontSize: 16, color: 'text.secondary' }} /> {club.memberCount}
-                                        </Box>
-                                    </TableCell>
-                                    <TableCell align="center">
-                                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
-                                            <EventIcon sx={{ fontSize: 16, color: 'text.secondary' }} /> {club.eventCount}
-                                        </Box>
-                                    </TableCell>
-                                    <TableCell align="center">
-                                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
-                                            <StarIcon sx={{ fontSize: 16, color: '#f59e0b' }} />
-                                            <Typography variant="body2" fontWeight={700}>{club.avgRating}</Typography>
-                                        </Box>
-                                    </TableCell>
-                                    <TableCell sx={{ minWidth: 160 }}>
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                            <LinearProgress
-                                                variant="determinate"
-                                                value={(club.score / maxScore) * 100}
-                                                sx={{
-                                                    flex: 1, height: 8, borderRadius: 4,
-                                                    bgcolor: 'action.selected',
-                                                    '& .MuiLinearProgress-bar': {
-                                                        borderRadius: 4,
-                                                        background: idx === 0
-                                                            ? 'linear-gradient(90deg, #f59e0b, #ef4444)'
-                                                            : idx === 1
-                                                                ? 'linear-gradient(90deg, #9ca3af, #6b7280)'
-                                                                : 'linear-gradient(90deg, #3b82f6, #6366f1)'
-                                                    }
-                                                }}
-                                            />
-                                            <Typography variant="caption" fontWeight={700} color="text.secondary">
-                                                {Math.round(club.score)}
-                                            </Typography>
-                                        </Box>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </TableContainer>
-            </Paper>
+            {!filtered.length ? (
+                <Paper sx={{ p: 4, borderRadius: '20px', textAlign: 'center' }}>
+                    <Typography variant="h6" fontWeight={800} color="text.primary">
+                        No clubs available for this view
+                    </Typography>
+                    <Typography color="text.secondary">
+                        Try another category filter or add clubs with approved activity first.
+                    </Typography>
+                </Paper>
+            ) : (
+                <>
+                    <Grid container spacing={3} sx={{ mb: 4 }} alignItems="stretch">
+                        {topThree.map((club, index) => (
+                            <Grid item xs={12} md={4} key={club.id} sx={{ display: 'flex' }}>
+                                <ClubHighlightCard club={club} rank={index + 1} />
+                            </Grid>
+                        ))}
+                    </Grid>
+
+                    <Paper sx={{ borderRadius: '20px', overflow: 'hidden' }}>
+                        <TableContainer>
+                            <Table>
+                                <TableHead>
+                                    <TableRow
+                                        sx={{
+                                            '& th': {
+                                                fontWeight: 800,
+                                                fontSize: '0.76rem',
+                                                textTransform: 'uppercase',
+                                                color: 'text.secondary',
+                                                letterSpacing: 0.6,
+                                                bgcolor: 'background.paper',
+                                            },
+                                        }}
+                                    >
+                                        <TableCell>Rank</TableCell>
+                                        <TableCell>Club</TableCell>
+                                        <TableCell>Category</TableCell>
+                                        <TableCell align="center">Members</TableCell>
+                                        <TableCell align="center">Events Hosted</TableCell>
+                                        <TableCell align="center">Avg Rating</TableCell>
+                                        <TableCell align="center">Score</TableCell>
+                                    </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                    {filtered.map((club, index) => (
+                                        <TableRow key={club.id} hover>
+                                            <TableCell sx={{ width: 90 }}>
+                                                <RankBadge rank={index + 1} />
+                                            </TableCell>
+                                            <TableCell>
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                                    <Avatar src={club.logo_url || undefined} sx={{ bgcolor: `${rankColor(index + 1)}18`, color: rankColor(index + 1), fontWeight: 900 }}>
+                                                        {club.name?.charAt(0)}
+                                                    </Avatar>
+                                                    <Box sx={{ minWidth: 0 }}>
+                                                        <Typography variant="body2" fontWeight={800} color="text.primary" noWrap>
+                                                            {club.name}
+                                                        </Typography>
+                                                        <Typography variant="caption" color="text.secondary">
+                                                            Created {club.created_at ? new Date(club.created_at).toLocaleDateString() : 'recently'}
+                                                        </Typography>
+                                                    </Box>
+                                                </Box>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Chip
+                                                    label={club.category || 'General'}
+                                                    size="small"
+                                                    sx={{
+                                                        bgcolor: `${CATEGORY_COLORS[club.category] || CATEGORY_COLORS.General}18`,
+                                                        color: CATEGORY_COLORS[club.category] || CATEGORY_COLORS.General,
+                                                        fontWeight: 700,
+                                                    }}
+                                                />
+                                            </TableCell>
+                                            <TableCell align="center">
+                                                <Typography fontWeight={800} color="text.primary">
+                                                    {club.memberCount}
+                                                </Typography>
+                                            </TableCell>
+                                            <TableCell align="center">
+                                                <Typography fontWeight={800} color="text.primary">
+                                                    {club.eventCount}
+                                                </Typography>
+                                            </TableCell>
+                                            <TableCell align="center">
+                                                <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
+                                                    <StarIcon sx={{ fontSize: 16, color: '#f59e0b' }} />
+                                                    <Typography fontWeight={800} color="text.primary">
+                                                        {club.avgRating}
+                                                    </Typography>
+                                                </Box>
+                                            </TableCell>
+                                            <TableCell align="center">
+                                                <Typography fontWeight={900} sx={{ color: rankColor(index + 1) }}>
+                                                    {Math.round(club.score)}
+                                                </Typography>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </TableContainer>
+                    </Paper>
+                </>
+            )}
         </Box>
     );
 };
 
 export default ClubLeaderboard;
-

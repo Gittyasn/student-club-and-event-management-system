@@ -1,7 +1,7 @@
 // eslint-disable-next-line no-unused-vars
 import React, { useState, useMemo } from 'react';
 import {
-    Box, Typography, Grid, Paper, Card, CardContent, CircularProgress,
+    Box, Typography, Grid, Paper, Card, CardContent,
     Tab, Tabs, Table, TableBody, TableCell, TableContainer, TableHead,
     // eslint-disable-next-line no-unused-vars
     TableRow, Chip, Avatar, TextField, InputAdornment, Stack, Alert,
@@ -21,6 +21,7 @@ import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as ReTip,
     ResponsiveContainer, Legend, PieChart as RePie, Pie, Cell, BarChart, Bar
 } from 'recharts';
+import LoadingDots from '../../components/LoadingDots';
 
 const STATUS_MAP = {
     present: { label: 'Present', color: 'success', icon: <CheckCircle fontSize="small" /> },
@@ -124,7 +125,7 @@ const AttendanceOverview = () => {
             .slice(0, 8);
     }, [recentLog]);
 
-    if (loadingAnalytics) return <Box display="flex" justifyContent="center" p={8}><CircularProgress /></Box>;
+    if (loadingAnalytics) return <LoadingDots minHeight="50vh" label="Loading attendance overview..." />;
 
     const ana = analytics || {};
 
@@ -156,7 +157,7 @@ const AttendanceOverview = () => {
                     { title: 'Excused', value: ana.excused ?? 0, color: '#8b5cf6', icon: <AssignmentTurnedIn /> },
                     { title: 'Overall Rate', value: `${ana.overallRate ?? 0}%`, color: '#10b981', icon: <AnalyticsIcon /> },
                 ].map(s => (
-                    <Grid item xs={6} sm={4} md={2} key={s.title}>
+                    <Grid item xs={12} sm={6} md={4} lg={2} key={s.title} sx={{ display: 'flex' }}>
                         <StatCard {...s} />
                     </Grid>
                 ))}
@@ -172,8 +173,8 @@ const AttendanceOverview = () => {
             {tab === 0 && (
                 <Grid container spacing={4}>
                     {/* Monthly Trend */}
-                    <Grid item xs={12} lg={8}>
-                        <Paper sx={{ p: 3, borderRadius: '20px', border: '1px solid', borderColor: 'divider' }}>
+                    <Grid item xs={12} lg={8} sx={{ display: 'flex' }}>
+                        <Paper sx={{ p: 3, borderRadius: '20px', border: '1px solid', borderColor: 'divider', width: '100%' }}>
                             <Typography variant="h6" fontWeight={900} gutterBottom>Monthly Attendance Trend</Typography>
                             <ResponsiveContainer width="100%" height={300}>
                                 <AreaChart data={ana.monthlyTrend || []} margin={{ left: -10 }}>
@@ -201,8 +202,8 @@ const AttendanceOverview = () => {
                     </Grid>
 
                     {/* Pie Chart */}
-                    <Grid item xs={12} lg={4}>
-                        <Paper sx={{ p: 3, borderRadius: '20px', border: '1px solid', borderColor: 'divider', height: '100%' }}>
+                    <Grid item xs={12} lg={4} sx={{ display: 'flex' }}>
+                        <Paper sx={{ p: 3, borderRadius: '20px', border: '1px solid', borderColor: 'divider', height: '100%', width: '100%' }}>
                             <Typography variant="h6" fontWeight={900} gutterBottom>Status Distribution</Typography>
                             <ResponsiveContainer width="100%" height={260}>
                                 <RePie>
@@ -217,8 +218,8 @@ const AttendanceOverview = () => {
                     </Grid>
 
                     {/* Top Events */}
-                    <Grid item xs={12}>
-                        <Paper sx={{ p: 3, borderRadius: '20px', border: '1px solid', borderColor: 'divider' }}>
+                    <Grid item xs={12} sx={{ display: 'flex' }}>
+                        <Paper sx={{ p: 3, borderRadius: '20px', border: '1px solid', borderColor: 'divider', width: '100%' }}>
                             <Typography variant="h6" fontWeight={900} gutterBottom>Top Events by Attendance</Typography>
                             <ResponsiveContainer width="100%" height={260}>
                                 <BarChart data={topEvents} margin={{ left: -10 }}>

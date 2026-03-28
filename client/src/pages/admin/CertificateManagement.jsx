@@ -1,62 +1,122 @@
-// eslint-disable-next-line no-unused-vars
-import React, { useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import {
-    Box, Typography, Grid, Paper, Card, CardContent, Chip,
-    CircularProgress, Button, Avatar, TextField, InputAdornment,
-    // eslint-disable-next-line no-unused-vars
-    Stack, Alert, Table, TableBody, TableCell, TableContainer,
-    TableHead, TableRow, Dialog, DialogTitle, DialogContent,
-    DialogActions, Select, MenuItem, FormControl, InputLabel
+    Alert,
+    Avatar,
+    Box,
+    Button,
+    Card,
+    CardContent,
+    Chip,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
+    FormControl,
+    Grid,
+    InputAdornment,
+    InputLabel,
+    MenuItem,
+    Paper,
+    Select,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    TextField,
+    Typography,
 } from '@mui/material';
 import {
-    EmojiEvents as CertIcon, Assessment, Cancel, CheckCircle,
-    // eslint-disable-next-line no-unused-vars
-    Search as SearchIcon, History, Block, Undo, People, TrendingUp
+    Assessment,
+    Block,
+    Cancel,
+    CheckCircle,
+    EmojiEvents as CertIcon,
+    People,
+    Search as SearchIcon,
+    Undo,
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '../../services/supabaseClient';
 import {
-    useCertificateAnalytics, useAdminCertificateMutations
-} from '../../hooks/useCertificates';
-import {
-    BarChart, Bar, XAxis, YAxis, Tooltip as ReTip, ResponsiveContainer,
-    CartesianGrid, PieChart, Pie, Cell, Legend, AreaChart, Area
+    Area,
+    AreaChart,
+    CartesianGrid,
+    Cell,
+    Legend,
+    Pie,
+    PieChart,
+    ResponsiveContainer,
+    Tooltip as ReTip,
+    XAxis,
+    YAxis,
 } from 'recharts';
+import { supabase } from '../../services/supabaseClient';
+import { useAdminCertificateMutations, useCertificateAnalytics } from '../../hooks/useCertificates';
+import LoadingDots from '../../components/LoadingDots';
+
+const TYPE_INFO = {
+    participation: { label: 'Participation', color: '#2563eb', badge: 'PC' },
+    winner: { label: 'Winner', color: '#f59e0b', badge: 'WN' },
+    merit: { label: 'Merit', color: '#8b5cf6', badge: 'MR' },
+};
 
 const StatCard = ({ title, value, color, icon }) => (
-    <Card sx={{ borderRadius: '18px', border: `1px solid ${color}20`, height: '100%' }}>
+    <Card sx={{ borderRadius: '18px', border: `1px solid ${color}24`, height: '100%' }}>
         <CardContent sx={{ p: 3, '&:last-child': { pb: 3 } }}>
             <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1.5}>
-                <Box sx={{ p: 1.2, borderRadius: '10px', bgcolor: `${color}15`, color, display: 'flex' }}>{icon}</Box>
-                <Typography variant="caption" color="text.secondary" fontWeight={700} textTransform="uppercase">{title}</Typography>
+                <Box sx={{ p: 1.2, borderRadius: '12px', bgcolor: `${color}14`, color, display: 'flex' }}>
+                    {icon}
+                </Box>
+                <Typography variant="caption" color="text.secondary" fontWeight={800} textTransform="uppercase">
+                    {title}
+                </Typography>
             </Box>
-            <Typography variant="h3" fontWeight={900} sx={{ color }}>{value}</Typography>
+            <Typography variant="h3" fontWeight={900} sx={{ color }}>
+                {value}
+            </Typography>
         </CardContent>
     </Card>
 );
 
-// ── Revoke Dialog ─────────────────────────────────────────────────────────────
 const RevokeDialog = ({ open, cert, onClose, onConfirm }) => {
     const [reason, setReason] = useState('');
+
+    const handleClose = () => {
+        setReason('');
+        onClose();
+    };
+
     return (
-        <Dialog open={open} onClose={() => { onClose(); setReason(''); }} maxWidth="xs" fullWidth
-            PaperProps={{ sx: { borderRadius: '20px' } }}>
-            <DialogTitle sx={{ fontWeight: 900 }}>🚫 Revoke Certificate</DialogTitle>
+        <Dialog open={open} onClose={handleClose} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: '20px' } }}>
+            <DialogTitle sx={{ fontWeight: 900 }}>Revoke Certificate</DialogTitle>
             <DialogContent>
                 <Typography variant="body2" color="text.secondary" mb={2}>
-                    Revoking certificate for <strong>{cert?.student?.full_name}</strong> from event <strong>{cert?.event?.title}</strong>.
-                    The verification page will show this certificate as REVOKED.
+                    Revoke the certificate for <strong>{cert?.student?.full_name}</strong> from <strong>{cert?.event?.title}</strong>.
                 </Typography>
-                <TextField fullWidth label="Revocation Reason *" value={reason} onChange={e => setReason(e.target.value)}
-                    variant="filled" multiline rows={3} placeholder="e.g. Academic misconduct, Invalid registration, Admin error..." />
+                <TextField
+                    fullWidth
+                    label="Revocation Reason"
+                    value={reason}
+                    onChange={(event) => setReason(event.target.value)}
+                    variant="filled"
+                    multiline
+                    rows={3}
+                />
             </DialogContent>
             <DialogActions sx={{ p: 3, pt: 1 }}>
-                <Button onClick={() => { onClose(); setReason(''); }} sx={{ fontWeight: 700 }}>Cancel</Button>
-                <Button variant="contained" color="error" disabled={!reason.trim()}
-                    onClick={() => { onConfirm(reason); setReason(''); }}
-                    sx={{ fontWeight: 800, borderRadius: '10px' }}>
-                    Revoke Certificate
+                <Button onClick={handleClose}>Cancel</Button>
+                <Button
+                    variant="contained"
+                    color="error"
+                    disabled={!reason.trim()}
+                    onClick={() => {
+                        onConfirm(reason);
+                        setReason('');
+                    }}
+                >
+                    Revoke
                 </Button>
             </DialogActions>
         </Dialog>
@@ -72,8 +132,11 @@ const CertificateManagement = () => {
     const { data: analytics, isLoading: loadingAnalytics } = useCertificateAnalytics();
     const { revokeCertificate, reinststateCertificate } = useAdminCertificateMutations();
 
-    // All certificates with joins
-    const { data: allCerts = [], isLoading: loadingCerts } = useQuery({
+    const {
+        data: allCertificates = [],
+        isLoading: loadingCertificates,
+        error: certificatesError,
+    } = useQuery({
         queryKey: ['adminAllCerts'],
         queryFn: async () => {
             const { data, error } = await supabase
@@ -87,101 +150,120 @@ const CertificateManagement = () => {
                 `)
                 .order('generated_at', { ascending: false })
                 .limit(2000);
+
             if (error) throw error;
             return data || [];
-        }
+        },
     });
 
-    const filtered = useMemo(() =>
-        allCerts.filter(c => {
-            if (filterType !== 'all' && c.cert_type !== filterType) return false;
-            if (filterStatus !== 'all' && c.status !== filterStatus) return false;
-            if (search === '') return true;
-            const q = search.toLowerCase();
-            return (
-                c.student?.full_name?.toLowerCase().includes(q) ||
-                c.student?.email?.toLowerCase().includes(q) ||
-                c.event?.title?.toLowerCase().includes(q) ||
-                c.certificate_number?.toLowerCase().includes(q)
-            );
-        }), [allCerts, filterType, filterStatus, search]);
+    const filteredCertificates = useMemo(
+        () =>
+            allCertificates.filter((certificate) => {
+                if (filterType !== 'all' && certificate.cert_type !== filterType) return false;
+                if (filterStatus !== 'all' && certificate.status !== filterStatus) return false;
+                if (!search) return true;
 
-    const TYPE_INFO = {
-        participation: { label: 'Participation', color: '#3b82f6', icon: '🎓' },
-        winner: { label: 'Winner', color: '#fbbf24', icon: '🏆' },
-        merit: { label: 'Merit', color: '#8b5cf6', icon: '⭐' },
-    };
+                const query = search.toLowerCase();
+                return (
+                    certificate.student?.full_name?.toLowerCase().includes(query) ||
+                    certificate.student?.email?.toLowerCase().includes(query) ||
+                    certificate.event?.title?.toLowerCase().includes(query) ||
+                    certificate.certificate_number?.toLowerCase().includes(query)
+                );
+            }),
+        [allCertificates, filterStatus, filterType, search]
+    );
 
-    const ana = analytics || {};
+    const analyticsData = analytics || {};
 
-    if (loadingAnalytics || loadingCerts) return <Box display="flex" justifyContent="center" p={8}><CircularProgress /></Box>;
+    if (loadingAnalytics || loadingCertificates) {
+        return <LoadingDots minHeight="50vh" label="Loading certificate management..." />;
+    }
 
     return (
         <Box sx={{ pb: 8 }}>
-            {/* Hero */}
-            <Box component={motion.div} initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
+            <Box
+                component={motion.div}
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
                 sx={{
-                    mb: 5, p: { xs: 3, md: 5 }, borderRadius: '28px',
-                    background: 'linear-gradient(135deg, #0a0014 0%, #1a0535 50%, #0d1b3e 100%)', color: 'white', position: 'relative', overflow: 'hidden'
-                }}>
-                <Box sx={{ position: 'absolute', top: -120, right: -120, width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle, rgba(251,191,36,0.07) 0%, transparent 70%)', pointerEvents: 'none' }} />
-                <Box sx={{ position: 'relative', zIndex: 1 }}>
-                    <Typography variant="overline" sx={{ color: '#fbbf24', fontWeight: 900, letterSpacing: 3 }}>ADMIN</Typography>
-                    <Typography variant="h3" fontWeight={900} sx={{ letterSpacing: -1.5, mb: 1 }}>Certificate Management</Typography>
-                    <Typography sx={{ opacity: 0.65, fontWeight: 500 }}>
-                        Campus-wide certificate analytics, revocation controls, and issuance audit.
-                    </Typography>
-                </Box>
+                    mb: 5,
+                    p: { xs: 3, md: 4 },
+                    borderRadius: '24px',
+                    background: (theme) =>
+                        theme.palette.mode === 'dark'
+                            ? 'linear-gradient(135deg, #140a28 0%, #172554 100%)'
+                            : 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+                    border: '1px solid',
+                    borderColor: 'divider',
+                }}
+            >
+                <Typography variant="overline" sx={{ color: '#f59e0b', fontWeight: 900, letterSpacing: 2.4 }}>
+                    CERTIFICATE GOVERNANCE
+                </Typography>
+                <Typography variant="h4" fontWeight={900} color="text.primary" sx={{ mt: 0.5 }}>
+                    Certificate Management
+                </Typography>
+                <Typography color="text.secondary" fontWeight={600}>
+                    Review issuance quality, status, type distribution, and revocation controls from a single workspace.
+                </Typography>
             </Box>
 
-            {/* Stat Cards */}
-            <Grid container spacing={2.5} sx={{ mb: 5 }}>
-                <Grid item xs={6} md={2}><StatCard title="Total" value={ana.total ?? 0} color="#3b82f6" icon={<CertIcon />} /></Grid>
-                <Grid item xs={6} md={2}><StatCard title="Valid" value={ana.valid ?? 0} color="#10b981" icon={<CheckCircle />} /></Grid>
-                <Grid item xs={6} md={2}><StatCard title="Revoked" value={ana.revoked ?? 0} color="#ef4444" icon={<Cancel />} /></Grid>
-                <Grid item xs={6} md={2}><StatCard title="Participation" value={ana.byType?.participation ?? 0} color="#3b82f6" icon={<People />} /></Grid>
-                <Grid item xs={6} md={2}><StatCard title="Winner" value={ana.byType?.winner ?? 0} color="#fbbf24" icon={<CertIcon />} /></Grid>
-                <Grid item xs={6} md={2}><StatCard title="Merit" value={ana.byType?.merit ?? 0} color="#8b5cf6" icon={<Assessment />} /></Grid>
+            {certificatesError && (
+                <Alert severity="error" sx={{ mb: 3, borderRadius: '16px' }}>
+                    {certificatesError.message || 'Unable to load certificate records.'}
+                </Alert>
+            )}
+
+            <Grid container spacing={2.5} sx={{ mb: 4 }}>
+                <Grid item xs={12} sm={6} md={4} lg={2} sx={{ display: 'flex' }}><StatCard title="Total" value={analyticsData.total ?? 0} color="#2563eb" icon={<CertIcon />} /></Grid>
+                <Grid item xs={12} sm={6} md={4} lg={2} sx={{ display: 'flex' }}><StatCard title="Valid" value={analyticsData.valid ?? 0} color="#10b981" icon={<CheckCircle />} /></Grid>
+                <Grid item xs={12} sm={6} md={4} lg={2} sx={{ display: 'flex' }}><StatCard title="Revoked" value={analyticsData.revoked ?? 0} color="#ef4444" icon={<Cancel />} /></Grid>
+                <Grid item xs={12} sm={6} md={4} lg={2} sx={{ display: 'flex' }}><StatCard title="Participation" value={analyticsData.byType?.participation ?? 0} color="#2563eb" icon={<People />} /></Grid>
+                <Grid item xs={12} sm={6} md={4} lg={2} sx={{ display: 'flex' }}><StatCard title="Winner" value={analyticsData.byType?.winner ?? 0} color="#f59e0b" icon={<CertIcon />} /></Grid>
+                <Grid item xs={12} sm={6} md={4} lg={2} sx={{ display: 'flex' }}><StatCard title="Merit" value={analyticsData.byType?.merit ?? 0} color="#8b5cf6" icon={<Assessment />} /></Grid>
             </Grid>
 
-            {/* Charts */}
-            <Grid container spacing={4} sx={{ mb: 5 }}>
-                {/* Monthly trend */}
-                <Grid item xs={12} lg={8}>
-                    <Paper sx={{ p: 3, borderRadius: '20px', border: '1px solid', borderColor: 'divider' }}>
-                        <Typography variant="h6" fontWeight={900} gutterBottom>Monthly Issuance Trend</Typography>
+            <Grid container spacing={3} sx={{ mb: 4 }}>
+                <Grid item xs={12} lg={8} sx={{ display: 'flex' }}>
+                    <Paper sx={{ p: 3, borderRadius: '20px', width: '100%', height: '100%' }}>
+                        <Typography variant="h6" fontWeight={900} gutterBottom>
+                            Monthly Issuance Trend
+                        </Typography>
                         <ResponsiveContainer width="100%" height={260}>
-                            <AreaChart data={ana.monthlyTrend || []} margin={{ left: -10 }}>
+                            <AreaChart data={analyticsData.monthlyTrend || []} margin={{ left: -10 }}>
                                 <defs>
-                                    <linearGradient id="gIssued" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="0%" stopColor="#6366f1" stopOpacity={0.35} />
-                                        <stop offset="100%" stopColor="#6366f1" stopOpacity={0} />
+                                    <linearGradient id="issuedArea" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="0%" stopColor="#2563eb" stopOpacity={0.28} />
+                                        <stop offset="100%" stopColor="#2563eb" stopOpacity={0} />
                                     </linearGradient>
-                                    <linearGradient id="gRevoked" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="0%" stopColor="#ef4444" stopOpacity={0.25} />
+                                    <linearGradient id="revokedArea" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="0%" stopColor="#ef4444" stopOpacity={0.2} />
                                         <stop offset="100%" stopColor="#ef4444" stopOpacity={0} />
                                     </linearGradient>
                                 </defs>
-                                <CartesianGrid strokeDasharray="3 3" opacity={0.25} />
+                                <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
                                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11 }} />
                                 <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11 }} />
                                 <ReTip contentStyle={{ borderRadius: '12px', border: 'none' }} />
                                 <Legend iconSize={10} />
-                                <Area type="monotone" dataKey="Issued" stroke="#6366f1" fill="url(#gIssued)" strokeWidth={2.5} dot={false} />
-                                <Area type="monotone" dataKey="Revoked" stroke="#ef4444" fill="url(#gRevoked)" strokeWidth={1.5} dot={false} />
+                                <Area type="monotone" dataKey="Issued" stroke="#2563eb" fill="url(#issuedArea)" strokeWidth={2.5} dot={false} />
+                                <Area type="monotone" dataKey="Revoked" stroke="#ef4444" fill="url(#revokedArea)" strokeWidth={2} dot={false} />
                             </AreaChart>
                         </ResponsiveContainer>
                     </Paper>
                 </Grid>
-
-                {/* Type pie */}
-                <Grid item xs={12} lg={4}>
-                    <Paper sx={{ p: 3, borderRadius: '20px', border: '1px solid', borderColor: 'divider', height: '100%' }}>
-                        <Typography variant="h6" fontWeight={900} gutterBottom>Type Breakdown</Typography>
-                        <ResponsiveContainer width="100%" height={240}>
+                <Grid item xs={12} lg={4} sx={{ display: 'flex' }}>
+                    <Paper sx={{ p: 3, borderRadius: '20px', width: '100%', height: '100%' }}>
+                        <Typography variant="h6" fontWeight={900} gutterBottom>
+                            Type Breakdown
+                        </Typography>
+                        <ResponsiveContainer width="100%" height={260}>
                             <PieChart>
-                                <Pie data={ana.pieData || []} cx="50%" cy="50%" innerRadius={55} outerRadius={90} paddingAngle={4} dataKey="value">
-                                    {(ana.pieData || []).map((e, i) => <Cell key={i} fill={e.color} />)}
+                                <Pie data={analyticsData.pieData || []} cx="50%" cy="50%" innerRadius={56} outerRadius={92} paddingAngle={4} dataKey="value">
+                                    {(analyticsData.pieData || []).map((entry, index) => (
+                                        <Cell key={index} fill={entry.color || ['#2563eb', '#f59e0b', '#8b5cf6'][index % 3]} />
+                                    ))}
                                 </Pie>
                                 <ReTip contentStyle={{ borderRadius: '12px', border: 'none' }} />
                                 <Legend iconSize={10} />
@@ -189,34 +271,41 @@ const CertificateManagement = () => {
                         </ResponsiveContainer>
                     </Paper>
                 </Grid>
-
-                {/* By club */}
-                <Grid item xs={12}>
-                    <Paper sx={{ p: 3, borderRadius: '20px', border: '1px solid', borderColor: 'divider' }}>
-                        <Typography variant="h6" fontWeight={900} gutterBottom>Certificates by Club</Typography>
-                        <ResponsiveContainer width="100%" height={220}>
-                            <BarChart data={ana.byClub || []} layout="vertical" margin={{ left: 10 }}>
-                                <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 11 }} />
-                                <YAxis type="category" dataKey="name" width={140} axisLine={false} tickLine={false} tick={{ fontSize: 12, fontWeight: 700 }} />
-                                <ReTip contentStyle={{ borderRadius: '12px', border: 'none' }} />
-                                <Bar dataKey="count" name="Certificates" radius={[0, 6, 6, 0]} barSize={22} fill="#6366f1" />
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </Paper>
-                </Grid>
             </Grid>
 
-            {/* Management Table */}
-            <Paper sx={{ borderRadius: '20px', overflow: 'hidden', border: '1px solid', borderColor: 'divider' }}>
-                <Box sx={{ p: 2.5, borderBottom: '1px solid', borderColor: 'divider', display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
-                    <Typography variant="h6" fontWeight={800} sx={{ flexGrow: 1 }}>Certificate Log</Typography>
-                    <TextField size="small" placeholder="Search name, email, event..." value={search}
-                        onChange={e => setSearch(e.target.value)}
-                        InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment>, sx: { borderRadius: '10px' } }}
-                        sx={{ width: 280 }} />
+            <Paper sx={{ borderRadius: '20px', overflow: 'hidden' }}>
+                <Box
+                    sx={{
+                        p: 2.5,
+                        borderBottom: '1px solid',
+                        borderColor: 'divider',
+                        display: 'flex',
+                        gap: 2,
+                        alignItems: 'center',
+                        flexWrap: 'wrap',
+                    }}
+                >
+                    <Typography variant="h6" fontWeight={800} sx={{ flexGrow: 1 }}>
+                        Certificate Log
+                    </Typography>
+                    <TextField
+                        size="small"
+                        placeholder="Search name, email, event..."
+                        value={search}
+                        onChange={(event) => setSearch(event.target.value)}
+                        InputProps={{
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <SearchIcon fontSize="small" />
+                                </InputAdornment>
+                            ),
+                            sx: { borderRadius: '10px' },
+                        }}
+                        sx={{ width: 280 }}
+                    />
                     <FormControl size="small" sx={{ minWidth: 120 }}>
                         <InputLabel>Type</InputLabel>
-                        <Select value={filterType} onChange={e => setFilterType(e.target.value)} label="Type" sx={{ borderRadius: '10px' }}>
+                        <Select value={filterType} onChange={(event) => setFilterType(event.target.value)} label="Type" sx={{ borderRadius: '10px' }}>
                             <MenuItem value="all">All Types</MenuItem>
                             <MenuItem value="participation">Participation</MenuItem>
                             <MenuItem value="winner">Winner</MenuItem>
@@ -225,13 +314,12 @@ const CertificateManagement = () => {
                     </FormControl>
                     <FormControl size="small" sx={{ minWidth: 120 }}>
                         <InputLabel>Status</InputLabel>
-                        <Select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} label="Status" sx={{ borderRadius: '10px' }}>
+                        <Select value={filterStatus} onChange={(event) => setFilterStatus(event.target.value)} label="Status" sx={{ borderRadius: '10px' }}>
                             <MenuItem value="all">All</MenuItem>
                             <MenuItem value="valid">Valid</MenuItem>
                             <MenuItem value="revoked">Revoked</MenuItem>
                         </Select>
                     </FormControl>
-                    <Typography variant="caption" color="text.secondary">{filtered.length} records</Typography>
                 </Box>
                 <TableContainer sx={{ maxHeight: 560 }}>
                     <Table stickyHeader>
@@ -240,84 +328,126 @@ const CertificateManagement = () => {
                                 <TableCell>Student</TableCell>
                                 <TableCell>Event</TableCell>
                                 <TableCell>Type</TableCell>
-                                <TableCell>Cert No.</TableCell>
-                                <TableCell>Rank/Score</TableCell>
+                                <TableCell>Certificate No.</TableCell>
+                                <TableCell>Rank / Score</TableCell>
                                 <TableCell>Status</TableCell>
                                 <TableCell>Issued</TableCell>
                                 <TableCell>Actions</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                            {filtered.length === 0 && (
-                                <TableRow><TableCell colSpan={8} align="center" sx={{ py: 6, color: 'text.secondary' }}>No certificates found.</TableCell></TableRow>
-                            )}
-                            {filtered.map(cert => {
-                                const tc = TYPE_INFO[cert.cert_type] || TYPE_INFO.participation;
-                                return (
-                                    <TableRow key={cert.id} hover sx={{ bgcolor: cert.status === 'revoked' ? '#ef444408' : 'inherit' }}>
-                                        <TableCell>
-                                            <Box display="flex" alignItems="center" gap={1.5}>
-                                                <Avatar src={cert.student?.avatar_url} sx={{ width: 30, height: 30, bgcolor: 'primary.main', fontSize: '0.75rem' }}>
-                                                    {cert.student?.full_name?.charAt(0)}
-                                                </Avatar>
-                                                <Box>
-                                                    <Typography variant="body2" fontWeight={700}>{cert.student?.full_name}</Typography>
-                                                    <Typography variant="caption" color="text.secondary">{cert.student?.email}</Typography>
+                            {filteredCertificates.length === 0 ? (
+                                <TableRow>
+                                    <TableCell colSpan={8} align="center" sx={{ py: 6, color: 'text.secondary' }}>
+                                        No certificates found.
+                                    </TableCell>
+                                </TableRow>
+                            ) : (
+                                filteredCertificates.map((certificate) => {
+                                    const typeInfo = TYPE_INFO[certificate.cert_type] || TYPE_INFO.participation;
+                                    const hasRank = certificate.rank !== null && certificate.rank !== undefined;
+                                    const hasScore = certificate.score !== null && certificate.score !== undefined;
+
+                                    return (
+                                        <TableRow key={certificate.id} hover sx={{ bgcolor: certificate.status === 'revoked' ? '#ef444408' : 'inherit' }}>
+                                            <TableCell>
+                                                <Box display="flex" alignItems="center" gap={1.5}>
+                                                    <Avatar src={certificate.student?.avatar_url} sx={{ width: 32, height: 32, bgcolor: 'primary.main', fontSize: '0.75rem' }}>
+                                                        {certificate.student?.full_name?.charAt(0)}
+                                                    </Avatar>
+                                                    <Box>
+                                                        <Typography variant="body2" fontWeight={700}>
+                                                            {certificate.student?.full_name}
+                                                        </Typography>
+                                                        <Typography variant="caption" color="text.secondary">
+                                                            {certificate.student?.email}
+                                                        </Typography>
+                                                    </Box>
                                                 </Box>
-                                            </Box>
-                                        </TableCell>
-                                        <TableCell>
-                                            <Typography variant="body2" fontWeight={700}>{cert.event?.title}</Typography>
-                                            <Typography variant="caption" color="text.secondary">{cert.event?.club?.name}</Typography>
-                                        </TableCell>
-                                        <TableCell>
-                                            <Chip label={`${tc.icon} ${tc.label}`} size="small"
-                                                sx={{ bgcolor: `${tc.color}15`, color: tc.color, fontWeight: 800, border: `1px solid ${tc.color}30`, fontSize: '0.65rem' }} />
-                                        </TableCell>
-                                        <TableCell>
-                                            <Typography variant="caption" fontFamily="monospace" fontWeight={700}>
-                                                {cert.certificate_number || cert.id?.slice(0, 8)}
-                                            </Typography>
-                                        </TableCell>
-                                        <TableCell>
-                                            {cert.rank ? <Chip label={`#${cert.rank}`} size="small" color="warning" sx={{ fontWeight: 800, mr: 0.5 }} /> : null}
-                                            {cert.score !== null && cert.score !== undefined ? <Typography variant="caption">{cert.score}</Typography> : null}
-                                            {!cert.rank && (cert.score === null || cert.score === undefined) ? <Typography color="text.disabled" variant="caption">—</Typography> : null}
-                                        </TableCell>
-                                        <TableCell>
-                                            <Chip label={cert.status} size="small"
-                                                color={cert.status === 'revoked' ? 'error' : 'success'} variant="outlined"
-                                                sx={{ fontWeight: 700, fontSize: '0.65rem', textTransform: 'capitalize' }} />
-                                        </TableCell>
-                                        <TableCell>
-                                            <Typography variant="caption" color="text.secondary">
-                                                {cert.generated_at ? new Date(cert.generated_at).toLocaleDateString() : '—'}
-                                            </Typography>
-                                        </TableCell>
-                                        <TableCell>
-                                            {cert.status === 'valid' ? (
-                                                <Button size="small" color="error" startIcon={<Block fontSize="small" />}
-                                                    onClick={() => setRevokeDialog({ open: true, cert })}
-                                                    sx={{ fontSize: '0.7rem', fontWeight: 700, borderRadius: '8px' }}>
-                                                    Revoke
-                                                </Button>
-                                            ) : (
-                                                <Button size="small" color="success" startIcon={<Undo fontSize="small" />}
-                                                    onClick={() => { if (window.confirm('Reinstate this certificate?')) reinststateCertificate.mutate(cert.id); }}
-                                                    sx={{ fontSize: '0.7rem', fontWeight: 700, borderRadius: '8px' }}>
-                                                    Reinstate
-                                                </Button>
-                                            )}
-                                        </TableCell>
-                                    </TableRow>
-                                );
-                            })}
+                                            </TableCell>
+                                            <TableCell>
+                                                <Typography variant="body2" fontWeight={700}>
+                                                    {certificate.event?.title}
+                                                </Typography>
+                                                <Typography variant="caption" color="text.secondary">
+                                                    {certificate.event?.club?.name}
+                                                </Typography>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Chip
+                                                    label={`${typeInfo.badge} ${typeInfo.label}`}
+                                                    size="small"
+                                                    sx={{
+                                                        bgcolor: `${typeInfo.color}15`,
+                                                        color: typeInfo.color,
+                                                        fontWeight: 800,
+                                                        border: `1px solid ${typeInfo.color}30`,
+                                                        fontSize: '0.65rem',
+                                                    }}
+                                                />
+                                            </TableCell>
+                                            <TableCell>
+                                                <Typography variant="caption" fontFamily="monospace" fontWeight={700}>
+                                                    {certificate.certificate_number || certificate.id?.slice(0, 8)}
+                                                </Typography>
+                                            </TableCell>
+                                            <TableCell>
+                                                {hasRank ? <Chip label={`#${certificate.rank}`} size="small" color="warning" sx={{ fontWeight: 800, mr: 0.5 }} /> : null}
+                                                {hasScore ? <Typography variant="caption">{certificate.score}</Typography> : null}
+                                                {!hasRank && !hasScore ? (
+                                                    <Typography color="text.disabled" variant="caption">
+                                                        --
+                                                    </Typography>
+                                                ) : null}
+                                            </TableCell>
+                                            <TableCell>
+                                                <Chip
+                                                    label={certificate.status}
+                                                    size="small"
+                                                    color={certificate.status === 'revoked' ? 'error' : 'success'}
+                                                    variant="outlined"
+                                                    sx={{ fontWeight: 700, fontSize: '0.65rem', textTransform: 'capitalize' }}
+                                                />
+                                            </TableCell>
+                                            <TableCell>
+                                                <Typography variant="caption" color="text.secondary">
+                                                    {certificate.generated_at ? new Date(certificate.generated_at).toLocaleDateString() : '--'}
+                                                </Typography>
+                                            </TableCell>
+                                            <TableCell>
+                                                {certificate.status === 'valid' ? (
+                                                    <Button
+                                                        size="small"
+                                                        color="error"
+                                                        startIcon={<Block fontSize="small" />}
+                                                        onClick={() => setRevokeDialog({ open: true, cert: certificate })}
+                                                    >
+                                                        Revoke
+                                                    </Button>
+                                                ) : (
+                                                    <Button
+                                                        size="small"
+                                                        color="success"
+                                                        startIcon={<Undo fontSize="small" />}
+                                                        onClick={() => {
+                                                            if (window.confirm('Reinstate this certificate?')) {
+                                                                reinststateCertificate.mutate(certificate.id);
+                                                            }
+                                                        }}
+                                                    >
+                                                        Reinstate
+                                                    </Button>
+                                                )}
+                                            </TableCell>
+                                        </TableRow>
+                                    );
+                                })
+                            )}
                         </TableBody>
                     </Table>
                 </TableContainer>
             </Paper>
 
-            {/* Revoke Dialog */}
             <RevokeDialog
                 open={revokeDialog.open}
                 cert={revokeDialog.cert}
@@ -332,4 +462,3 @@ const CertificateManagement = () => {
 };
 
 export default CertificateManagement;
-

@@ -1,7 +1,7 @@
 // eslint-disable-next-line no-unused-vars
 import React, { useState } from 'react';
 import {
-    Box, Typography, Grid, Card, CardContent, Paper, CircularProgress,
+    Box, Typography, Grid, Card, CardContent, Paper,
     Chip, Stack, TextField, InputAdornment, Button, Avatar, Tabs, Tab,
     Table, TableHead, TableBody, TableRow, TableCell, TableContainer,
     Dialog, DialogTitle, DialogContent, DialogActions, Alert, Autocomplete
@@ -23,9 +23,10 @@ import {
     // eslint-disable-next-line no-unused-vars
     AreaChart, Area, PieChart, Pie, Legend
 } from 'recharts';
+import LoadingDots from '../../components/LoadingDots';
 
 const StatCard = ({ title, value, subtitle, icon, color }) => (
-    <Card sx={{ borderRadius: '18px', border: '1px solid', borderColor: 'divider', boxShadow: `0 4px 20px ${color}10` }}>
+    <Card sx={{ borderRadius: '18px', border: '1px solid', borderColor: 'divider', boxShadow: `0 4px 20px ${color}10`, height: '100%' }}>
         <CardContent sx={{ p: 3, '&:last-child': { pb: 3 } }}>
             <Box display="flex" justifyContent="space-between" alignItems="flex-start">
                 <Box>
@@ -209,19 +210,19 @@ const RegistrationOverview = () => {
 
             {/* Stats */}
             <Grid container spacing={3} sx={{ mb: 5 }}>
-                <Grid item xs={6} md={2.4}>
+                <Grid item xs={12} sm={6} md={4} lg sx={{ display: 'flex' }}>
                     <StatCard title="Total Registrations" value={platformStats?.total || 0} icon={<PeopleIcon fontSize="large" />} color="#3b82f6" />
                 </Grid>
-                <Grid item xs={6} md={2.4}>
+                <Grid item xs={12} sm={6} md={4} lg sx={{ display: 'flex' }}>
                     <StatCard title="Active" value={platformStats?.registered || 0} icon={<EventNote fontSize="large" />} color="#10b981" />
                 </Grid>
-                <Grid item xs={6} md={2.4}>
+                <Grid item xs={12} sm={6} md={4} lg sx={{ display: 'flex' }}>
                     <StatCard title="Waitlisted" value={platformStats?.waitlisted || 0} icon={<QueuePlayNext fontSize="large" />} color="#f59e0b" />
                 </Grid>
-                <Grid item xs={6} md={2.4}>
+                <Grid item xs={12} sm={6} md={4} lg sx={{ display: 'flex' }}>
                     <StatCard title="Cancelled" value={platformStats?.cancelled || 0} icon={<CancelIcon fontSize="large" />} color="#ef4444" />
                 </Grid>
-                <Grid item xs={6} md={2.4}>
+                <Grid item xs={12} sm={6} md={4} lg sx={{ display: 'flex' }}>
                     <StatCard title="Attended" value={platformStats?.attended || 0} icon={<AnalyticsIcon fontSize="large" />} color="#8b5cf6" subtitle={`${platformStats?.registered > 0 ? Math.round((platformStats.attended / platformStats.registered) * 100) : 0}% rate`} />
                 </Grid>
             </Grid>
@@ -231,10 +232,14 @@ const RegistrationOverview = () => {
                 <Tab label="Registration Log" />
             </Tabs>
 
+            {tab === 0 && loadingAnalytics && (
+                <LoadingDots minHeight="320px" label="Loading registration analytics..." />
+            )}
+
             {tab === 0 && !loadingAnalytics && (
                 <Grid container spacing={4}>
-                    <Grid item xs={12} md={8}>
-                        <Paper sx={{ p: 3, borderRadius: '16px', height: 320 }}>
+                    <Grid item xs={12} md={8} sx={{ display: 'flex' }}>
+                        <Paper sx={{ p: 3, borderRadius: '16px', height: 320, width: '100%' }}>
                             <Typography variant="subtitle1" fontWeight={800} gutterBottom>Monthly Registration Trend</Typography>
                             <ResponsiveContainer width="100%" height="85%">
                                 <AreaChart data={analytics?.monthlyTrend || []}>
@@ -253,8 +258,8 @@ const RegistrationOverview = () => {
                             </ResponsiveContainer>
                         </Paper>
                     </Grid>
-                    <Grid item xs={12} md={4}>
-                        <Paper sx={{ p: 3, borderRadius: '16px' }}>
+                    <Grid item xs={12} md={4} sx={{ display: 'flex' }}>
+                        <Paper sx={{ p: 3, borderRadius: '16px', width: '100%', minHeight: 320 }}>
                             <Typography variant="subtitle1" fontWeight={800} gutterBottom>Top 5 Events</Typography>
                             <Stack spacing={2} sx={{ mt: 1 }}>
                                 {(analytics?.topEvents || []).slice(0, 5).map((e, i) => (
@@ -301,7 +306,7 @@ const RegistrationOverview = () => {
                             </TableHead>
                             <TableBody>
                                 {loadingRegs ? (
-                                    <TableRow><TableCell colSpan={5} align="center" sx={{ py: 4 }}><CircularProgress size={28} /></TableCell></TableRow>
+                                    <TableRow><TableCell colSpan={5} align="center" sx={{ py: 4 }}><LoadingDots minHeight="140px" label="Loading registrations..." /></TableCell></TableRow>
                                 ) : filteredRegs?.map(reg => (
                                     <TableRow key={reg.id} hover>
                                         <TableCell>

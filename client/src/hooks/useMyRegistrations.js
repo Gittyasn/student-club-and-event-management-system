@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../services/supabaseClient';
 import { sendNotification } from '../services/notificationService';
+import { writeAuditLog } from '../services/auditLogService';
 import { useAuthStore } from '../store/authStore';
 import { toast } from 'sonner';
 
@@ -293,7 +294,7 @@ export const useAdminRegistrationOverrides = () => {
             }
 
             // Log admin action
-            await supabase.from('audit_logs').insert({
+            await writeAuditLog({
                 user_id: user?.id,
                 action: 'admin_force_register',
                 target_id: eventId,
@@ -320,7 +321,7 @@ export const useAdminRegistrationOverrides = () => {
                 .eq('id', registrationId);
             if (error) throw error;
 
-            await supabase.from('audit_logs').insert({
+            await writeAuditLog({
                 user_id: user?.id,
                 action: 'admin_remove_registration',
                 target_id: eventId,
@@ -343,7 +344,7 @@ export const useAdminRegistrationOverrides = () => {
                 .eq('id', eventId);
             if (error) throw error;
 
-            await supabase.from('audit_logs').insert({
+            await writeAuditLog({
                 user_id: user?.id,
                 action: 'admin_lock_registration',
                 target_id: eventId,
@@ -366,7 +367,7 @@ export const useAdminRegistrationOverrides = () => {
                 .eq('id', registrationId);
             if (error) throw error;
 
-            await supabase.from('audit_logs').insert({
+            await writeAuditLog({
                 user_id: user?.id,
                 action: 'admin_manual_waitlist_promote',
                 target_id: eventId,

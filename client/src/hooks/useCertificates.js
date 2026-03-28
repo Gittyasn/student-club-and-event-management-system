@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../services/supabaseClient';
 import { sendNotifications } from '../services/notificationService';
+import { writeAuditLog } from '../services/auditLogService';
 import { useAuthStore } from '../store/authStore';
 import { toast } from 'sonner';
 import { generateCertificatePDF, downloadPDF } from '../utils/generateCertificate';
@@ -375,7 +376,7 @@ export const useAdminCertificateMutations = () => {
                 certificate_id: certId, event_id: cert?.event_id, student_id: cert?.user_id,
                 actor_id: user?.id, action: 'revoked', note: reason
             });
-            await supabase.from('audit_logs').insert({
+            await writeAuditLog({
                 actor_id: user?.id, action: 'certificate_revoked', target_id: certId, meta: { reason }
             });
         },

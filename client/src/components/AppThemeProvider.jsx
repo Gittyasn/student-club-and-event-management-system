@@ -45,6 +45,10 @@ const getDesignTokens = (mode) => ({
                 ::-webkit-scrollbar-track { background: transparent; }
                 ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 4px; }
                 .dark ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); }
+                @keyframes loadingDotsPulse {
+                    0%, 80%, 100% { transform: translateY(0); opacity: 0.25; }
+                    40% { transform: translateY(-4px); opacity: 1; }
+                }
             `
         },
         MuiPaper: {

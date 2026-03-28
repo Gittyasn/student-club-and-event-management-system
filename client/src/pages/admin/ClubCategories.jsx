@@ -4,7 +4,7 @@ import {
     TableContainer, TableHead, TableRow, IconButton, Dialog, DialogTitle,
     // eslint-disable-next-line no-unused-vars
     DialogContent, DialogActions, TextField, CircularProgress, Chip,
-    InputAdornment
+    InputAdornment, Grid, useTheme
 } from '@mui/material';
 import {
     Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon,
@@ -19,6 +19,7 @@ import {
     useClubCategories, useAddCategory, useUpdateCategory, useDeleteCategory
 } from '../../hooks/useClubCategories';
 import { motion, AnimatePresence } from 'framer-motion';
+import LoadingDots from '../../components/LoadingDots';
 
 const categorySchema = z.object({
     name: z.string().min(2, 'Name must be at least 2 characters').max(50, 'Name too long'),
@@ -26,6 +27,7 @@ const categorySchema = z.object({
 });
 
 const AdminClubCategories = () => {
+    const theme = useTheme();
     const { data: categories = [], isLoading } = useClubCategories();
     const addCategory = useAddCategory();
     const updateCategory = useUpdateCategory();
@@ -88,24 +90,32 @@ const AdminClubCategories = () => {
         (c.description || '').toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    if (isLoading) return <Box display="flex" justifyContent="center" p={10}><CircularProgress /></Box>;
+    if (isLoading) return <LoadingDots minHeight="50vh" label="Loading club categories..." />;
 
     return (
         <Box sx={{ pb: 6 }}>
             {/* Header */}
             <Box sx={{
-                mb: 4, p: 4, borderRadius: '24px',
-                background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
-                border: '1px solid rgba(255,255,255,0.05)',
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                mb: 4,
+                p: { xs: 3, md: 4 },
+                borderRadius: '24px',
+                background: theme.palette.mode === 'dark'
+                    ? 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)'
+                    : 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+                border: `1px solid ${theme.palette.divider}`,
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: 2,
             }}>
                 <Stack direction="row" spacing={3} alignItems="center">
                     <Box sx={{ p: 2, borderRadius: '20px', bgcolor: 'rgba(244,114,182,0.1)', color: '#f472b6', border: '1px solid rgba(244,114,182,0.2)' }}>
                         <CategoryIcon sx={{ fontSize: 32 }} />
                     </Box>
                     <Box>
-                        <Typography variant="h4" fontWeight={900} sx={{ color: 'white', letterSpacing: -1 }}>Organization Categories</Typography>
-                        <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>
+                        <Typography variant="h4" fontWeight={900} sx={{ color: 'text.primary', letterSpacing: -1 }}>Club Categories</Typography>
+                        <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
                             Define and manage structural classifications for clubs.
                         </Typography>
                     </Box>
@@ -123,8 +133,27 @@ const AdminClubCategories = () => {
                 </Button>
             </Box>
 
+            <Grid container spacing={2} sx={{ mb: 3 }}>
+                {[
+                    { label: 'Total Categories', value: categories.length, color: '#3b82f6' },
+                    { label: 'Visible Results', value: filteredCategories.length, color: '#10b981' },
+                    { label: 'Search Active', value: searchQuery ? 'Yes' : 'No', color: '#f59e0b' },
+                ].map((item) => (
+                    <Grid item xs={12} sm={4} key={item.label}>
+                        <Paper sx={{ p: 2.25, borderRadius: '18px', height: '100%' }}>
+                            <Typography variant="caption" color="text.secondary" fontWeight={800}>
+                                {item.label}
+                            </Typography>
+                            <Typography variant="h5" fontWeight={900} sx={{ mt: 0.5, color: item.color }}>
+                                {item.value}
+                            </Typography>
+                        </Paper>
+                    </Grid>
+                ))}
+            </Grid>
+
             {/* Controls */}
-            <Paper elevation={0} sx={{ p: 2, mb: 4, borderRadius: '16px', bgcolor: 'rgba(30,41,59,0.5)', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', gap: 2 }}>
+            <Paper elevation={0} sx={{ p: 2, mb: 4, borderRadius: '16px', bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider', display: 'flex', gap: 2 }}>
                 <TextField
                     placeholder="Search categories..."
                     variant="outlined"
@@ -134,8 +163,9 @@ const AdminClubCategories = () => {
                     sx={{
                         width: 300,
                         '& .MuiOutlinedInput-root': {
-                            bgcolor: 'rgba(15,23,42,0.5)', borderRadius: '10px',
-                            '& fieldset': { borderColor: 'rgba(255,255,255,0.1)' }
+                            bgcolor: 'background.default', borderRadius: '10px',
+                            color: 'text.primary',
+                            '& fieldset': { borderColor: 'divider' }
                         }
                     }}
                     InputProps={{
@@ -149,9 +179,9 @@ const AdminClubCategories = () => {
             </Paper>
 
             {/* Data Table */}
-            <TableContainer component={Paper} elevation={0} sx={{ borderRadius: '20px', border: '1px solid', borderColor: 'divider', overflow: 'hidden', bgcolor: 'rgba(15,23,42,0.3)' }}>
+            <TableContainer component={Paper} elevation={0} sx={{ borderRadius: '20px', border: '1px solid', borderColor: 'divider', overflow: 'hidden', bgcolor: 'background.paper' }}>
                 <Table>
-                    <TableHead sx={{ bgcolor: 'rgba(255,255,255,0.02)' }}>
+                    <TableHead sx={{ bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : '#f8fafc' }}>
                         <TableRow>
                             <TableCell sx={{ fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', fontSize: '0.75rem' }}>Name</TableCell>
                             <TableCell sx={{ fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', fontSize: '0.75rem' }}>Description</TableCell>
@@ -178,10 +208,13 @@ const AdminClubCategories = () => {
                                         sx={{ '&:hover': { bgcolor: 'rgba(255,255,255,0.02)' } }}
                                     >
                                         <TableCell>
-                                            <Typography variant="body2" fontWeight={800} color="white">{category.name}</Typography>
+                                            <Stack direction="row" spacing={1.25} alignItems="center">
+                                                <Box sx={{ width: 10, height: 10, borderRadius: '999px', bgcolor: '#f472b6' }} />
+                                                <Typography variant="body2" fontWeight={800} color="text.primary">{category.name}</Typography>
+                                            </Stack>
                                         </TableCell>
                                         <TableCell>
-                                            <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                            <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 480, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                                 {category.description || '-'}
                                             </Typography>
                                         </TableCell>
@@ -209,9 +242,9 @@ const AdminClubCategories = () => {
             </TableContainer>
 
             {/* Create/Edit Dialog */}
-            <Dialog open={openDialog} onClose={handleCloseDialog} PaperProps={{ sx: { bgcolor: '#0f172a', backgroundImage: 'none', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.1)', minWidth: 400 } }}>
+            <Dialog open={openDialog} onClose={handleCloseDialog} PaperProps={{ sx: { bgcolor: 'background.paper', backgroundImage: 'none', borderRadius: '20px', border: '1px solid', borderColor: 'divider', minWidth: 400 } }}>
                 <form onSubmit={handleSubmit(onSubmit)}>
-                    <DialogTitle sx={{ fontWeight: 800, color: 'white' }}>
+                    <DialogTitle sx={{ fontWeight: 800, color: 'text.primary' }}>
                         {editingCategory ? 'Edit Category' : 'New Category'}
                     </DialogTitle>
                     <DialogContent>
@@ -265,7 +298,7 @@ const AdminClubCategories = () => {
             </Dialog>
 
             {/* Delete Confirmation Dialog */}
-            <Dialog open={!!deleteConfirm} onClose={() => setDeleteConfirm(null)} PaperProps={{ sx: { bgcolor: '#0f172a', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.1)' } }}>
+            <Dialog open={!!deleteConfirm} onClose={() => setDeleteConfirm(null)} PaperProps={{ sx: { bgcolor: 'background.paper', borderRadius: '20px', border: '1px solid', borderColor: 'divider' } }}>
                 <DialogTitle sx={{ color: '#ef4444', fontWeight: 800 }}>Confirm Deletion</DialogTitle>
                 <DialogContent>
                     <Typography color="text.secondary">

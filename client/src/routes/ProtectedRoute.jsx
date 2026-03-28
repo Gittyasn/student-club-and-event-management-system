@@ -1,7 +1,7 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
-
-import { CircularProgress, Box } from '@mui/material';
+import { Box } from '@mui/material';
+import LoadingDots from '../components/LoadingDots';
 
 const ProtectedRoute = ({ allowedRoles }) => {
     const { user, profile, role, loading } = useAuthStore();
@@ -9,8 +9,8 @@ const ProtectedRoute = ({ allowedRoles }) => {
 
     if (loading) {
         return (
-            <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
-                <CircularProgress />
+            <Box minHeight="100vh">
+                <LoadingDots minHeight="100vh" label="Checking access..." />
             </Box>
         );
     }
