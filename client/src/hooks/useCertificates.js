@@ -65,7 +65,7 @@ export const useEventCertificates = (eventId) => {
             const { data, error } = await supabase
                 .from('certificates')
                 .select(`
-                    id, cert_type, status, rank, score, grade, prize_title,
+                    id, user_id, cert_type, status, rank, score, grade, prize_title,
                     file_url, certificate_url, certificate_number, is_locked,
                     generated_at, revoked_at,
                     student:profiles!certificates_user_id_fkey(id, full_name, email, avatar_url, department)

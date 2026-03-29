@@ -7,6 +7,11 @@ export const useNotificationStore = create((set, get) => ({
     loading: false,
     preferences: null,
 
+    belongsToUser: (notification, userId) => {
+        if (!notification || !userId) return false;
+        return String(notification.user_id) === String(userId);
+    },
+
     fetchNotifications: async (userId) => {
         set({ loading: true });
         const { data, error } = await supabase
@@ -143,6 +148,7 @@ export const useNotificationStore = create((set, get) => ({
         let active = true;
         let channel = null;
         let retryTimeout = null;
+        let refreshInterval = null;
 
         const clearRetry = () => {
             if (retryTimeout) {
@@ -151,11 +157,19 @@ export const useNotificationStore = create((set, get) => ({
             }
         };
 
+        const clearRefresh = () => {
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+                refreshInterval = null;
+            }
+        };
+
         const scheduleReconnect = () => {
             if (!active || retryTimeout) return;
             retryTimeout = setTimeout(async () => {
                 retryTimeout = null;
                 if (!active) return;
+                clearRefresh();
                 if (channel) {
                     try { await supabase.removeChannel(channel); } catch { /* ignore */ }
                     channel = null;
@@ -175,11 +189,12 @@ export const useNotificationStore = create((set, get) => ({
                     {
                         event: 'INSERT',
                         schema: 'public',
-                        table: 'notifications',
-                        filter: `user_id=eq.${userId}`
+                        table: 'notifications'
                     },
                     (payload) => {
-                        get().addNotification(payload.new);
+                        if (get().belongsToUser(payload.new, userId)) {
+                            get().addNotification(payload.new);
+                        }
                     }
                 )
                 .on(
@@ -187,11 +202,12 @@ export const useNotificationStore = create((set, get) => ({
                     {
                         event: 'UPDATE',
                         schema: 'public',
-                        table: 'notifications',
-                        filter: `user_id=eq.${userId}`
+                        table: 'notifications'
                     },
                     (payload) => {
-                        get().updateNotification(payload.new);
+                        if (get().belongsToUser(payload.new, userId)) {
+                            get().updateNotification(payload.new);
+                        }
                     }
                 )
                 .on(
@@ -199,17 +215,27 @@ export const useNotificationStore = create((set, get) => ({
                     {
                         event: 'DELETE',
                         schema: 'public',
-                        table: 'notifications',
-                        filter: `user_id=eq.${userId}`
+                        table: 'notifications'
                     },
                     (payload) => {
-                        get().removeNotification(payload.old.id);
+                        if (get().belongsToUser(payload.old, userId)) {
+                            get().removeNotification(payload.old.id);
+                        }
                     }
                 );
 
             channel.subscribe((status) => {
                 if (status === 'SUBSCRIBED') {
                     clearRetry();
+                    get().fetchNotifications(userId);
+                    if (!refreshInterval) {
+                        // Realtime insert events can occasionally be missed in live environments.
+                        // Keep a lightweight sync loop so the notification center stays accurate.
+                        refreshInterval = setInterval(() => {
+                            if (!active) return;
+                            get().fetchNotifications(userId);
+                        }, 15000);
+                    }
                     return;
                 }
 
@@ -224,6 +250,7 @@ export const useNotificationStore = create((set, get) => ({
         return () => {
             active = false;
             clearRetry();
+            clearRefresh();
             if (channel) {
                 supabase.removeChannel(channel);
             }

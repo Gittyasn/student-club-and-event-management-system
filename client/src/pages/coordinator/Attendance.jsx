@@ -1,7 +1,7 @@
-import React, { useState, useMemo, useRef, useCallback } from 'react';
+import React, { Suspense, lazy, useState, useMemo, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-    Box, Typography, Button, Paper, CircularProgress, Tabs, Tab,
+    Box, Typography, Button, Paper, Tabs, Tab,
     Stack, Chip, Avatar, Tooltip, Alert, LinearProgress, Grid, Card,
     // eslint-disable-next-line no-unused-vars
     CardContent, IconButton, TextField, InputAdornment, Dialog,
@@ -21,16 +21,14 @@ import {
     LockOpen, Inventory2
 } from '@mui/icons-material';
 import { DataGrid, GridActionsCellItem } from '@mui/x-data-grid';
-import * as QRCode from 'qrcode';
 import { useEventRegistrations, useAttendanceMutations, useAttendanceLogs } from '../../hooks/useAttendance';
 import { useEventById } from '../../hooks/useEventById';
 import { supabase } from '../../services/supabaseClient';
 import { toast } from 'sonner';
 import RolePageHeader from '../../components/RolePageHeader';
-import {
-    PieChart, Pie, Cell, ResponsiveContainer, Tooltip as ReTip,
-    BarChart, Bar, XAxis, YAxis, Legend
-} from 'recharts';
+import LoadingDots from '../../components/LoadingDots';
+
+const AttendanceChartsTab = lazy(() => import('./components/AttendanceChartsTab'));
 
 const STATUS_CFG = {
     present: { label: 'Present', color: '#10b981', chip: 'success' },
@@ -60,6 +58,7 @@ const QrModal = ({ open, onClose, eventId }) => {
     const generate = useCallback(async () => {
         setGenerating(true);
         try {
+            const QRCode = await import('qrcode');
             const token = crypto.randomUUID();
             await supabase.from('events').update({ qr_token: token, qr_generated_at: new Date().toISOString() }).eq('id', eventId);
             const payload = JSON.stringify({ type: 'attendance_token', eventId, token });
@@ -80,7 +79,7 @@ const QrModal = ({ open, onClose, eventId }) => {
                 <Typography variant="body2" color="text.secondary" mb={3}>
                     Display this to students for QR scan attendance. Regenerate to invalidate old codes.
                 </Typography>
-                {generating ? <CircularProgress sx={{ my: 4 }} /> : qrUrl ? (
+                {generating ? <LoadingDots label="Generating QR..." minHeight="140px" /> : qrUrl ? (
                     <Box sx={{ p: 2, bgcolor: 'white', borderRadius: '16px', display: 'inline-block', boxShadow: '0 8px 32px rgba(0,0,0,0.12)' }}>
                         <img src={qrUrl} alt="Event QR" style={{ width: 260, height: 260, display: 'block' }} />
                     </Box>
@@ -243,12 +242,12 @@ const Attendance = () => {
         setBulkFile(null);
     };
 
-    if (isLoading) return <Box display="flex" justifyContent="center" p={8}><CircularProgress /></Box>;
+    if (isLoading) return <LoadingDots label="Loading attendance..." minHeight="50vh" />;
 
     return (
         <Box sx={{ pb: 6 }}>
             <RolePageHeader
-                kicker="Coordinator Suite"
+                kicker="Coordinator Dashboard"
                 title="Attendance"
                 subtitle="Mark, review, and lock attendance records."
             />
@@ -412,39 +411,9 @@ const Attendance = () => {
 
             {/* Tab: Report */}
             {tab === 2 && (
-                <Grid container spacing={4}>
-                    <Grid item xs={12} md={5}>
-                        <Paper sx={{ p: 3, borderRadius: '16px', height: 300 }}>
-                            <Typography variant="subtitle2" fontWeight={800} color="text.secondary" gutterBottom>Status Distribution</Typography>
-                            <ResponsiveContainer width="100%" height="85%">
-                                <PieChart>
-                                    <Pie data={stats.pieData} cx="50%" cy="50%" innerRadius={55} outerRadius={90} paddingAngle={3} dataKey="value">
-                                        {stats.pieData.map((e, i) => <Cell key={i} fill={e.color} />)}
-                                    </Pie>
-                                    <ReTip contentStyle={{ borderRadius: '12px', border: 'none' }} />
-                                    <Legend iconSize={10} wrapperStyle={{ fontSize: '0.78rem' }} />
-                                </PieChart>
-                            </ResponsiveContainer>
-                        </Paper>
-                    </Grid>
-                    <Grid item xs={12} md={7}>
-                        <Paper sx={{ p: 3, borderRadius: '16px', height: 300 }}>
-                            <Typography variant="subtitle2" fontWeight={800} color="text.secondary" gutterBottom>Attendance Breakdown</Typography>
-                            <ResponsiveContainer width="100%" height="85%">
-                                <BarChart data={[{ name: event?.title?.slice(0, 20) + '...', Present: stats.present, Late: stats.late, Absent: stats.absent, Excused: stats.excused }]}>
-                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11 }} />
-                                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11 }} />
-                                    <ReTip contentStyle={{ borderRadius: '12px', border: 'none' }} />
-                                    <Legend iconSize={10} />
-                                    <Bar dataKey="Present" fill="#10b981" radius={[4, 4, 0, 0]} />
-                                    <Bar dataKey="Late" fill="#f59e0b" radius={[4, 4, 0, 0]} />
-                                    <Bar dataKey="Absent" fill="#ef4444" radius={[4, 4, 0, 0]} />
-                                    <Bar dataKey="Excused" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </Paper>
-                    </Grid>
-                </Grid>
+                <Suspense fallback={<LoadingDots label="Loading charts..." minHeight="260px" />}>
+                    <AttendanceChartsTab eventTitle={event?.title} stats={stats} />
+                </Suspense>
             )}
 
             {/* Tab: Audit Log */}

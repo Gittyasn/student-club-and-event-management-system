@@ -13,8 +13,6 @@ import {
     DialogTitle,
     DialogContent,
     DialogActions,
-    // eslint-disable-next-line no-unused-vars
-    CircularProgress,
     Chip,
     Stack
 } from '@mui/material';
@@ -57,7 +55,7 @@ const AdminEventCategories = () => {
         },
         onSuccess: () => {
             queryClient.invalidateQueries(['eventCategories']);
-            toast.success('Category established.');
+            toast.success('Category created.');
             setDialogOpen(false);
         },
         onError: (err) => toast.error(err.message)
@@ -70,7 +68,7 @@ const AdminEventCategories = () => {
         },
         onSuccess: () => {
             queryClient.invalidateQueries(['eventCategories']);
-            toast.success('Category re-calibrated.');
+            toast.success('Category updated.');
             setDialogOpen(false);
         },
         onError: (err) => toast.error(err.message)
@@ -83,7 +81,7 @@ const AdminEventCategories = () => {
         },
         onSuccess: () => {
             queryClient.invalidateQueries(['eventCategories']);
-            toast.success('Category eradicated.');
+            toast.success('Category deleted.');
         },
         // eslint-disable-next-line no-unused-vars
         onError: (err) => toast.error("Failed to delete. This category might be bound to existing events.")
@@ -101,7 +99,7 @@ const AdminEventCategories = () => {
     };
 
     const handleSave = () => {
-        if (!formData.name.trim()) return toast.error('Taxonomy name is structural and cannot be empty.');
+        if (!formData.name.trim()) return toast.error('Category name cannot be empty.');
         if (editingCategory) {
             updateMutation.mutate({ id: editingCategory, updates: formData });
         } else {
@@ -115,8 +113,8 @@ const AdminEventCategories = () => {
     );
 
     const columns = [
-        { field: 'name', headerName: 'Taxonomy Designation', flex: 1, renderCell: p => <Typography fontWeight={800}>{p.value}</Typography> },
-        { field: 'description', headerName: 'Structural Description', flex: 2, renderCell: p => <Typography variant="body2" color="text.secondary">{p.value || 'No description matrix'}</Typography> },
+        { field: 'name', headerName: 'Category', flex: 1, renderCell: p => <Typography fontWeight={800}>{p.value}</Typography> },
+        { field: 'description', headerName: 'Description', flex: 2, renderCell: p => <Typography variant="body2" color="text.secondary">{p.value || 'No description added'}</Typography> },
         {
             field: 'events_count',
             headerName: 'Utilization',
@@ -126,7 +124,7 @@ const AdminEventCategories = () => {
         {
             field: 'actions',
             type: 'actions',
-            headerName: 'Overrides',
+            headerName: 'Actions',
             width: 120,
             getActions: (params) => [
                 <GridActionsCellItem
@@ -138,7 +136,7 @@ const AdminEventCategories = () => {
                 <GridActionsCellItem
                     icon={<DeleteIcon color="error" />}
                     label="Delete"
-                    onClick={() => window.confirm('Eradicate this category?') && deleteMutation.mutate(params.id)}
+                    onClick={() => window.confirm('Delete this category?') && deleteMutation.mutate(params.id)}
                     key="delete"
                 />
             ]
@@ -155,10 +153,10 @@ const AdminEventCategories = () => {
             }}>
                 <Box>
                     <Typography variant="h4" fontWeight={900} sx={{ letterSpacing: -1.5 }}>
-                        Event Taxonomy Core
+                        Event Categories
                     </Typography>
                     <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600, mt: 0.5 }}>
-                        Manage global structural templates for standardizing campus events.
+                        Manage the categories used when clubs create new events.
                     </Typography>
                 </Box>
                 <Button
@@ -167,14 +165,14 @@ const AdminEventCategories = () => {
                     onClick={() => handleOpenDialog()}
                     sx={{ bgcolor: '#38bdf8', color: '#0f172a', fontWeight: 900, px: 3, '&:hover': { bgcolor: '#0284c7' } }}
                 >
-                    Synthesize Category
+                    Add Category
                 </Button>
             </Box>
 
             <Paper sx={{ p: 3, borderRadius: '16px', border: '1px solid', borderColor: 'divider', mb: 3 }}>
                 <TextField
                     fullWidth
-                    placeholder="Scan taxonomy registers..."
+                    placeholder="Search categories..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     InputProps={{
@@ -203,13 +201,13 @@ const AdminEventCategories = () => {
 
             <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: '16px' } }}>
                 <DialogTitle sx={{ fontWeight: 900, display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                    <CategoryIcon color="primary" /> {editingCategory ? 'Recalibrate Category' : 'Inject New Category'}
+                    <CategoryIcon color="primary" /> {editingCategory ? 'Edit Category' : 'Add Category'}
                 </DialogTitle>
                 <DialogContent>
                     <Stack spacing={3} sx={{ mt: 1 }}>
                         <TextField
                             fullWidth
-                            label="Taxonomy Designation"
+                            label="Category name"
                             value={formData.name}
                             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                             variant="filled"
@@ -217,7 +215,7 @@ const AdminEventCategories = () => {
                         />
                         <TextField
                             fullWidth
-                            label="Structural Description"
+                            label="Description"
                             value={formData.description}
                             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                             variant="filled"
@@ -235,7 +233,7 @@ const AdminEventCategories = () => {
                         disabled={createMutation.isPending || updateMutation.isPending}
                         sx={{ fontWeight: 800, borderRadius: '8px', px: 3, boxShadow: 'none' }}
                     >
-                        {createMutation.isPending || updateMutation.isPending ? 'Committing...' : 'Commit Protocol'}
+                        {createMutation.isPending || updateMutation.isPending ? 'Saving...' : 'Save Category'}
                     </Button>
                 </DialogActions>
             </Dialog>

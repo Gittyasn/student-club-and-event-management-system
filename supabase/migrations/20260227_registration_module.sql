@@ -74,8 +74,9 @@ BEGIN
                 WHERE id = v_next_waitlisted_id;
 
                 -- Insert a notification for the promoted student
-                INSERT INTO public.notifications (user_id, message, type)
+                INSERT INTO public.notifications (user_id, title, message, type)
                 SELECT user_id,
+                    'Registration Confirmed',
                     'Great news! A slot opened up and you have been moved from the waitlist to Registered.',
                     'success'
                 FROM public.registrations

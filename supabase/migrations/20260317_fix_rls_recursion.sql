@@ -8,9 +8,29 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
   SELECT EXISTS (
-    SELECT 1 FROM public.events e
-    JOIN public.profiles p ON p.club_id = e.club_id
-    WHERE e.id = p_event_id AND p.id = p_user_id AND p.role = 'coordinator'
+    SELECT 1
+    FROM public.events e
+    JOIN public.profiles p ON p.id = p_user_id
+    LEFT JOIN public.clubs c ON c.id = e.club_id
+    WHERE e.id = p_event_id
+      AND (
+        p.role = 'admin'
+        OR (
+            p.role = 'coordinator'
+            AND (
+                p.club_id = e.club_id
+                OR c.coordinator_id = p_user_id
+                OR EXISTS (
+                    SELECT 1
+                    FROM public.club_memberships cm
+                    WHERE cm.club_id = e.club_id
+                      AND cm.user_id = p_user_id
+                      AND cm.status = 'approved'
+                      AND cm.role = 'sub_coordinator'
+                )
+            )
+        )
+      )
   );
 $$;
 
@@ -56,7 +76,7 @@ DROP POLICY IF EXISTS "Events viewable according to rules" ON public.events;
 CREATE POLICY "Events viewable according to rules" ON public.events FOR SELECT USING (
     check_is_admin(auth.uid())
     OR 
-    (EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.role = 'coordinator' AND p.club_id = public.events.club_id))
+    check_is_coordinator_for_event(public.events.id, auth.uid())
     OR
     (
         status IN ('approved', 'registration_open', 'registration_closed', 'ongoing', 'completed', 'cancelled')

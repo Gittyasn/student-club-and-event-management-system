@@ -1,13 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../services/supabaseClient';
-import { useAuthStore } from '../store/authStore';
+import { useCoordinatorClub } from './useCoordinatorClub';
 
 export const useCoordinatorEvents = () => {
-    const { profile } = useAuthStore();
+    const { data: coordinatorClub } = useCoordinatorClub();
 
     return useQuery({
-        queryKey: ['events', 'coordinator', profile?.club_id],
-        enabled: !!profile?.club_id,
+        queryKey: ['events', 'coordinator', coordinatorClub?.id],
+        enabled: !!coordinatorClub?.id,
         queryFn: async () => {
             const { data, error } = await supabase
                 .from('events')
@@ -16,7 +16,7 @@ export const useCoordinatorEvents = () => {
                     club:clubs(name),
                     registrations:registrations(count)
                 `)
-                .eq('club_id', profile?.club_id)
+                .eq('club_id', coordinatorClub.id)
                 .order('start_time', { ascending: true });
 
             if (error) throw error;

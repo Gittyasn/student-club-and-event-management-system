@@ -52,10 +52,13 @@ CREATE POLICY "Coordinators can update draft/rejected and submit." ON public.eve
   EXISTS (
     SELECT 1 FROM public.profiles
     WHERE id = auth.uid() AND role = 'coordinator' AND club_id = public.events.club_id
-  ) AND status IN ('draft', 'rejected')
+  ) AND approval_status IN ('draft', 'rejected')
 ) WITH CHECK (
-  -- Can keep it draft/rejected, or submit it to pending. They CANNOT force approve.
-  status IN ('draft', 'rejected', 'pending')
+  EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE id = auth.uid() AND role = 'coordinator' AND club_id = public.events.club_id
+  ) AND approval_status IN ('draft', 'pending', 'rejected')
+    AND status IN ('draft', 'pending')
 );
 
 -- 3. Enhance audit_logs (already exists from admin governance, but ensuring we use it correctly)

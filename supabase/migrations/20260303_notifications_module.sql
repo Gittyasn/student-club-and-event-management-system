@@ -30,6 +30,13 @@ CREATE TABLE public.notifications (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
+ALTER TABLE public.notifications
+DROP CONSTRAINT IF EXISTS notifications_type_check;
+
+ALTER TABLE public.notifications
+ADD CONSTRAINT notifications_type_check
+CHECK (type IN ('event', 'membership', 'attendance', 'result', 'certificate', 'chat', 'system', 'announcement', 'alert', 'success', 'info'));
+
 -- 2. Indexes for fast retrieval
 CREATE INDEX idx_user_notification_prefs_userid ON public.user_notification_preferences(user_id);
 CREATE INDEX idx_notifications_user_id ON public.notifications(user_id);
@@ -59,6 +66,10 @@ CREATE POLICY "Users can view their own notifications"
 
 CREATE POLICY "Users can update their own notifications (read status)" 
     ON public.notifications FOR UPDATE 
+    USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete their own notifications"
+    ON public.notifications FOR DELETE
     USING (auth.uid() = user_id);
 
 CREATE POLICY "Admins can insert notifications for anyone" 
@@ -148,10 +159,10 @@ BEGIN
         END IF;
     -- If Status Update -> Notify Student
     ELSIF TG_OP = 'UPDATE' AND NEW.status != OLD.status AND (NEW.status = 'approved' OR NEW.status = 'rejected') THEN
-        IF COALESCE((SELECT membership_enabled FROM public.user_notification_preferences WHERE user_id = NEW.student_id), true) THEN
+        IF COALESCE((SELECT membership_enabled FROM public.user_notification_preferences WHERE user_id = NEW.user_id), true) THEN
             INSERT INTO public.notifications (user_id, type, title, message, related_id, related_type)
             VALUES (
-                NEW.student_id, 
+                NEW.user_id, 
                 CASE WHEN NEW.status = 'approved' THEN 'success' ELSE 'alert' END,
                 'Club Membership ' || INITCAP(NEW.status),
                 'Your request to join ' || club_name || ' has been ' || NEW.status || '.',
@@ -177,10 +188,10 @@ BEGIN
     -- Notify Student on Status Change (Approved from Waitlist/Pending)
     IF TG_OP = 'UPDATE' AND NEW.status != OLD.status AND NEW.status = 'registered' THEN
         SELECT title INTO event_title FROM public.events WHERE id = NEW.event_id;
-        IF COALESCE((SELECT system_enabled FROM public.user_notification_preferences WHERE user_id = NEW.student_id), true) THEN
+        IF COALESCE((SELECT system_enabled FROM public.user_notification_preferences WHERE user_id = NEW.user_id), true) THEN
             INSERT INTO public.notifications (user_id, type, title, message, related_id, related_type)
             VALUES (
-                NEW.student_id, 'success', 'Registration Confirmed',
+                NEW.user_id, 'success', 'Registration Confirmed',
                 'You are successfully registered for ' || event_title || '.',
                 NEW.event_id, 'event'
             );
@@ -211,7 +222,7 @@ BEGIN
     IF p_target_club_id IS NOT NULL THEN
         -- Broadcast to specific club members
         INSERT INTO public.notifications (user_id, type, title, message, related_id, related_type)
-        SELECT student_id, 'announcement', p_title, p_message, p_target_club_id, 'club'
+        SELECT user_id, 'announcement', p_title, p_message, p_target_club_id, 'club'
         FROM public.club_memberships
         WHERE club_id = p_target_club_id AND status = 'approved';
     ELSE

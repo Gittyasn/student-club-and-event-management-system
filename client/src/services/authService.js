@@ -8,7 +8,10 @@ const authService = {
     /**
      * Sign up a new user
      */
-    async register({ email, password, fullName, role, department, year }) {
+    async register({ email, password, fullName, department, year }) {
+        const assignedRole = 'student';
+        const parsedYear = Number.isFinite(parseInt(year, 10)) ? parseInt(year, 10) : null;
+
         const { data: authData, error: authError } = await supabase.auth.signUp({
             email,
             password,
@@ -51,9 +54,9 @@ const authService = {
                         id: user.id,
                         email,
                         full_name: fullName,
-                        role: role || 'student',
+                        role: assignedRole,
                         department,
-                        year: role === 'student' ? parseInt(year) : null,
+                        year: parsedYear,
                         account_status: 'active'
                     },
                 ], { onConflict: 'id' });

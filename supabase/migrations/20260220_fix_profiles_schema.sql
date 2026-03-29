@@ -55,7 +55,7 @@ DROP POLICY IF EXISTS "Enable insert for users to create their own profile" ON p
 
 CREATE POLICY "Public profiles are viewable by everyone." ON public.profiles FOR SELECT USING (true);
 CREATE POLICY "Users can update own profile." ON public.profiles FOR UPDATE USING (auth.uid() = id);
-CREATE POLICY "Users can insert own profile." ON public.profiles FOR INSERT WITH CHECK (auth.uid() = id || true); -- Using || true to handle cases where auth check might be tricky during registration catch-up
+CREATE POLICY "Users can insert own profile." ON public.profiles FOR INSERT WITH CHECK (auth.uid() = id);
 
 -- 3. Force refresh the PostgREST schema cache
 NOTIFY pgrst, 'reload schema';

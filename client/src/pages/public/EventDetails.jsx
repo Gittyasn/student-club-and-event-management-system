@@ -52,7 +52,7 @@ const EventDetails = () => {
     if (isLoading) return (
         <div className="flex flex-col items-center justify-center min-h-[70vh] gap-4">
             <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-            <p className="text-muted-foreground animate-pulse font-medium">Resolving Event Metadata...</p>
+            <p className="text-muted-foreground animate-pulse font-medium">Loading event details...</p>
         </div>
     );
 
@@ -64,7 +64,7 @@ const EventDetails = () => {
             <h2 className="text-2xl font-bold mb-2">Event unavailable</h2>
             <p className="text-muted-foreground max-w-sm mb-8">This event is not public or could not be found.</p>
             <Button asChild variant="outline">
-                <RouterLink to="/events"><ArrowLeft className="mr-2 w-4 h-4" /> Return to Grid</RouterLink>
+                <RouterLink to="/events"><ArrowLeft className="mr-2 w-4 h-4" /> Back to Events</RouterLink>
             </Button>
         </div>
     );
@@ -90,10 +90,10 @@ const EventDetails = () => {
     let isDisabled = false;
 
     if (!isOpen) {
-        buttonText = "Registration Offline";
+        buttonText = "Registration Closed";
         isDisabled = true;
     } else if (isRegistered) {
-        buttonText = isWaitlisted ? "Waitlist Active" : "Access Secured";
+        buttonText = isWaitlisted ? "On Waitlist" : "Registered";
         isDisabled = true;
     } else if (isPastDeadline) {
         buttonText = "Deadline Expired";
@@ -117,7 +117,7 @@ const EventDetails = () => {
                     className="mb-8 hover:bg-muted font-bold text-muted-foreground hover:text-foreground transition-all"
                 >
                     <RouterLink to="/events">
-                        <ArrowLeft className="mr-2 w-4 h-4" /> &larr; Return to Matrix
+                        <ArrowLeft className="mr-2 w-4 h-4" /> Back to Events
                     </RouterLink>
                 </Button>
 
@@ -162,7 +162,7 @@ const EventDetails = () => {
                                             </AvatarFallback>
                                         </Avatar>
                                         <span className="text-white/80 font-medium tracking-wide">
-                                            Hosted by <span className="text-white font-black">{event.club?.name || 'Independent Authority'}</span>
+                                            Hosted by <span className="text-white font-black">{event.club?.name || 'Independent Club'}</span>
                                         </span>
                                     </div>
                                 </div>
@@ -262,7 +262,7 @@ const EventDetails = () => {
                                 <div className={`flex items-center gap-3 p-4 rounded-2xl mb-6 ${isWaitlisted ? 'bg-amber-500/10 text-amber-600 border border-amber-500/20' : 'bg-green-500/10 text-green-600 border border-green-500/20'}`}>
                                     <CheckCircle2 className="w-5 h-5 shrink-0" />
                                     <span className="font-black text-sm uppercase tracking-wide">
-                                        {isWaitlisted ? "Buffer Override: Waitlisted" : "Protocol Clear: Registered"}
+                                        {isWaitlisted ? 'You are on the waitlist' : 'You are registered'}
                                     </span>
                                 </div>
                             )}
@@ -274,7 +274,7 @@ const EventDetails = () => {
                                 disabled={isDisabled || registerMutation.isPending}
                                 variant={isFull && event.allow_waitlist && !isRegistered ? "outline" : "default"}
                             >
-                                {registerMutation.isPending ? 'Syncing...' : buttonText}
+                                {registerMutation.isPending ? 'Submitting...' : buttonText}
                             </Button>
 
                             <div className="mt-6 flex flex-col gap-3">
@@ -283,7 +283,7 @@ const EventDetails = () => {
                                     className="w-full h-12 rounded-xl font-bold text-xs uppercase tracking-wider"
                                     onClick={() => navigate(`/events/${event.id}/results`)}
                                 >
-                                    Access Result Manifest
+                                    View Results
                                 </Button>
                                 {profile?.role === 'student' && registrations?.find(r => r.event_id === event.id)?.attendance_status === 'present' && !hasSubmittedFeedback && (
                                     <Button
@@ -291,7 +291,7 @@ const EventDetails = () => {
                                         className="w-full h-12 rounded-xl font-bold text-xs uppercase tracking-wider"
                                         onClick={() => navigate(`/student/events/${event.id}/feedback`)}
                                     >
-                                        Transmit Feedback Hook
+                                        Share Feedback
                                     </Button>
                                 )}
                             </div>
@@ -339,7 +339,7 @@ const EventDetails = () => {
                                                     <a href={event.meeting_link} target="_blank" rel="noreferrer" className="text-primary hover:underline flex items-center gap-1">
                                                         Join Meeting <ExternalLink className="w-3 h-3" />
                                                     </a>
-                                                ) : 'Portal TBD'
+                                                ) : 'Link will be shared soon'
                                             ) : (event.location || 'TBA')}
                                         </p>
                                     </div>
@@ -354,7 +354,7 @@ const EventDetails = () => {
                                     <div>
                                         <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest mb-1">Registration Deadline</p>
                                         <p className="text-sm font-bold">
-                                            {event.registration_deadline ? new Date(event.registration_deadline).toLocaleString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Infinite Deadline'}
+                                            {event.registration_deadline ? new Date(event.registration_deadline).toLocaleString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'No deadline set'}
                                         </p>
                                     </div>
                                 </div>
@@ -368,7 +368,7 @@ const EventDetails = () => {
                                     <div className="w-full">
                                         <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest mb-1">Capacity</p>
                                         <div className="flex items-center justify-between mb-2">
-                                            <span className="text-sm font-bold">{event.registrations?.[0]?.count || 0} / {event.max_participants || '\u221E'} Secured</span>
+                                            <span className="text-sm font-bold">{event.registrations?.[0]?.count || 0} / {event.max_participants || '\u221E'} registered</span>
                                             <span className="text-[10px] font-black text-muted-foreground">{Math.round(((event.registrations?.[0]?.count || 0) / (event.max_participants || 1)) * 100)}%</span>
                                         </div>
                                         <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">

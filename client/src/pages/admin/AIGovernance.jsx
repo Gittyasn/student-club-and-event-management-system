@@ -19,14 +19,17 @@ import { useGlobalAIGovernance, useToggleAIFeature } from '../../hooks/useGuideE
 import LoadingDots from '../../components/LoadingDots';
 
 const FEATURE_ICONS = {
+    event_recommendations: <AutoAwesome />,
+    club_recommendations: <AutoAwesome />,
     dropout_detection: <Insights />,
     engagement_prediction: <AutoAwesome />,
     sentiment_analysis: <Psychology />,
 };
 
 const AIGovernance = () => {
-    const { data: features, isLoading } = useGlobalAIGovernance();
+    const { data: governanceState, isLoading } = useGlobalAIGovernance();
     const { mutate: toggleFeature } = useToggleAIFeature();
+    const features = governanceState?.features || [];
 
     if (isLoading) {
         return <LoadingDots minHeight="50vh" label="Loading governance controls..." />;
@@ -59,16 +62,22 @@ const AIGovernance = () => {
                 }}
             >
                 <Typography variant="overline" sx={{ color: '#2563eb', fontWeight: 900, letterSpacing: 2.2 }}>
-                    AI CONTROL CENTER
+                    AI SETTINGS
                 </Typography>
                 <Typography variant="h4" fontWeight={900} sx={{ mt: 0.5, display: 'flex', alignItems: 'center', gap: 1.25 }}>
                     <HealthAndSafety color="primary" fontSize="large" />
-                    Assistance Governance
+                    AI Feature Controls
                 </Typography>
                 <Typography color="text.secondary" fontWeight={600}>
-                    Manage which guidance features are active across reporting, analytics, and the campus support assistant.
+                    Manage which recommendation and reporting features are active across dashboards and student guidance.
                 </Typography>
             </Box>
+
+            {governanceState?.isFallback ? (
+                <Alert severity="warning" sx={{ mb: 3, borderRadius: '18px', '& .MuiAlert-message': { fontWeight: 600 } }}>
+                    Live AI governance tables were not available, so the page is showing safe built-in defaults. Apply the AI alignment SQL patch to enable database-backed controls.
+                </Alert>
+            ) : null}
 
             <Alert
                 severity="info"

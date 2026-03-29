@@ -154,12 +154,13 @@ export const useEventWaitlist = (eventId) => {
         queryKey: ['eventWaitlist', eventId],
         enabled: !!eventId,
         queryFn: async () => {
-            const { data } = await supabase
+            const { data, error } = await supabase
                 .from('registrations')
-                .select('*, profiles:user_id(full_name, email)')
+                .select('*, profiles:profiles!registrations_user_id_fkey(full_name, email)')
                 .eq('event_id', eventId)
                 .eq('status', 'waitlisted')
                 .order('registered_at', { ascending: true });
+            if (error) throw error;
             return data || [];
         }
     });

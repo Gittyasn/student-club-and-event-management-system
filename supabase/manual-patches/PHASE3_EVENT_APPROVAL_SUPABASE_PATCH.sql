@@ -31,19 +31,32 @@ RETURNS TRIGGER
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    IF NEW.status = 'draft' THEN
-        NEW.approval_status := 'draft';
+    IF NEW.approval_status = 'rejected' THEN
+        NEW.status := 'draft';
         NEW.submitted_at := NULL;
         NEW.approved_at := NULL;
-    ELSIF NEW.status = 'pending' THEN
+    ELSIF NEW.approval_status = 'pending' OR NEW.status = 'pending' THEN
+        NEW.status := 'pending';
         NEW.approval_status := 'pending';
         NEW.submitted_at := COALESCE(NEW.submitted_at, NOW());
         NEW.approved_at := NULL;
-    ELSIF NEW.status = 'rejected' THEN
-        NEW.approval_status := 'rejected';
+        NEW.rejection_reason := NULL;
+    ELSIF NEW.approval_status = 'draft' THEN
+        NEW.status := 'draft';
+        NEW.approval_status := 'draft';
+        NEW.submitted_at := NULL;
         NEW.approved_at := NULL;
-    ELSIF NEW.status IN ('approved', 'registration_open', 'registration_closed', 'ongoing', 'completed', 'cancelled', 'archived') THEN
+        NEW.rejection_reason := NULL;
+    ELSIF NEW.status IN ('approved', 'registration_open', 'registration_closed', 'ongoing', 'completed', 'cancelled', 'archived')
+        OR NEW.approval_status = 'approved' THEN
         NEW.approval_status := 'approved';
+        NEW.approved_at := COALESCE(NEW.approved_at, NOW());
+        NEW.rejection_reason := NULL;
+    ELSIF NEW.status = 'draft' AND COALESCE(NEW.approval_status, 'draft') = 'draft' THEN
+        NEW.approval_status := 'draft';
+        NEW.submitted_at := NULL;
+        NEW.approved_at := NULL;
+        NEW.rejection_reason := NULL;
     END IF;
 
     RETURN NEW;
@@ -162,13 +175,37 @@ WITH CHECK (
 CREATE POLICY "Coordinators can update draft/rejected and submit" ON public.events
 FOR UPDATE
 USING (
-    check_is_coordinator_for_club_safe(public.events.club_id, auth.uid())
-    AND status IN ('draft', 'rejected', 'pending')
+  check_is_coordinator_for_club_safe(public.events.club_id, auth.uid())
+  AND approval_status IN ('draft', 'rejected')
 )
 WITH CHECK (
-    check_is_coordinator_for_club_safe(public.events.club_id, auth.uid())
-    AND status IN ('draft', 'rejected', 'pending')
+  check_is_coordinator_for_club_safe(public.events.club_id, auth.uid())
+  AND approval_status IN ('draft', 'pending', 'rejected')
+  AND status IN ('draft', 'pending')
 );
+
+CREATE OR REPLACE FUNCTION public.prevent_pending_event_edits()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    IF check_is_admin_safe(auth.uid()) THEN
+        RETURN NEW;
+    END IF;
+
+    IF OLD.approval_status = 'pending' THEN
+        RAISE EXCEPTION 'Pending events are locked while awaiting admin review.';
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_prevent_pending_event_edits ON public.events;
+CREATE TRIGGER trg_prevent_pending_event_edits
+BEFORE UPDATE ON public.events
+FOR EACH ROW
+EXECUTE FUNCTION public.prevent_pending_event_edits();
 
 CREATE POLICY "Coordinators can delete draft events" ON public.events
 FOR DELETE

@@ -297,13 +297,13 @@ const ResultsOverview = () => {
                                         <Typography variant="caption" color="text.secondary">{r.event?.club?.name}</Typography>
                                     </TableCell>
                                     <TableCell>
-                                        {r.rank ? <Chip label={`#${r.rank}`} size="small" color={r.rank <= 3 ? 'warning' : 'default'} sx={{ fontWeight: 800 }} /> : '�'}
+                                        {r.rank ? <Chip label={`#${r.rank}`} size="small" color={r.rank <= 3 ? 'warning' : 'default'} sx={{ fontWeight: 800 }} /> : '-'}
                                     </TableCell>
                                     <TableCell>
-                                        {r.score !== null ? <Typography variant="body2" fontWeight={700}>{r.score}{r.max_score ? `/${r.max_score}` : ''}</Typography> : '�'}
+                                        {r.score !== null ? <Typography variant="body2" fontWeight={700}>{r.score}{r.max_score ? `/${r.max_score}` : ''}</Typography> : '-'}
                                     </TableCell>
                                     <TableCell>
-                                        {r.prize_title ? <Chip label={r.prize_title} size="small" sx={{ fontWeight: 700, fontSize: '0.65rem' }} /> : '�'}
+                                        {r.prize_title ? <Chip label={r.prize_title} size="small" sx={{ fontWeight: 700, fontSize: '0.65rem' }} /> : '-'}
                                     </TableCell>
                                     <TableCell>
                                         <Chip label={r.status} size="small"
@@ -351,3 +351,4 @@ const ResultsOverview = () => {
 };
 
 export default ResultsOverview;
+

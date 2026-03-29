@@ -3,7 +3,7 @@ import React, { useState, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import {
     Box, Typography, Button, Paper, Grid, Card, CardContent,
-    CircularProgress, Avatar, Chip, Stack, Alert,
+    Avatar, Chip, Stack, Alert,
     Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
     // eslint-disable-next-line no-unused-vars
     Tooltip, IconButton, Tabs, Tab, LinearProgress, Divider,
@@ -30,6 +30,7 @@ import {
 } from 'recharts';
 import RolePageHeader from '../../components/RolePageHeader';
 import { toast } from 'sonner';
+import LoadingDots from '../../components/LoadingDots';
 
 const TYPE_CONFIG = {
     participation: { label: 'Participation', color: '#3b82f6', icon: '🎓' },
@@ -114,7 +115,7 @@ const CertificatesManager = () => {
         return (
             <Box sx={{ pb: 6 }}>
                 <RolePageHeader
-                    kicker="Coordinator Suite"
+                    kicker="Coordinator Dashboard"
                     title="Certificates"
                     subtitle="Choose an event before managing certificates."
                 />
@@ -125,12 +126,12 @@ const CertificatesManager = () => {
         );
     }
 
-    if (isLoading) return <Box display="flex" justifyContent="center" p={8}><CircularProgress /></Box>;
+    if (isLoading) return <LoadingDots label="Loading certificates..." minHeight="50vh" />;
 
     return (
         <Box sx={{ pb: 6 }}>
             <RolePageHeader
-                kicker="Coordinator Suite"
+                kicker="Coordinator Dashboard"
                 title="Certificates"
                 subtitle="Generate and manage event certificates."
             />
@@ -195,7 +196,7 @@ const CertificatesManager = () => {
                             </Typography>
                             <Button fullWidth variant="contained" onClick={handleGenerateAll}
                                 disabled={generating || isLocked || !attendees.length}
-                                startIcon={generating ? <CircularProgress size={16} color="inherit" /> : <AutoAwesome />}
+                                startIcon={generating ? <LoadingDots inline size={5} color="currentColor" /> : <AutoAwesome />}
                                 sx={{ bgcolor: '#3b82f6', fontWeight: 800, borderRadius: '12px', py: 1.5, '&:hover': { bgcolor: '#2563eb' } }}>
                                 Generate All Certificates
                             </Button>

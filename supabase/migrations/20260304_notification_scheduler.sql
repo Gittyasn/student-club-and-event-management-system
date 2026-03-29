@@ -21,14 +21,14 @@ BEGIN
         -- Insert a notification for every registered student who has event_reminders_enabled
         INSERT INTO public.notifications (user_id, type, title, message, related_id, related_type)
         SELECT 
-            r.student_id, 
+            r.user_id, 
             'event', 
             'Upcoming Event Reminder',
             'Reminder: "' || upcoming_event.title || '" is starting within 24 hours!',
             upcoming_event.id, 
             'event'
         FROM public.registrations r
-        JOIN public.user_notification_preferences p ON r.student_id = p.user_id
+        JOIN public.user_notification_preferences p ON r.user_id = p.user_id
         WHERE r.event_id = upcoming_event.id 
         AND r.status = 'registered' 
         AND p.event_reminders_enabled = true;

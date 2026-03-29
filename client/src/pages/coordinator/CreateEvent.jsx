@@ -1,84 +1,112 @@
-// eslint-disable-next-line no-unused-vars
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
+    Accordion,
+    AccordionDetails,
+    AccordionSummary,
+    Alert,
     Box,
-    Typography,
-    TextField,
     Button,
+    Chip,
+    FormControl,
+    FormControlLabel,
+    FormHelperText,
+    Grid,
+    InputAdornment,
+    InputLabel,
     MenuItem,
     Paper,
-    Grid,
-    InputLabel,
-    FormControl,
     Select,
-    CircularProgress,
-    FormControlLabel,
-    Switch,
-    InputAdornment,
     Stack,
-    Chip,
-    FormHelperText
+    Switch,
+    TextField,
+    Typography,
 } from '@mui/material';
+import { CloudUpload as UploadIcon, ExpandMore as ExpandMoreIcon } from '@mui/icons-material';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { useEventMutations } from '../../hooks/useEventMutations';
 import { useEventCategories } from '../../hooks/useEvents';
 import { useAuthStore } from '../../store/authStore';
+import { useCoordinatorClub } from '../../hooks/useCoordinatorClub';
 import RolePageHeader from '../../components/RolePageHeader';
-import { CloudUpload as UploadIcon } from '@mui/icons-material';
-import { toast } from 'sonner';
+import LoadingDots from '../../components/LoadingDots';
 
-// Advanced Schema for Event Blueprint
 const eventSchema = z.object({
-    title: z.string().min(3, 'Title connects participants to the vision (min 3 chars).'),
-    short_description: z.string().min(10, 'A quick summary is required (min 10 chars).').max(200),
-    description: z.string().min(10, 'Detailed agenda is required (min 10 chars).'),
-    category_id: z.string().uuid('Please select an authoritative category.'),
+    title: z.string().min(3, 'Enter a title with at least 3 characters.'),
+    short_description: z.string().min(10, 'Add a short summary with at least 10 characters.').max(200, 'Keep the short summary under 200 characters.'),
+    description: z.string().min(10, 'Add a description with at least 10 characters.'),
+    category_id: z.string().uuid('Select an event category.'),
     mode: z.enum(['online', 'offline', 'hybrid']),
-    start_time: z.string().refine((date) => new Date(date) > new Date(), { message: 'When does the event begin?' }),
-    end_time: z.string().refine((date) => new Date(date) > new Date(), { message: 'When does the event conclude?' }),
+    start_time: z.string().refine((value) => new Date(value) > new Date(), { message: 'Choose a future start time.' }),
+    end_time: z.string().refine((value) => new Date(value) > new Date(), { message: 'Choose a future end time.' }),
     location: z.string().optional().or(z.literal('')),
-    meeting_link: z.string().url('Must be a valid URL.').optional().or(z.literal('')),
+    meeting_link: z.string().url('Enter a valid meeting link.').optional().or(z.literal('')),
     registration_deadline: z.string(),
-    max_participants: z.number().min(1, 'At least 1 soul must attend.'),
+    max_participants: z.number().min(1, 'Maximum participants must be at least 1.'),
     allow_waitlist: z.boolean().default(false),
     visibility: z.enum(['public', 'members_only', 'private', 'hidden']),
     requires_membership: z.boolean().default(false),
     certificate_enabled: z.boolean().default(false),
     result_required: z.boolean().default(false),
     rank_based_certificates: z.boolean().default(false),
-    budget_requested: z.number().min(0, 'Budget cannot be negative').optional().default(0),
-    expense_estimate: z.number().min(0, 'Estimate cannot be negative').optional().default(0),
+    budget_requested: z.number().min(0, 'Budget cannot be negative.').optional().default(0),
+    expense_estimate: z.number().min(0, 'Estimated expense cannot be negative.').optional().default(0),
     event_type: z.enum(['normal', 'hackathon']).default('normal'),
-    min_team_size: z.number().min(1).max(10).default(1),
-    max_team_size: z.number().min(1).max(20).default(5)
+    min_team_size: z.number().min(1, 'Minimum team size must be at least 1.').max(10, 'Minimum team size cannot exceed 10.').default(1),
+    max_team_size: z.number().min(1, 'Maximum team size must be at least 1.').max(20, 'Maximum team size cannot exceed 20.').default(5),
 }).refine((data) => new Date(data.start_time) < new Date(data.end_time), {
-    message: "End time must be precisely after start time.",
-    path: ["end_time"],
+    message: 'End time must be after the start time.',
+    path: ['end_time'],
 }).refine((data) => new Date(data.registration_deadline) < new Date(data.start_time), {
-    message: "Deadline must precede event start time to lock numbers.",
-    path: ["registration_deadline"],
+    message: 'Registration must close before the event starts.',
+    path: ['registration_deadline'],
 }).refine((data) => {
     if ((data.mode === 'online' || data.mode === 'hybrid') && !data.meeting_link) return false;
     return true;
 }, {
-    message: "Meeting link is structurally required for virtual participants.",
-    path: ["meeting_link"]
+    message: 'Add a meeting link for online or hybrid events.',
+    path: ['meeting_link'],
 }).refine((data) => {
     if ((data.mode === 'offline' || data.mode === 'hybrid') && !data.location) return false;
     return true;
 }, {
-    message: "Physical location is structurally required for in-person gatherings.",
-    path: ["location"]
+    message: 'Add a location for offline or hybrid events.',
+    path: ['location'],
+}).refine((data) => {
+    if (data.event_type !== 'hackathon') return true;
+    return data.min_team_size <= data.max_team_size;
+}, {
+    message: 'Minimum team size cannot be greater than maximum team size.',
+    path: ['max_team_size'],
 });
+
+const Section = ({ title, description, children, defaultExpanded = false }) => (
+    <Accordion defaultExpanded={defaultExpanded} disableGutters sx={{ borderRadius: '18px !important', border: '1px solid', borderColor: 'divider', boxShadow: 'none', '&:before': { display: 'none' } }}>
+        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+            <Box>
+                <Typography variant="h6" fontWeight={800} sx={{ fontSize: '1rem' }}>
+                    {title}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                    {description}
+                </Typography>
+            </Box>
+        </AccordionSummary>
+        <AccordionDetails sx={{ pt: 0 }}>
+            {children}
+        </AccordionDetails>
+    </Accordion>
+);
 
 const CreateEvent = () => {
     const navigate = useNavigate();
-    const { profile, user } = useAuthStore();
+    const { user } = useAuthStore();
     const { createEvent, uploadPoster } = useEventMutations();
     const { data: categories, isLoading: categoriesLoading } = useEventCategories();
+    const { data: coordinatorClub, isLoading: clubLoading } = useCoordinatorClub();
 
     const [uploading, setUploading] = useState(false);
     const [posterFile, setPosterFile] = useState(null);
@@ -104,7 +132,7 @@ const CreateEvent = () => {
             expense_estimate: 0,
             event_type: 'normal',
             min_team_size: 1,
-            max_team_size: 5
+            max_team_size: 5,
         }
     });
 
@@ -113,27 +141,28 @@ const CreateEvent = () => {
     const isCertEnabled = watch('certificate_enabled');
     const currentEventType = watch('event_type');
 
-    const handleFileChange = (e) => {
-        if (e.target.files && e.target.files[0]) {
-            setPosterFile(e.target.files[0]);
+    const handleFileChange = (event) => {
+        if (event.target.files?.[0]) {
+            setPosterFile(event.target.files[0]);
         }
     };
 
     const onSubmit = async (data, isDraft = false) => {
-        if (!profile?.club_id || !user?.id) {
-            toast.error("Security Block: Missing authoritative credentials.");
+        if (!coordinatorClub?.id || !user?.id) {
+            toast.error('Missing club or user details. Please sign in again.');
             return;
         }
 
         try {
             let posterUrl = null;
+
             if (posterFile) {
                 setUploading(true);
                 posterUrl = await uploadPoster(posterFile);
                 setUploading(false);
             }
 
-            const newEvent = {
+            createEvent.mutate({
                 title: data.title,
                 short_description: data.short_description,
                 description: data.description,
@@ -154,419 +183,406 @@ const CreateEvent = () => {
                 budget_requested: data.budget_requested,
                 expense_estimate: data.expense_estimate,
                 event_type: data.event_type,
+                min_team_size: data.event_type === 'hackathon' ? data.min_team_size : 1,
+                max_team_size: data.event_type === 'hackathon' ? data.max_team_size : 1,
                 poster_url: posterUrl || undefined,
                 approval_status: isDraft ? 'draft' : 'pending',
                 status: isDraft ? 'draft' : 'pending',
                 submitted_at: isDraft ? null : new Date().toISOString(),
-                club_id: profile.club_id,
-                created_by: user.id
-            };
-
-            createEvent.mutate(newEvent, {
+                club_id: coordinatorClub.id,
+                created_by: user.id,
+            }, {
                 onSuccess: () => navigate('/coordinator/events')
             });
-
         } catch (error) {
             console.error(error);
             setUploading(false);
-            toast.error(error.message || "Execution exception during creation");
+            toast.error(error.message || 'Failed to create event.');
         }
     };
 
-    if (!profile?.club_id) {
-        return <Typography color="error">Critical Authorization Failure: Identity unlinked to organization.</Typography>;
+    if (clubLoading) {
+        return <LoadingDots label="Loading club..." minHeight="40vh" />;
+    }
+
+    if (!coordinatorClub?.id) {
+        return <Typography color="error">Your coordinator account is not linked to a club.</Typography>;
     }
 
     return (
-        <Box maxWidth="lg" mx="auto" sx={{ pb: 6 }}>
+        <Box maxWidth="lg" mx="auto" sx={{ pb: 14 }}>
             <RolePageHeader
-                kicker="Coordinator Suite"
+                kicker="Coordinator"
                 title="Create Event"
-                subtitle="Draft a new event and submit for approval."
+                subtitle="Prepare the event details, save a draft, or send it for approval."
             />
-            <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+
+            <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 2, flexWrap: 'wrap' }}>
                 <Box>
                     <Typography variant="h4" fontWeight={900} sx={{ letterSpacing: -1 }}>
-                        Create Event Manifest
+                        New Event
                     </Typography>
-                    <Typography color="text.secondary" fontWeight={500}>
-                        Construct the foundational blueprint for your organization&apos;s upcoming engagement.
+                    <Typography color="text.secondary">
+                        Use short, clear language so students know what the event is and how to join.
                     </Typography>
                 </Box>
-                <Chip
-                    label="Status: New Draft"
-                    variant="outlined"
-                    sx={{ fontWeight: 700, px: 1 }}
-                />
+                <Chip label="Draft not submitted" variant="outlined" sx={{ fontWeight: 700 }} />
             </Box>
 
-            <Grid container spacing={4}>
-                <Grid item xs={12} lg={8}>
-                    <Paper sx={{ p: 4, borderRadius: '16px', border: '1px solid', borderColor: 'divider' }}>
-                        <form id="event-form" onSubmit={handleSubmit((data) => onSubmit(data, false))}>
+            <Alert severity="info" sx={{ mb: 3, borderRadius: 3 }}>
+                Keep descriptions short and practical. Detailed instructions can go in the full event description.
+            </Alert>
 
-                            <Typography variant="h6" fontWeight={800} gutterBottom sx={{ fontSize: '1rem', mb: 3 }}>
-                                Primary Information
-                            </Typography>
-                            <Grid container spacing={3}>
-                                <Grid item xs={12}>
-                                    <TextField
-                                        fullWidth
-                                        variant="filled"
-                                        label="Event Title"
-                                        placeholder="Enter an authoritative title..."
-                                        {...register('title')}
-                                        error={!!errors.title}
-                                        helperText={errors.title?.message}
-                                        InputProps={{ sx: { borderRadius: '8px', fontWeight: 600 } }}
-                                    />
-                                </Grid>
-                                <Grid item xs={12}>
-                                    <TextField
-                                        fullWidth
-                                        variant="filled"
-                                        label="Short Description"
-                                        placeholder="A concise, powerful summary for discovery cards..."
-                                        {...register('short_description')}
-                                        error={!!errors.short_description}
-                                        helperText={errors.short_description?.message}
-                                        InputProps={{ sx: { borderRadius: '8px' } }}
-                                    />
-                                </Grid>
-                                <Grid item xs={12}>
-                                    <TextField
-                                        fullWidth
-                                        variant="filled"
-                                        multiline
-                                        rows={5}
-                                        label="Detailed Agenda"
-                                        placeholder="Elaborate on the structural intent, speakers, and expected takeaways."
-                                        {...register('description')}
-                                        error={!!errors.description}
-                                        helperText={errors.description?.message}
-                                        InputProps={{ sx: { borderRadius: '8px' } }}
-                                    />
-                                </Grid>
-
-                                <Grid item xs={12} sm={6}>
-                                    <FormControl fullWidth variant="filled" error={!!errors.category_id} disabled={categoriesLoading}>
-                                        <InputLabel>Category Alignment</InputLabel>
-                                        <Select
-                                            {...register('category_id')}
-                                            sx={{ borderRadius: '8px' }}
-                                            defaultValue=""
-                                        >
-                                            <MenuItem value="" disabled>Select Core Category</MenuItem>
-                                            {categories?.map((cat) => (
-                                                <MenuItem key={cat.id} value={cat.id}>{cat.name}</MenuItem>
-                                            ))}
-                                        </Select>
-                                        {errors.category_id && <FormHelperText>{errors.category_id.message}</FormHelperText>}
-                                    </FormControl>
-                                </Grid>
-
-                                <Grid item xs={12} sm={6}>
-                                    <FormControl fullWidth variant="filled">
-                                        <InputLabel>Execution Mode</InputLabel>
-                                        <Select
-                                            defaultValue="offline"
-                                            {...register('mode')}
-                                            sx={{ borderRadius: '8px' }}
-                                        >
-                                            <MenuItem value="offline">Offline (In-person Campus)</MenuItem>
-                                            <MenuItem value="online">Online (Virtual Streaming)</MenuItem>
-                                            <MenuItem value="hybrid">Hybrid (Omnichannel)</MenuItem>
-                                        </Select>
-                                    </FormControl>
-                                </Grid>
-
-                                <Grid item xs={12} sm={6}>
-                                    <FormControl fullWidth variant="filled">
-                                        <InputLabel>Event Type</InputLabel>
-                                        <Select
-                                            defaultValue="normal"
-                                            {...register('event_type')}
-                                            sx={{ borderRadius: '8px' }}
-                                        >
-                                            <MenuItem value="normal">Normal Event</MenuItem>
-                                            <MenuItem value="hackathon">Hackathon (Team Based)</MenuItem>
-                                        </Select>
-                                    </FormControl>
-                                </Grid>
-                                {currentEventType === 'hackathon' && (
-                                    <>
-                                        <Grid item xs={12} sm={6}>
-                                            <TextField
-                                                fullWidth
-                                                type="number"
-                                                variant="filled"
-                                                label="Min Team Size"
-                                                {...register('min_team_size', { valueAsNumber: true })}
-                                                error={!!errors.min_team_size}
-                                                helperText={errors.min_team_size?.message}
-                                            />
-                                        </Grid>
-                                        <Grid item xs={12} sm={6}>
-                                            <TextField
-                                                fullWidth
-                                                type="number"
-                                                variant="filled"
-                                                label="Max Team Size"
-                                                {...register('max_team_size', { valueAsNumber: true })}
-                                                error={!!errors.max_team_size}
-                                                helperText={errors.max_team_size?.message}
-                                            />
-                                        </Grid>
-                                    </>
-                                )}
+            <form id="event-form" onSubmit={handleSubmit((data) => onSubmit(data, false))}>
+                <Stack spacing={2.5}>
+                    <Section title="Basics" description="Main event details students will see first." defaultExpanded>
+                        <Grid container spacing={3}>
+                            <Grid item xs={12}>
+                                <TextField
+                                    fullWidth
+                                    variant="filled"
+                                    label="Event title"
+                                    placeholder="Example: Robotics Workshop"
+                                    {...register('title')}
+                                    error={!!errors.title}
+                                    helperText={errors.title?.message}
+                                    InputProps={{ sx: { borderRadius: 2 } }}
+                                />
                             </Grid>
+                            <Grid item xs={12}>
+                                <TextField
+                                    fullWidth
+                                    variant="filled"
+                                    label="Short summary"
+                                    placeholder="One short sentence for cards and search results."
+                                    {...register('short_description')}
+                                    error={!!errors.short_description}
+                                    helperText={errors.short_description?.message}
+                                    InputProps={{ sx: { borderRadius: 2 } }}
+                                />
+                            </Grid>
+                            <Grid item xs={12}>
+                                <TextField
+                                    fullWidth
+                                    variant="filled"
+                                    multiline
+                                    rows={5}
+                                    label="Full description"
+                                    placeholder="Share the agenda, speakers, requirements, and what students will take away."
+                                    {...register('description')}
+                                    error={!!errors.description}
+                                    helperText={errors.description?.message}
+                                    InputProps={{ sx: { borderRadius: 2 } }}
+                                />
+                            </Grid>
+                            <Grid item xs={12} md={6}>
+                                <FormControl fullWidth variant="filled" error={!!errors.category_id} disabled={categoriesLoading}>
+                                    <InputLabel>Category</InputLabel>
+                                    <Select {...register('category_id')} defaultValue="" sx={{ borderRadius: 2 }}>
+                                        <MenuItem value="" disabled>Select a category</MenuItem>
+                                        {categories?.map((category) => (
+                                            <MenuItem key={category.id} value={category.id}>{category.name}</MenuItem>
+                                        ))}
+                                    </Select>
+                                    {errors.category_id ? <FormHelperText>{errors.category_id.message}</FormHelperText> : null}
+                                </FormControl>
+                            </Grid>
+                            <Grid item xs={12} md={3}>
+                                <FormControl fullWidth variant="filled">
+                                    <InputLabel>Mode</InputLabel>
+                                    <Select defaultValue="offline" {...register('mode')} sx={{ borderRadius: 2 }}>
+                                        <MenuItem value="offline">Offline</MenuItem>
+                                        <MenuItem value="online">Online</MenuItem>
+                                        <MenuItem value="hybrid">Hybrid</MenuItem>
+                                    </Select>
+                                </FormControl>
+                            </Grid>
+                            <Grid item xs={12} md={3}>
+                                <FormControl fullWidth variant="filled">
+                                    <InputLabel>Event type</InputLabel>
+                                    <Select defaultValue="normal" {...register('event_type')} sx={{ borderRadius: 2 }}>
+                                        <MenuItem value="normal">Standard event</MenuItem>
+                                        <MenuItem value="hackathon">Hackathon</MenuItem>
+                                    </Select>
+                                </FormControl>
+                            </Grid>
+                            <Grid item xs={12}>
+                                <Paper
+                                    component="label"
+                                    variant="outlined"
+                                    sx={{
+                                        p: 2.5,
+                                        display: 'block',
+                                        borderRadius: 3,
+                                        border: '1px dashed',
+                                        borderColor: 'divider',
+                                        cursor: 'pointer',
+                                        bgcolor: 'action.hover',
+                                        '&:hover': { borderColor: 'primary.main', bgcolor: 'primary.main' + '08' },
+                                    }}
+                                >
+                                    <input type="file" hidden accept="image/*" onChange={handleFileChange} />
+                                    <Stack direction="row" spacing={2} alignItems="center">
+                                        <Box sx={{ width: 44, height: 44, borderRadius: 2, bgcolor: 'background.paper', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            <UploadIcon color="primary" />
+                                        </Box>
+                                        <Box>
+                                            <Typography fontWeight={700}>
+                                                {posterFile ? posterFile.name : 'Upload event poster'}
+                                            </Typography>
+                                            <Typography variant="body2" color="text.secondary">
+                                                Optional. Use a clear image for event listings and approval review.
+                                            </Typography>
+                                        </Box>
+                                    </Stack>
+                                </Paper>
+                            </Grid>
+                        </Grid>
+                    </Section>
 
-                            <Box sx={{ mt: 5, mb: 3 }}><Typography variant="h6" fontWeight={800} sx={{ fontSize: '1rem' }}>Timeline Architecture</Typography></Box>
-
-                            <Grid container spacing={3}>
-                                <Grid item xs={12} sm={6}>
+                    <Section title="Schedule" description="Set the event timing and how students will attend.">
+                        <Grid container spacing={3}>
+                            <Grid item xs={12} md={4}>
+                                <TextField
+                                    fullWidth
+                                    type="datetime-local"
+                                    variant="filled"
+                                    label="Start time"
+                                    InputLabelProps={{ shrink: true }}
+                                    {...register('start_time')}
+                                    error={!!errors.start_time}
+                                    helperText={errors.start_time?.message}
+                                    InputProps={{ sx: { borderRadius: 2 } }}
+                                />
+                            </Grid>
+                            <Grid item xs={12} md={4}>
+                                <TextField
+                                    fullWidth
+                                    type="datetime-local"
+                                    variant="filled"
+                                    label="End time"
+                                    InputLabelProps={{ shrink: true }}
+                                    {...register('end_time')}
+                                    error={!!errors.end_time}
+                                    helperText={errors.end_time?.message}
+                                    InputProps={{ sx: { borderRadius: 2 } }}
+                                />
+                            </Grid>
+                            <Grid item xs={12} md={4}>
+                                <TextField
+                                    fullWidth
+                                    type="datetime-local"
+                                    variant="filled"
+                                    label="Registration deadline"
+                                    InputLabelProps={{ shrink: true }}
+                                    {...register('registration_deadline')}
+                                    error={!!errors.registration_deadline}
+                                    helperText={errors.registration_deadline?.message}
+                                    InputProps={{ sx: { borderRadius: 2 } }}
+                                />
+                            </Grid>
+                            {(currentMode === 'offline' || currentMode === 'hybrid') ? (
+                                <Grid item xs={12} md={6}>
                                     <TextField
                                         fullWidth
-                                        type="datetime-local"
                                         variant="filled"
-                                        label="Commencement (Start Time)"
-                                        InputLabelProps={{ shrink: true }}
-                                        {...register('start_time')}
-                                        error={!!errors.start_time}
-                                        helperText={errors.start_time?.message}
-                                        InputProps={{ sx: { borderRadius: '8px' } }}
+                                        label="Location"
+                                        placeholder="Example: Main auditorium"
+                                        {...register('location')}
+                                        error={!!errors.location}
+                                        helperText={errors.location?.message}
+                                        InputProps={{ sx: { borderRadius: 2 } }}
                                     />
                                 </Grid>
-                                <Grid item xs={12} sm={6}>
+                            ) : null}
+                            {(currentMode === 'online' || currentMode === 'hybrid') ? (
+                                <Grid item xs={12} md={currentMode === 'hybrid' ? 6 : 12}>
                                     <TextField
                                         fullWidth
-                                        type="datetime-local"
                                         variant="filled"
-                                        label="Conclusion (End Time)"
-                                        InputLabelProps={{ shrink: true }}
-                                        {...register('end_time')}
-                                        error={!!errors.end_time}
-                                        helperText={errors.end_time?.message}
-                                        InputProps={{ sx: { borderRadius: '8px' } }}
+                                        label="Meeting link"
+                                        placeholder="https://..."
+                                        {...register('meeting_link')}
+                                        error={!!errors.meeting_link}
+                                        helperText={errors.meeting_link?.message}
+                                        InputProps={{ sx: { borderRadius: 2 } }}
                                     />
                                 </Grid>
-                                <Grid item xs={12} sm={6}>
-                                    <TextField
-                                        fullWidth
-                                        type="datetime-local"
-                                        variant="filled"
-                                        label="Registration Gate Closure"
-                                        InputLabelProps={{ shrink: true }}
-                                        {...register('registration_deadline')}
-                                        error={!!errors.registration_deadline}
-                                        helperText={errors.registration_deadline?.message}
-                                        InputProps={{ sx: { borderRadius: '8px' } }}
-                                    />
-                                </Grid>
-                            </Grid>
+                            ) : null}
+                        </Grid>
+                    </Section>
 
-                            <Box sx={{ mt: 5, mb: 3 }}><Typography variant="h6" fontWeight={800} sx={{ fontSize: '1rem' }}>Logistical Execution</Typography></Box>
-
-                            <Grid container spacing={3}>
-                                {(currentMode === 'offline' || currentMode === 'hybrid') && (
-                                    <Grid item xs={12} sm={6}>
-                                        <TextField
-                                            fullWidth
-                                            variant="filled"
-                                            label="Physical Location"
-                                            placeholder="Auditorium / Lab designation"
-                                            {...register('location')}
-                                            error={!!errors.location}
-                                            helperText={errors.location?.message}
-                                            InputProps={{ sx: { borderRadius: '8px' } }}
-                                        />
-                                    </Grid>
-                                )}
-                                {(currentMode === 'online' || currentMode === 'hybrid') && (
-                                    <Grid item xs={12} sm={currentMode === 'hybrid' ? 6 : 12}>
-                                        <TextField
-                                            fullWidth
-                                            variant="filled"
-                                            label="Virtual Stream URL"
-                                            placeholder="https://zoom.us/..."
-                                            {...register('meeting_link')}
-                                            error={!!errors.meeting_link}
-                                            helperText={errors.meeting_link?.message}
-                                            InputProps={{ sx: { borderRadius: '8px' } }}
-                                        />
-                                    </Grid>
-                                )}
-                            </Grid>
-
-                            <Box sx={{ mt: 5, mb: 3 }}><Typography variant="h6" fontWeight={800} sx={{ fontSize: '1rem' }}>Visibility & Governance</Typography></Box>
-
-                            <Grid container spacing={3}>
-                                <Grid item xs={12} sm={6}>
-                                    <FormControl fullWidth variant="filled" error={!!errors.visibility}>
-                                        <InputLabel>Visibility Matrix</InputLabel>
-                                        <Select
-                                            defaultValue="public"
-                                            {...register('visibility')}
-                                            sx={{ borderRadius: '8px' }}
-                                        >
-                                            <MenuItem value="public">Global Public (Open Access)</MenuItem>
-                                            <MenuItem value="members_only">Members Shielded</MenuItem>
-                                            <MenuItem value="private">Private (Invite Driven)</MenuItem>
-                                            <MenuItem value="hidden">Hidden (Admin Shadowing)</MenuItem>
-                                        </Select>
-                                    </FormControl>
-                                </Grid>
-                                <Grid item xs={12} sm={6}>
-                                    <FormControlLabel
-                                        control={<Switch {...register('requires_membership')} color="primary" />}
-                                        label={<Typography variant="body2" fontWeight={600}>Enforce Club Membership Requirement</Typography>}
-                                        sx={{ mt: 1 }}
-                                    />
-                                </Grid>
-                            </Grid>
-
-                        </form>
-                    </Paper>
-                </Grid>
-
-                <Grid item xs={12} lg={4}>
-                    <Stack spacing={3}>
-                        <Paper sx={{ p: 3, borderRadius: '16px', border: '1px solid', borderColor: 'divider' }}>
-                            <Typography variant="h6" fontWeight={800} gutterBottom sx={{ fontSize: '1rem' }}>
-                                Capacity & Waitlist
-                            </Typography>
-                            <Stack spacing={2} sx={{ mt: 1 }}>
+                    <Section title="Registration" description="Control capacity, access, and budget details.">
+                        <Grid container spacing={3}>
+                            <Grid item xs={12} md={4}>
                                 <TextField
                                     fullWidth
                                     type="number"
-                                    label="Maximum Threshold"
+                                    variant="filled"
+                                    label="Maximum participants"
                                     {...register('max_participants', { valueAsNumber: true })}
                                     error={!!errors.max_participants}
                                     helperText={errors.max_participants?.message}
+                                    InputProps={{ sx: { borderRadius: 2 } }}
                                 />
-                                <FormControlLabel
-                                    control={<Switch {...register('allow_waitlist')} color="primary" />}
-                                    label={<Typography variant="body2" fontWeight={600}>Permit Waitlist Queueing</Typography>}
-                                />
-                            </Stack>
-                        </Paper>
-
-                        <Paper sx={{ p: 3, borderRadius: '16px', border: '1px solid', borderColor: 'divider' }}>
-                            <Typography variant="h6" fontWeight={800} gutterBottom sx={{ fontSize: '1rem' }}>
-                                Results & Certification
-                            </Typography>
-                            <Stack spacing={1} sx={{ mt: 1 }}>
-                                <FormControlLabel
-                                    control={<Switch {...register('result_required')} color="primary" />}
-                                    label={<Typography variant="body2" fontWeight={600}>Enforce Result Upload (Competitions)</Typography>}
-                                />
-                                <FormControlLabel
-                                    control={<Switch {...register('certificate_enabled')} color="primary" />}
-                                    label={<Typography variant="body2" fontWeight={600}>Enable Issue of E-Certificates</Typography>}
-                                />
-                                {isCertEnabled && (
+                            </Grid>
+                            <Grid item xs={12} md={4}>
+                                <FormControl fullWidth variant="filled" error={!!errors.visibility}>
+                                    <InputLabel>Visibility</InputLabel>
+                                    <Select defaultValue="public" {...register('visibility')} sx={{ borderRadius: 2 }}>
+                                        <MenuItem value="public">Public</MenuItem>
+                                        <MenuItem value="members_only">Members only</MenuItem>
+                                        <MenuItem value="private">Private</MenuItem>
+                                        <MenuItem value="hidden">Hidden</MenuItem>
+                                    </Select>
+                                </FormControl>
+                            </Grid>
+                            <Grid item xs={12} md={4}>
+                                <Stack spacing={1.25} sx={{ pt: 1 }}>
                                     <FormControlLabel
-                                        control={<Switch {...register('rank_based_certificates')} color="primary" />}
-                                        label={<Typography variant="body2" fontWeight={600} color="primary">Strict Rank-Based Validation</Typography>}
+                                        control={<Switch {...register('allow_waitlist')} color="primary" />}
+                                        label={<Typography fontWeight={600}>Allow waitlist</Typography>}
                                     />
-                                )}
-                            </Stack>
-                        </Paper>
-
-                        <Paper sx={{ p: 3, borderRadius: '16px', border: '1px solid', borderColor: 'divider' }}>
-                            <Typography variant="h6" fontWeight={800} gutterBottom sx={{ fontSize: '1rem' }}>
-                                Financial Allocation
-                            </Typography>
-                            <Stack spacing={2} sx={{ mt: 1 }}>
+                                    <FormControlLabel
+                                        control={<Switch {...register('requires_membership')} color="primary" />}
+                                        label={<Typography fontWeight={600}>Require club membership</Typography>}
+                                    />
+                                </Stack>
+                            </Grid>
+                            <Grid item xs={12} md={6}>
                                 <TextField
                                     fullWidth
                                     type="number"
-                                    label="Budget Requested"
+                                    variant="filled"
+                                    label="Budget requested"
                                     {...register('budget_requested', { valueAsNumber: true })}
                                     error={!!errors.budget_requested}
-                                    helperText={errors.budget_requested?.message}
+                                    helperText={errors.budget_requested?.message || 'Optional'}
                                     InputProps={{
-                                        startAdornment: <InputAdornment position="start">₹</InputAdornment>,
+                                        startAdornment: <InputAdornment position="start">Rs.</InputAdornment>,
+                                        sx: { borderRadius: 2 },
                                     }}
                                 />
+                            </Grid>
+                            <Grid item xs={12} md={6}>
                                 <TextField
                                     fullWidth
                                     type="number"
-                                    label="Expense Estimated"
+                                    variant="filled"
+                                    label="Estimated expense"
                                     {...register('expense_estimate', { valueAsNumber: true })}
                                     error={!!errors.expense_estimate}
-                                    helperText={errors.expense_estimate?.message}
+                                    helperText={errors.expense_estimate?.message || 'Optional'}
                                     InputProps={{
-                                        startAdornment: <InputAdornment position="start">₹</InputAdornment>,
+                                        startAdornment: <InputAdornment position="start">Rs.</InputAdornment>,
+                                        sx: { borderRadius: 2 },
                                     }}
                                 />
-                            </Stack>
-                        </Paper>
+                            </Grid>
+                        </Grid>
+                    </Section>
 
-                        <Paper sx={{ p: 3, borderRadius: '16px', border: '1px solid', borderColor: 'divider' }}>
-                            <Typography variant="h6" fontWeight={800} gutterBottom sx={{ fontSize: '1rem' }}>
-                                Event Poster Payload
-                            </Typography>
-                            <Box
-                                sx={{
-                                    mt: 1, p: 3, border: '2px dashed', borderColor: 'divider', borderRadius: '12px',
-                                    textAlign: 'center', cursor: 'pointer', bgcolor: 'action.hover',
-                                    '&:hover': { borderColor: 'primary.main', bgcolor: 'primary.main' + '08' }
-                                }}
-                                component="label"
-                            >
-                                <input type="file" hidden accept="image/*" onChange={handleFileChange} />
-                                {posterFile ? (
-                                    <Typography variant="body2" fontWeight={700} color="primary">
-                                        {posterFile.name}
-                                    </Typography>
-                                ) : (
-                                    <>
-                                        <UploadIcon sx={{ fontSize: 32, color: 'text.disabled', mb: 1 }} />
-                                        <Typography variant="caption" display="block" color="text.secondary">
-                                            Inject high-definition graphical asset
-                                        </Typography>
-                                    </>
-                                )}
-                            </Box>
-                        </Paper>
+                    <Section title="Certificates and Results" description="Turn on results and certificates only when the event needs them.">
+                        <Stack spacing={1.5}>
+                            <FormControlLabel
+                                control={<Switch {...register('result_required')} color="primary" />}
+                                label={<Typography fontWeight={600}>Publish results after the event</Typography>}
+                            />
+                            <FormControlLabel
+                                control={<Switch {...register('certificate_enabled')} color="primary" />}
+                                label={<Typography fontWeight={600}>Issue certificates</Typography>}
+                            />
+                            {isCertEnabled ? (
+                                <FormControlLabel
+                                    control={<Switch {...register('rank_based_certificates')} color="primary" />}
+                                    label={<Typography fontWeight={600}>Limit certificates by rank</Typography>}
+                                />
+                            ) : null}
+                        </Stack>
+                    </Section>
 
-                        <Paper sx={{ p: 3, borderRadius: '16px', bgcolor: 'primary.main', color: 'white' }}>
-                            <Typography variant="h6" fontWeight={800} gutterBottom>
-                                Execution Directives
-                            </Typography>
-                            <Typography variant="body2" sx={{ mb: 3, opacity: 0.9 }}>
-                                Direct publication is shielded by strict Admin approval validation sequences.
-                            </Typography>
-                            <Stack spacing={1.5}>
-                                <Button
-                                    form="event-form"
-                                    type="submit"
-                                    variant="contained"
-                                    fullWidth
-                                    sx={{
-                                        bgcolor: 'white', color: 'primary.main', fontWeight: 800,
-                                        '&:hover': { bgcolor: 'rgba(255,255,255,0.9)' }
-                                    }}
-                                    disabled={isSubmitting || uploading}
-                                >
-                                    {isSubmitting || uploading ? <CircularProgress size={24} /> : 'Initiate Approval Protocol'}
-                                </Button>
-                                <Button
-                                    variant="outlined"
-                                    fullWidth
-                                    onClick={handleSubmit((data) => onSubmit(data, true))}
-                                    sx={{ color: 'white', borderColor: 'rgba(255,255,255,0.3)', fontWeight: 700 }}
-                                    disabled={isSubmitting || uploading}
-                                >
-                                    Preserve as Draft
-                                </Button>
-                            </Stack>
-                        </Paper>
-                    </Stack>
-                </Grid>
-            </Grid>
-        </Box >
+                    <Section title="Team Settings" description="Use these settings only for team-based hackathons.">
+                        {currentEventType === 'hackathon' ? (
+                            <Grid container spacing={3}>
+                                <Grid item xs={12} md={6}>
+                                    <TextField
+                                        fullWidth
+                                        type="number"
+                                        variant="filled"
+                                        label="Minimum team size"
+                                        {...register('min_team_size', { valueAsNumber: true })}
+                                        error={!!errors.min_team_size}
+                                        helperText={errors.min_team_size?.message}
+                                        InputProps={{ sx: { borderRadius: 2 } }}
+                                    />
+                                </Grid>
+                                <Grid item xs={12} md={6}>
+                                    <TextField
+                                        fullWidth
+                                        type="number"
+                                        variant="filled"
+                                        label="Maximum team size"
+                                        {...register('max_team_size', { valueAsNumber: true })}
+                                        error={!!errors.max_team_size}
+                                        helperText={errors.max_team_size?.message}
+                                        InputProps={{ sx: { borderRadius: 2 } }}
+                                    />
+                                </Grid>
+                            </Grid>
+                        ) : (
+                            <Alert severity="info" sx={{ borderRadius: 3 }}>
+                                Team settings are only needed when the event type is set to hackathon.
+                            </Alert>
+                        )}
+                    </Section>
+                </Stack>
+            </form>
+
+            <Paper
+                elevation={4}
+                sx={{
+                    position: 'sticky',
+                    bottom: 16,
+                    mt: 3,
+                    p: 2,
+                    borderRadius: 3,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: 2,
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    zIndex: 10,
+                }}
+            >
+                <Box>
+                    <Typography fontWeight={800}>Ready to continue?</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                        Save a draft if you are still collecting details, or submit when the event is ready for review.
+                    </Typography>
+                </Box>
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
+                    <Button
+                        variant="outlined"
+                        onClick={handleSubmit((data) => onSubmit(data, true))}
+                        disabled={isSubmitting || uploading}
+                        sx={{ fontWeight: 700, minWidth: 150 }}
+                    >
+                        Save Draft
+                    </Button>
+                    <Button
+                        form="event-form"
+                        type="submit"
+                        variant="contained"
+                        disabled={isSubmitting || uploading}
+                        sx={{ fontWeight: 800, minWidth: 190 }}
+                    >
+                        {isSubmitting || uploading ? <LoadingDots inline size={5} color="currentColor" /> : 'Submit for Approval'}
+                    </Button>
+                </Stack>
+            </Paper>
+        </Box>
     );
 };
 

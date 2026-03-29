@@ -5,7 +5,7 @@ import {
     Button, Chip, TextField, IconButton, InputAdornment,
     FormControl, InputLabel, Select, MenuItem, Stack,
     // eslint-disable-next-line no-unused-vars
-    CircularProgress, Paper, Divider, Badge, Tooltip
+    Paper, Divider, Badge, Tooltip
 } from '@mui/material';
 import {
     Search as SearchIcon,
@@ -32,6 +32,7 @@ import { useEvents, useEventCategories } from '../../hooks/useEvents';
 import { useClubs } from '../../hooks/useClubs';
 import { useRegisterEvent } from '../../hooks/useMyRegistrations';
 import RolePageHeader from '../../components/RolePageHeader';
+import LoadingDots from '../../components/LoadingDots';
 
 const BrowseEvents = () => {
     const navigate = useNavigate();
@@ -67,7 +68,7 @@ const BrowseEvents = () => {
             return matchesSearch && matchesClub && matchesMode && matchesCategory && isActive;
         });
 
-        // Sorting Matrix
+        // Client-side sorting
         result.sort((a, b) => {
             if (sortBy === 'date') return new Date(a.start_time) - new Date(b.start_time);
             if (sortBy === 'popularity') return (b.registrationsCount || 0) - (a.registrationsCount || 0);
@@ -87,11 +88,7 @@ const BrowseEvents = () => {
         registerMutation.mutate(event.id);
     };
 
-    if (eventsLoading) return (
-        <Box display="flex" justifyContent="center" alignItems="center" height="60vh">
-            <CircularProgress size={60} thickness={4} />
-        </Box>
-    );
+    if (eventsLoading) return <LoadingDots label="Loading events..." minHeight="60vh" />;
 
     return (
         <Box sx={{ pb: 8 }}>
@@ -109,7 +106,7 @@ const BrowseEvents = () => {
                     Discover Experiences
                 </Typography>
                 <Typography color="text.secondary" variant="body1" fontWeight="500">
-                    Register for active technical and cultural deployments.
+                    Register for active technical, cultural, and campus events.
                 </Typography>
             </Box>
 
@@ -120,7 +117,7 @@ const BrowseEvents = () => {
                 sx={{ mb: 4, p: 3, borderRadius: 4, bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider' }}
             >
                 <TextField
-                    placeholder="Search by signature or club..."
+                    placeholder="Search by event or club..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     InputProps={{
@@ -136,7 +133,7 @@ const BrowseEvents = () => {
                 <FormControl sx={{ minWidth: 160 }}>
                     <InputLabel>Host Club</InputLabel>
                     <Select value={clubFilter} onChange={(e) => setClubFilter(e.target.value)} label="Host Club">
-                        <MenuItem value="all">Global Matrix</MenuItem>
+                        <MenuItem value="all">All Clubs</MenuItem>
                         {clubs?.map(club => (
                             <MenuItem key={club.id} value={club.id}>{club.name}</MenuItem>
                         ))}
@@ -147,16 +144,16 @@ const BrowseEvents = () => {
                     <InputLabel>Mode</InputLabel>
                     <Select value={modeFilter} onChange={(e) => setModeFilter(e.target.value)} label="Mode">
                         <MenuItem value="all">All Modes</MenuItem>
-                        <MenuItem value="online">Virtual Net</MenuItem>
-                        <MenuItem value="offline">Physical Hub</MenuItem>
+                        <MenuItem value="online">Online</MenuItem>
+                        <MenuItem value="offline">Offline</MenuItem>
                         <MenuItem value="hybrid">Hybrid</MenuItem>
                     </Select>
                 </FormControl>
 
                 <FormControl sx={{ minWidth: 160 }}>
-                    <InputLabel>Taxonomy</InputLabel>
-                    <Select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} label="Taxonomy">
-                        <MenuItem value="all">All Classifications</MenuItem>
+                    <InputLabel>Category</InputLabel>
+                    <Select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} label="Category">
+                        <MenuItem value="all">All Categories</MenuItem>
                         {categories?.map((cat) => (
                             <MenuItem key={cat.id} value={cat.id}>{cat.name}</MenuItem>
                         ))}
@@ -164,11 +161,11 @@ const BrowseEvents = () => {
                 </FormControl>
 
                 <FormControl sx={{ minWidth: 140 }}>
-                    <InputLabel>Sort Override</InputLabel>
-                    <Select value={sortBy} onChange={(e) => setSortBy(e.target.value)} label="Sort Override">
-                        <MenuItem value="date">Cronological</MenuItem>
-                        <MenuItem value="popularity">High Traffic</MenuItem>
-                        <MenuItem value="seats">Critical Capacity</MenuItem>
+                    <InputLabel>Sort By</InputLabel>
+                    <Select value={sortBy} onChange={(e) => setSortBy(e.target.value)} label="Sort By">
+                        <MenuItem value="date">Chronological</MenuItem>
+                        <MenuItem value="popularity">Most Popular</MenuItem>
+                        <MenuItem value="seats">Fewest Seats Left</MenuItem>
                     </Select>
                 </FormControl>
             </Stack>
@@ -180,9 +177,9 @@ const BrowseEvents = () => {
                         <Grid item xs={12}>
                             <Box sx={{ py: 10, textAlign: 'center', bgcolor: 'action.hover', borderRadius: 4, border: '1px dashed', borderColor: 'divider' }}>
                                 <SearchIcon sx={{ fontSize: 60, color: 'text.disabled', mb: 2 }} />
-                                <Typography variant="h6" color="text.secondary">Telemetry Empty</Typography>
-                                <Typography variant="body2" color="text.secondary">No events match your current subspace filters.</Typography>
-                                <Button variant="outlined" sx={{ mt: 3, fontWeight: 700 }} onClick={() => { setSearch(''); setClubFilter('all'); setModeFilter('all'); setCategoryFilter('all'); }}>Reset Matrix</Button>
+                                <Typography variant="h6" color="text.secondary">No matching events</Typography>
+                                <Typography variant="body2" color="text.secondary">Try adjusting your search or filters to see more events.</Typography>
+                                <Button variant="outlined" sx={{ mt: 3, fontWeight: 700 }} onClick={() => { setSearch(''); setClubFilter('all'); setModeFilter('all'); setCategoryFilter('all'); }}>Reset Filters</Button>
                             </Box>
                         </Grid>
                     ) : (
@@ -224,7 +221,7 @@ const BrowseEvents = () => {
                                             <Box sx={{ position: 'absolute', top: 12, left: 12, display: 'flex', gap: 1 }}>
                                                 {event.visibility === 'members_only' && (
                                                     <Chip
-                                                        label="Members Shielded"
+                                                        label="Members Only"
                                                         size="small"
                                                         icon={<PrivateIcon sx={{ fontSize: '14px !important' }} />}
                                                         sx={{ bgcolor: '#8b5cf6', color: 'white', fontWeight: 900, boxShadow: '0 4px 10px rgba(0,0,0,0.2)' }}
@@ -249,7 +246,7 @@ const BrowseEvents = () => {
 
                                                 <Chip
                                                     icon={<ClubIcon fontSize="small" />}
-                                                    label={event.club?.name || 'Independent Authority'}
+                                                    label={event.club?.name || 'Independent Club'}
                                                     size="small"
                                                     variant="outlined"
                                                     sx={{ alignSelf: 'flex-start', fontWeight: 700, borderRadius: '6px' }}
@@ -269,7 +266,7 @@ const BrowseEvents = () => {
                                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, color: 'text.secondary' }}>
                                                         <VenueIcon fontSize="small" color="primary" />
                                                         <Typography variant="body2" fontWeight="500">
-                                                            {event.mode === 'online' ? 'Encrypted Stream Link' : (event.location || 'TBA')}
+                                                            {event.mode === 'online' ? 'Online event link' : (event.location || 'Location to be announced')}
                                                         </Typography>
                                                     </Box>
 
@@ -303,7 +300,7 @@ const BrowseEvents = () => {
                                                 onClick={() => navigate(`/events/${event.id}`)}
                                                 sx={{ borderRadius: 3, fontWeight: 700, textTransform: 'none' }}
                                             >
-                                                Analyze
+                                                View Details
                                             </Button>
                                             <Button
                                                 variant={isFull ? "outlined" : "contained"}
@@ -319,7 +316,7 @@ const BrowseEvents = () => {
                                                     boxShadow: !isFull ? '0 8px 16px -4px rgba(59, 130, 246, 0.3)' : 'none'
                                                 }}
                                             >
-                                                {isFull ? (event.allow_waitlist ? 'Join Waitlist' : 'Locked') : (registerMutation.isPending ? 'Syncing...' : 'Register Securely')}
+                                                {isFull ? (event.allow_waitlist ? 'Join Waitlist' : 'Full') : (registerMutation.isPending ? 'Submitting...' : 'Register')}
                                             </Button>
                                         </Box>
                                     </Card>

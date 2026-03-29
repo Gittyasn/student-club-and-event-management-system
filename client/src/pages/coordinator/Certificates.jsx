@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-    Box, Typography, Button, Paper, CircularProgress,
+    Box, Typography, Button, Paper,
     List, ListItem, ListItemText, ListItemAvatar, Avatar,
     Checkbox, Divider, Chip
 } from '@mui/material';
@@ -14,6 +14,7 @@ import { useEventById } from '../../hooks/useEventById';
 import { useEventRegistrations } from '../../hooks/useAttendance';
 import { useEventCertificates, useCertificateMutations } from '../../hooks/useCertificates';
 import RolePageHeader from '../../components/RolePageHeader';
+import LoadingDots from '../../components/LoadingDots';
 
 const Certificates = () => {
     const { id: eventId } = useParams();
@@ -26,7 +27,7 @@ const Certificates = () => {
 
     const [selectedUsers, setSelectedUsers] = useState([]);
 
-    if (eventLoading || regsLoading || certsLoading) return <CircularProgress sx={{ display: 'block', m: '50px auto' }} />;
+    if (eventLoading || regsLoading || certsLoading) return <LoadingDots label="Loading certificates..." minHeight="50vh" />;
 
     if (!event?.certificate_enabled) {
         return (
@@ -39,7 +40,9 @@ const Certificates = () => {
         );
     }
 
-    const presentAttendees = registrations?.filter(r => r.attendance_status === 'present') || [];
+    const presentAttendees = registrations?.filter((registration) =>
+        ['present', 'late'].includes(registration.attendance?.status)
+    ) || [];
 
     const handleToggle = (userId) => {
         const currentIndex = selectedUsers.indexOf(userId);
@@ -68,13 +71,13 @@ const Certificates = () => {
     };
 
     const hasCertificate = (userId) => {
-        return certificates?.some(c => c.user_id === userId);
+        return certificates?.some(c => String(c.user_id) === String(userId));
     };
 
     return (
         <Box sx={{ maxWidth: 800, margin: '0 auto', pb: 5 }}>
             <RolePageHeader
-                kicker="Coordinator Suite"
+                kicker="Coordinator Dashboard"
                 title="Certificate Issuance"
                 subtitle="Select recipients and generate certificates."
             />
@@ -94,7 +97,7 @@ const Certificates = () => {
                     variant="contained"
                     color="primary"
                     size="large"
-                    startIcon={generateCertificates.isPending ? <CircularProgress size={20} color="inherit" /> : <CertificateIcon />}
+                    startIcon={generateCertificates.isPending ? <LoadingDots inline size={5} color="currentColor" /> : <CertificateIcon />}
                     disabled={selectedUsers.length === 0 || generateCertificates.isPending}
                     onClick={handleGenerate}
                     sx={{ borderRadius: 2, px: 3, py: 1.5, fontWeight: 'bold' }}

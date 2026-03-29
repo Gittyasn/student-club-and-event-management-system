@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Outlet, Link as RouterLink, useNavigate, useLocation } from 'react-router-dom';
 import {
     Box, Drawer, List, Typography, IconButton,
@@ -137,7 +137,7 @@ const SidebarContent = ({ location, profile }) => (
                                 )}
                                 <ListItemIcon sx={{ minWidth: 36, color: isActive ? item.color : 'rgba(255,255,255,0.45)' }}>{item.icon}</ListItemIcon>
                                 <ListItemText primary={item.text}
-                                    primaryTypographyProps={{ fontSize: '0.85rem', fontWeight: isActive ? 700 : 500, color: isActive ? '#fff' : 'rgba(255,255,255,0.55)' }} />
+                                    primaryTypographyProps={{ fontSize: '0.88rem', fontWeight: isActive ? 700 : 600, color: isActive ? '#fff' : 'rgba(255,255,255,0.78)' }} />
                                 {isActive && <ChevronRight sx={{ fontSize: 16, color: item.color, opacity: 0.6 }} />}
                             </ListItemButton>
                         </Box>
@@ -168,6 +168,31 @@ const StudentLayout = () => {
     const handleSettingsOpen = () => { setAnchorEl(null); navigate('/student/settings'); };
     const handleLogout = async () => { setAnchorEl(null); await logout(); navigate('/login'); };
     const drawerSx = { '& .MuiDrawer-paper': { boxSizing: 'border-box', width: DRAWER_WIDTH, border: 'none', background: 'transparent' } };
+
+    useEffect(() => {
+        const preloadStudentRoutes = () => {
+            [
+                () => import('../pages/student/BrowseEvents'),
+                () => import('../pages/student/MyEvents'),
+                () => import('../pages/student/MyRegistrations'),
+                () => import('../pages/student/MyClubs'),
+                () => import('../pages/student/AttendanceRecord'),
+                () => import('../pages/student/MyResults'),
+                () => import('../pages/student/Certificates'),
+                () => import('../pages/student/Leaderboard'),
+                () => import('../pages/student/Analytics'),
+                () => import('../pages/student/Notifications'),
+            ].forEach((load) => load().catch(() => undefined));
+        };
+
+        if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+            const idleId = window.requestIdleCallback(preloadStudentRoutes, { timeout: 1500 });
+            return () => window.cancelIdleCallback(idleId);
+        }
+
+        const timeoutId = window.setTimeout(preloadStudentRoutes, 350);
+        return () => window.clearTimeout(timeoutId);
+    }, []);
 
     return (
         <Box className="app-style" sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>

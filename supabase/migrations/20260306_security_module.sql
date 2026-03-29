@@ -338,17 +338,31 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- 6a. Prevent editing locked results (non-admin)
 CREATE OR REPLACE FUNCTION public.prevent_locked_result_edit()
 RETURNS TRIGGER AS $$
+DECLARE
+    v_event_id uuid;
+    v_locked boolean;
 BEGIN
-    IF OLD.status = 'locked' AND NOT public.is_admin() THEN
+    v_event_id := COALESCE(NEW.event_id, OLD.event_id);
+
+    IF public.is_admin_user(auth.uid()) THEN
+        RETURN COALESCE(NEW, OLD);
+    END IF;
+
+    SELECT COALESCE(results_locked, false)
+    INTO v_locked
+    FROM public.events
+    WHERE id = v_event_id;
+
+    IF v_locked OR OLD.status = 'locked' THEN
         RAISE EXCEPTION 'Results are locked and cannot be modified.';
     END IF;
-    RETURN NEW;
+    RETURN COALESCE(NEW, OLD);
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 DROP TRIGGER IF EXISTS trg_prevent_locked_result_edit ON public.results;
 CREATE TRIGGER trg_prevent_locked_result_edit
-    BEFORE UPDATE ON public.results
+    BEFORE UPDATE OR DELETE ON public.results
     FOR EACH ROW EXECUTE FUNCTION public.prevent_locked_result_edit();
 
 -- 6b. Message content sanitizer — Strip dangerous HTML/script tags from chat messages
@@ -417,6 +431,20 @@ CREATE TRIGGER trg_log_profile_changes
 -- 7a. PROFILES TABLE — Strengthen access control
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
+CREATE OR REPLACE FUNCTION public.is_admin_user(p_user_id uuid)
+RETURNS boolean
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+    SELECT EXISTS (
+        SELECT 1
+        FROM public.profiles p
+        WHERE p.id = p_user_id
+          AND p.role = 'admin'
+    );
+$$;
+
 DROP POLICY IF EXISTS "Students can view and update own profile" ON public.profiles;
 CREATE POLICY "Students can view and update own profile" ON public.profiles
     FOR ALL USING (id = auth.uid())
@@ -429,7 +457,7 @@ CREATE POLICY "Authenticated users can view basic profile info" ON public.profil
 DROP POLICY IF EXISTS "Admins have full profile access" ON public.profiles;
 CREATE POLICY "Admins have full profile access" ON public.profiles
     FOR ALL USING (
-        EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.role = 'admin')
+        public.is_admin_user(auth.uid())
     );
 
 -- 7b. EVENTS TABLE — Harden student-visible events

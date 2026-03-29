@@ -2,9 +2,10 @@
 import { useState, useEffect, useMemo } from 'react';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
+import LoadingDots from '../../components/LoadingDots';
 dayjs.extend(relativeTime);
 import {
-    Box, Typography, Paper, Grid, Chip, CircularProgress,
+    Box, Typography, Paper, Grid, Chip,
     Stack, Alert, TextField, FormControl, InputLabel,
     Select, MenuItem, InputAdornment, Avatar, Button,
     Dialog, DialogTitle, DialogContent, DialogActions,
@@ -106,7 +107,7 @@ const KPICard = ({ title, value, icon, color, subtitle, loading, delay = 0 }) =>
                 </Box>
             </Box>
             <Typography variant="h3" fontWeight={900} sx={{ color, letterSpacing: -1.5, lineHeight: 1, mb: 0.5 }}>
-                {loading ? '—' : value ?? 0}
+                {loading ? 'ï¿½' : value ?? 0}
             </Typography>
             <Typography variant="caption" fontWeight={700} sx={{ textTransform: 'uppercase', letterSpacing: 1, color: 'text.secondary', fontSize: '0.7rem' }}>
                 {title}
@@ -144,7 +145,7 @@ const SecurityEventRow = ({ event, onResolve }) => {
                     {event.description || 'No description'}
                 </Typography>
                 <Typography variant="caption" sx={{ color: 'text.disabled', fontSize: '0.65rem' }}>
-                    {event.actor?.full_name || 'System'} · {dayjs(event.created_at).fromNow()}
+                    {event.actor?.full_name || 'System'} ï¿½ {dayjs(event.created_at).fromNow()}
                 </Typography>
             </Box>
             <Chip label={event.severity} size="small" sx={{ bgcolor: cfg.bg, color: cfg.color, fontWeight: 700, fontSize: '0.68rem', border: `1px solid ${cfg.color}40`, textTransform: 'capitalize', flexShrink: 0 }} />
@@ -274,10 +275,10 @@ const AdminSecurity = () => {
                             </Box>
                             <Box>
                                 <Typography variant="h4" fontWeight={900} sx={{ color: 'white', letterSpacing: -1, lineHeight: 1 }}>
-                                    Security Intelligence
+                                    Security Overview
                                 </Typography>
                                 <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.45)', fontWeight: 600, letterSpacing: 1.5, textTransform: 'uppercase', fontSize: '0.68rem' }}>
-                                    Defense Command Center — Module 18
+                                    Access, audit, and risk summary
                                 </Typography>
                             </Box>
                         </Box>
@@ -326,7 +327,7 @@ const AdminSecurity = () => {
                         <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" mb={2}>
                             Authentication attempts over the last 24 hours
                         </Typography>
-                        {loginLoading ? <CircularProgress size={24} /> : (
+                        {loginLoading ? <LoadingDots inline size={5} /> : (
                             <ResponsiveContainer width="100%" height={220}>
                                 <AreaChart data={loginTrendData}>
                                     <defs>
@@ -365,7 +366,7 @@ const AdminSecurity = () => {
                         <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" mb={2}>
                             Distribution of logged operations
                         </Typography>
-                        {logsLoading ? <CircularProgress size={24} /> : (
+                        {logsLoading ? <LoadingDots inline size={5} /> : (
                             <ResponsiveContainer width="100%" height={220}>
                                 <BarChart data={auditDistribution} layout="vertical">
                                     <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} horizontal={false} />
@@ -418,7 +419,7 @@ const AdminSecurity = () => {
                                 </Box>
                                 <Chip label={`${securityEvents?.length || 0} unresolved`} size="small" color="error" sx={{ fontWeight: 700 }} />
                             </Box>
-                            {eventsLoading ? <CircularProgress size={24} /> : (
+                            {eventsLoading ? <LoadingDots inline size={5} /> : (
                                 (!securityEvents || securityEvents.length === 0) ? (
                                     <Alert severity="success" icon={<CheckCircle />} sx={{ borderRadius: '12px' }}>
                                         <Typography fontWeight={700}>No active incidents</Typography>
@@ -440,7 +441,7 @@ const AdminSecurity = () => {
                         <Paper elevation={0} sx={{ p: 3.5, borderRadius: '20px', border: `2px solid #3b82f620` }}>
                             <Typography variant="h6" fontWeight={900} mb={0.5}>Login Attempt Log</Typography>
                             <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" mb={2.5}>Last 100 authentication events</Typography>
-                            {loginLoading ? <CircularProgress size={24} /> : (
+                            {loginLoading ? <LoadingDots inline size={5} /> : (
                                 <Stack spacing={1}>
                                     {(loginLogs || []).map(log => (
                                         <Box key={log.id} sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 1.5, borderRadius: '10px', '&:hover': { bgcolor: 'action.hover' } }}>
@@ -450,7 +451,7 @@ const AdminSecurity = () => {
                                                     {log.email}
                                                 </Typography>
                                                 <Typography variant="caption" color="text.secondary">
-                                                    {log.ip_address || 'Unknown IP'} · {log.failure_reason || ''}
+                                                    {log.ip_address || 'Unknown IP'} ï¿½ {log.failure_reason || ''}
                                                 </Typography>
                                             </Box>
                                             <Chip label={log.status} size="small" sx={{ fontWeight: 700, bgcolor: `${ACTION_COLORS[log.status]}15`, color: ACTION_COLORS[log.status], fontSize: '0.68rem', textTransform: 'capitalize' }} />
@@ -494,7 +495,7 @@ const AdminSecurity = () => {
                                     </FormControl>
                                 </Stack>
                             </Box>
-                            {logsLoading ? <CircularProgress size={24} /> : (
+                            {logsLoading ? <LoadingDots inline size={5} /> : (
                                 <Stack spacing={0.5}>
                                     {filteredLogs.slice(0, 100).map((log) => (
                                         <Box key={log.id} sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 1.5, borderRadius: '10px', '&:hover': { bgcolor: 'action.hover' } }}>
@@ -503,10 +504,10 @@ const AdminSecurity = () => {
                                             </Avatar>
                                             <Box sx={{ flex: 1, minWidth: 0 }}>
                                                 <Typography variant="body2" fontWeight={700} sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                    {log.actor?.full_name || 'System'} <Box component="span" sx={{ color: 'text.secondary', fontWeight: 600 }}>· {log.action}</Box>
+                                                    {log.actor?.full_name || 'System'} <Box component="span" sx={{ color: 'text.secondary', fontWeight: 600 }}>ï¿½ {log.action}</Box>
                                                 </Typography>
                                                 <Typography variant="caption" color="text.secondary">
-                                                    {log.target_table}{log.target_table && ' ·'} {log.module}
+                                                    {log.target_table}{log.target_table && ' ï¿½'} {log.module}
                                                 </Typography>
                                             </Box>
                                             <Chip label={log.action} size="small" sx={{ fontWeight: 700, fontSize: '0.65rem', textTransform: 'capitalize' }} />
@@ -547,7 +548,7 @@ const AdminSecurity = () => {
                                                     {item.action.replace(/_/g, ' ')}
                                                 </Typography>
                                                 <Typography variant="body2" fontWeight={900} sx={{ color: item.total > 50 ? '#ef4444' : '#3b82f6' }}>
-                                                    {item.total} hits · {item.users} user{item.users !== 1 ? 's' : ''}
+                                                    {item.total} hits ï¿½ {item.users} user{item.users !== 1 ? 's' : ''}
                                                 </Typography>
                                             </Box>
                                             <LinearProgress

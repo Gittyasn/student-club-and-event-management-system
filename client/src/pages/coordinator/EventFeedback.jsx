@@ -15,7 +15,6 @@ import {
     ListItemAvatar,
     // eslint-disable-next-line no-unused-vars
     ListItemText,
-    CircularProgress,
     Button,
     // eslint-disable-next-line no-unused-vars
     Card,
@@ -31,6 +30,7 @@ import RolePageHeader from '../../components/RolePageHeader';
 import { ArrowBack as BackIcon, Forum as FeedbackIcon, Download as DownloadIcon, CheckCircle as CheckCircleIcon, CheckCircleOutline as CheckCircleOutlineIcon } from '@mui/icons-material';
 import { useEventFeedback, useMarkFeedbackReviewed } from '../../hooks/useFeedback';
 import { useEventById } from '../../hooks/useEventById';
+import LoadingDots from '../../components/LoadingDots';
 // eslint-disable-next-line no-unused-vars
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 // eslint-disable-next-line no-unused-vars
@@ -46,7 +46,7 @@ const EventFeedback = () => {
     const { mutate: markReviewed } = useMarkFeedbackReviewed();
 
     if (eventLoading || feedbackLoading) {
-        return <Box sx={{ display: 'flex', justifyContent: 'center', p: 10 }}><CircularProgress /></Box>;
+        return <LoadingDots label="Loading feedback..." minHeight="50vh" />;
     }
 
     const avgRating = feedback && feedback.length > 0
@@ -82,7 +82,7 @@ const EventFeedback = () => {
     return (
         <Box sx={{ pb: 6 }}>
             <RolePageHeader
-                kicker="Coordinator Suite"
+                kicker="Coordinator Dashboard"
                 title="Event Feedback"
                 subtitle="Review ratings, comments, and insights."
             />

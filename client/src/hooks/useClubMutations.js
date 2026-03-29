@@ -14,6 +14,16 @@ export const useClubMutations = () => {
                 .single();
 
             if (error) throw error;
+
+            if (data?.coordinator_id) {
+                const { error: profileError } = await supabase
+                    .from('profiles')
+                    .update({ club_id: data.id })
+                    .eq('id', data.coordinator_id);
+
+                if (profileError) throw profileError;
+            }
+
             return data;
         },
         onSuccess: () => {
@@ -35,6 +45,16 @@ export const useClubMutations = () => {
                 .single();
 
             if (error) throw error;
+
+            if (data?.coordinator_id) {
+                const { error: profileError } = await supabase
+                    .from('profiles')
+                    .update({ club_id: data.id })
+                    .eq('id', data.coordinator_id);
+
+                if (profileError) throw profileError;
+            }
+
             return data;
         },
         onSuccess: () => {

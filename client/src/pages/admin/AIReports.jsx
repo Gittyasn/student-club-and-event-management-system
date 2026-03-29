@@ -121,7 +121,7 @@ const RankedRow = ({ index, avatar, primary, secondary, score, scoreLabel, accen
 );
 
 const AIReports = () => {
-    const { data: governance, isLoading: isGovernanceLoading } = useGlobalAIGovernance();
+    const { data: governanceState, isLoading: isGovernanceLoading } = useGlobalAIGovernance();
 
     const { data, isLoading } = useQuery({
         queryKey: ['admin-ai-reports'],
@@ -259,10 +259,10 @@ const AIReports = () => {
         staleTime: 60 * 1000,
     });
 
-    const features = useMemo(() => governance || [], [governance]);
+    const features = useMemo(() => governanceState?.features || [], [governanceState]);
 
     if (isGovernanceLoading || isLoading) {
-        return <LoadingDots minHeight="50vh" label="Loading intelligence reports..." />;
+        return <LoadingDots minHeight="50vh" label="Loading AI reports..." />;
     }
 
     const isDropoutEnabled =
@@ -286,16 +286,36 @@ const AIReports = () => {
                 }}
             >
                 <Typography variant="overline" sx={{ color: '#7c3aed', fontWeight: 900, letterSpacing: 2.2 }}>
-                    INTELLIGENCE REPORTING
+                    AI REPORTING
                 </Typography>
                 <Typography variant="h4" fontWeight={900} sx={{ mt: 0.5, display: 'flex', alignItems: 'center', gap: 1.5 }}>
                     <AutoGraph color="secondary" fontSize="large" />
-                    Engagement Intelligence
+                    Engagement Insights
                 </Typography>
                 <Typography color="text.secondary" fontWeight={600}>
-                    Live operational insights built from registrations, attendance, club memberships, certificates, and feedback activity.
+                    Reporting built from registrations, attendance, memberships, certificates, and feedback activity.
                 </Typography>
             </Box>
+
+            {governanceState?.isFallback ? (
+                <Paper
+                    sx={{
+                        mb: 3,
+                        p: 2.5,
+                        borderRadius: '18px',
+                        border: '1px solid',
+                        borderColor: 'warning.light',
+                        bgcolor: 'warning.50',
+                    }}
+                >
+                    <Typography fontWeight={800} color="warning.dark">
+                        AI governance is using built-in defaults
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                        Reports still work, but feature flags and recommendation services will not be live until the AI alignment SQL patch is applied.
+                    </Typography>
+                </Paper>
+            ) : null}
 
             <Grid container spacing={2.5} sx={{ mb: 4 }}>
                 <Grid item xs={12} sm={6} md={3} sx={{ display: 'flex' }}>

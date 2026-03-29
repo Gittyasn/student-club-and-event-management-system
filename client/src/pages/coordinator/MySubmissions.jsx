@@ -1,44 +1,45 @@
 // eslint-disable-next-line no-unused-vars
 import React from 'react';
 // eslint-disable-next-line no-unused-vars
-import { Box, Typography, Paper, Grid, Card, CardContent, CircularProgress, Chip, Stack, Button, IconButton } from '@mui/material';
+import { Box, Typography, Paper, Grid, Card, CardContent, Chip, Stack, Button, IconButton } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../services/supabaseClient';
-import { useAuthStore } from '../../store/authStore';
 import { Edit as EditIcon, PendingActions, FactCheck, Rule, Warning } from '@mui/icons-material';
 import RolePageHeader from '../../components/RolePageHeader';
 import { useNavigate } from 'react-router-dom';
+import LoadingDots from '../../components/LoadingDots';
+import { useCoordinatorClub } from '../../hooks/useCoordinatorClub';
 
 const MySubmissions = () => {
-    const { profile } = useAuthStore();
     const navigate = useNavigate();
+    const { data: coordinatorClub } = useCoordinatorClub();
 
     // Fetch only pending and rejected events for the coordinator's club
     const { data: submissions, isLoading } = useQuery({
-        queryKey: ['my_submissions', profile?.club_id],
+        queryKey: ['my_submissions', coordinatorClub?.id],
         queryFn: async () => {
-            if (!profile?.club_id) return [];
+            if (!coordinatorClub?.id) return [];
             const { data, error } = await supabase
                 .from('events')
-                .select('id, title, status, submitted_at, rejected_at, rejection_reason, resubmission_count, start_time')
-                .eq('club_id', profile.club_id)
-                .in('status', ['pending', 'rejected'])
+                .select('id, title, status, approval_status, submitted_at, rejection_reason, resubmission_count, start_time, updated_at')
+                .eq('club_id', coordinatorClub.id)
+                .in('approval_status', ['pending', 'rejected'])
                 .order('submitted_at', { ascending: false, nullsFirst: false });
             if (error) throw error;
             return data;
         },
-        enabled: !!profile?.club_id
+        enabled: !!coordinatorClub?.id
     });
 
-    if (isLoading) return <Box display="flex" justifyContent="center" p={4}><CircularProgress /></Box>;
+    if (isLoading) return <LoadingDots label="Loading submissions..." minHeight="40vh" />;
 
-    const pendingList = submissions?.filter(s => s.status === 'pending') || [];
-    const rejectedList = submissions?.filter(s => s.status === 'rejected') || [];
+    const pendingList = submissions?.filter(s => s.approval_status === 'pending') || [];
+    const rejectedList = submissions?.filter(s => s.approval_status === 'rejected') || [];
 
     return (
         <Box sx={{ pb: 6 }}>
             <RolePageHeader
-                kicker="Coordinator Suite"
+                kicker="Coordinator Dashboard"
                 title="My Submissions"
                 subtitle="Track approval status and admin feedback."
             />
@@ -51,7 +52,7 @@ const MySubmissions = () => {
                 <Box>
                     <Typography variant="h4" fontWeight={900} sx={{ letterSpacing: -1 }}>Governance Pipeline</Typography>
                     <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
-                        Monitor pending authorizations and address administrative rejections.
+                        Monitor pending reviews and respond to admin feedback.
                     </Typography>
                 </Box>
                 <Chip
@@ -82,7 +83,7 @@ const MySubmissions = () => {
                                             <Chip label="Rejected" color="error" size="small" sx={{ fontWeight: 800 }} />
                                         </Box>
                                         <Typography variant="caption" color="text.secondary" display="block" mb={2}>
-                                            Rejected on {new Date(event.rejected_at).toLocaleString()}
+                                            Returned on {event.updated_at || event.submitted_at ? new Date(event.updated_at || event.submitted_at).toLocaleString() : 'Recently'}
                                         </Typography>
 
                                         <Box sx={{ p: 2, bgcolor: '#ef444410', borderRadius: '8px', mb: 3 }}>
@@ -123,7 +124,7 @@ const MySubmissions = () => {
                     </Typography>
                     {pendingList.length === 0 ? (
                         <Paper sx={{ p: 4, textAlign: 'center', borderRadius: '16px', bgcolor: 'transparent', border: '1px dashed', borderColor: 'divider' }}>
-                            <Typography color="text.secondary" fontWeight={600}>No pending authorizations.</Typography>
+                            <Typography color="text.secondary" fontWeight={600}>No pending reviews.</Typography>
                         </Paper>
                     ) : (
                         <Stack spacing={2}>

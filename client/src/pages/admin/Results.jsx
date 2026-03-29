@@ -9,13 +9,13 @@ import {
     TableHead,
     TableRow,
     Chip,
-    CircularProgress,
     Avatar,
     Stack
 } from '@mui/material';
 import { EmojiEvents as TrophyIcon } from '@mui/icons-material';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../services/supabaseClient';
+import LoadingDots from '../../components/LoadingDots';
 
 const RANK_COLORS = { 1: 'gold', 2: 'silver', 3: '#cd7f32' };
 
@@ -42,7 +42,7 @@ const AdminResults = () => {
         }
     });
 
-    if (isLoading) return <Box display="flex" justifyContent="center" p={4}><CircularProgress /></Box>;
+    if (isLoading) return <LoadingDots label="Loading results..." minHeight="40vh" />;
     if (error) return <Typography color="error">Error loading results: {error.message}</Typography>;
 
     return (

@@ -3,12 +3,12 @@ import {
     Box, Typography, Paper, Button, Stack, Table, TableBody, TableCell,
     TableContainer, TableHead, TableRow, IconButton, Dialog, DialogTitle,
     // eslint-disable-next-line no-unused-vars
-    DialogContent, DialogActions, TextField, CircularProgress, Chip,
+    DialogContent, DialogActions, TextField, Chip,
     InputAdornment, Grid, useTheme
 } from '@mui/material';
 import {
     Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon,
-    Category as CategoryIcon, Search as SearchIcon
+    CategoryRounded as CategoryIcon, Search as SearchIcon
 } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
@@ -110,7 +110,7 @@ const AdminClubCategories = () => {
                 gap: 2,
             }}>
                 <Stack direction="row" spacing={3} alignItems="center">
-                    <Box sx={{ p: 2, borderRadius: '20px', bgcolor: 'rgba(244,114,182,0.1)', color: '#f472b6', border: '1px solid rgba(244,114,182,0.2)' }}>
+                    <Box sx={{ p: 2, borderRadius: '20px', bgcolor: 'rgba(59,130,246,0.1)', color: '#2563eb', border: '1px solid rgba(59,130,246,0.18)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.6)' }}>
                         <CategoryIcon sx={{ fontSize: 32 }} />
                     </Box>
                     <Box>
@@ -125,8 +125,8 @@ const AdminClubCategories = () => {
                     startIcon={<AddIcon />}
                     onClick={() => handleOpenDialog()}
                     sx={{
-                        bgcolor: '#f472b6', color: '#0f172a', fontWeight: 800, px: 3, py: 1.5, borderRadius: '12px',
-                        '&:hover': { bgcolor: '#f9a8d4' }
+                        bgcolor: '#2563eb', color: 'white', fontWeight: 800, px: 3, py: 1.5, borderRadius: '12px',
+                        '&:hover': { bgcolor: '#1d4ed8' }
                     }}
                 >
                     New Category
@@ -209,7 +209,7 @@ const AdminClubCategories = () => {
                                     >
                                         <TableCell>
                                             <Stack direction="row" spacing={1.25} alignItems="center">
-                                                <Box sx={{ width: 10, height: 10, borderRadius: '999px', bgcolor: '#f472b6' }} />
+                                                <Box sx={{ width: 10, height: 10, borderRadius: '999px', bgcolor: '#2563eb' }} />
                                                 <Typography variant="body2" fontWeight={800} color="text.primary">{category.name}</Typography>
                                             </Stack>
                                         </TableCell>
@@ -289,7 +289,7 @@ const AdminClubCategories = () => {
                             type="submit"
                             variant="contained"
                             disabled={addCategory.isPending || updateCategory.isPending}
-                            sx={{ bgcolor: '#f472b6', color: '#0f172a', fontWeight: 800, borderRadius: '10px', '&:hover': { bgcolor: '#f9a8d4' } }}
+                            sx={{ bgcolor: '#2563eb', color: 'white', fontWeight: 800, borderRadius: '10px', '&:hover': { bgcolor: '#1d4ed8' } }}
                         >
                             {addCategory.isPending || updateCategory.isPending ? 'Saving...' : 'Save Category'}
                         </Button>

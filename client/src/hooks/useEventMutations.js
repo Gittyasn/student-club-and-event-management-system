@@ -3,13 +3,28 @@ import { supabase } from '../services/supabaseClient';
 import { toast } from 'sonner';
 import { validateFile } from '../utils/validation';
 
+const normalizeEventPayload = (eventPayload = {}) => {
+    const normalized = {
+        ...eventPayload,
+    };
+
+    if (normalized.start_time && !normalized.date) {
+        normalized.date = new Date(normalized.start_time).toISOString().slice(0, 10);
+    }
+
+    delete normalized.min_team_size;
+    delete normalized.max_team_size;
+
+    return normalized;
+};
+
 export const useEventMutations = () => {
     const queryClient = useQueryClient();
 
     const createEvent = useMutation({
         mutationFn: async (newEvent) => {
             const normalizedEvent = {
-                ...newEvent,
+                ...normalizeEventPayload(newEvent),
                 approval_status: newEvent.approval_status || (newEvent.status === 'draft' ? 'draft' : 'pending')
             };
 
@@ -45,9 +60,10 @@ export const useEventMutations = () => {
 
     const updateEvent = useMutation({
         mutationFn: async ({ id, updates }) => {
+            const normalizedUpdates = normalizeEventPayload(updates);
             const { data, error } = await supabase
                 .from('events')
-                .update(updates)
+                .update(normalizedUpdates)
                 .eq('id', id)
                 .select()
                 .single();

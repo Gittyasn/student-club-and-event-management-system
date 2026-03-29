@@ -21,7 +21,8 @@ const EventsTable = ({ rows, isLoading, statusConfig, navigate, onSubmit, onDele
         {
             field: 'status', headerName: 'Lifecycle State', width: 150,
             renderCell: p => {
-                const config = statusConfig[p.value] || statusConfig.draft;
+                const displayStatus = p.row.approval_status === 'rejected' ? 'rejected' : p.value;
+                const config = statusConfig[displayStatus] || statusConfig.draft;
                 return <Chip label={config.label} size="small" sx={{ fontWeight: 800, fontSize: '0.7rem', bgcolor: config.bg, color: config.color, border: `1px solid ${config.border}` }} />;
             }
         },
@@ -29,7 +30,8 @@ const EventsTable = ({ rows, isLoading, statusConfig, navigate, onSubmit, onDele
         {
             field: 'actions', type: 'actions', headerName: 'Actions', width: 140,
             getActions: (params) => {
-                if (params.row.status === 'draft' || params.row.status === 'rejected') return [
+                const displayStatus = params.row.approval_status === 'rejected' ? 'rejected' : params.row.status;
+                if (displayStatus === 'draft' || displayStatus === 'rejected') return [
                     <GridActionsCellItem key="edit" icon={<EditIcon color="primary" />} label="Edit" onClick={() => navigate(`/coordinator/events/${params.id}/edit`)} />,
                     <GridActionsCellItem key="submit" icon={<SubmitIcon color="success" />} label="Submit for Approval" onClick={() => onSubmit(params.id)} showInMenu />,
                     <GridActionsCellItem key="delete" icon={<DeleteIcon color="error" />} label="Delete" onClick={() => onDelete(params.id)} />,

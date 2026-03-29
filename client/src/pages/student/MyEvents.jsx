@@ -1,4 +1,5 @@
-import { Box, Typography, Chip, Grid, Button, CircularProgress, Divider } from '@mui/material';
+import { Box, Typography, Chip, Grid, Button, Divider } from '@mui/material';
+import LoadingDots from '../../components/LoadingDots';
 import {
     Cancel as CancelIcon,
     CalendarMonth as DateIcon,
@@ -31,7 +32,7 @@ const MyEvents = () => {
 
     if (isLoading) return (
         <Box display="flex" justifyContent="center" alignItems="center" height="50vh">
-            <CircularProgress />
+            <LoadingDots label="Loading events..." minHeight="40vh" />
         </Box>
     );
 

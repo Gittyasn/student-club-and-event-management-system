@@ -242,7 +242,7 @@ export const useEventRegistrationList = (eventId) => {
                 .select(`
                     id, status, registered_at, cancelled_at, attended, 
                     attendance_marked_at, waitlist_position, admin_note,
-                    student:profiles(id, full_name, email, department, avatar_url)
+                    student:profiles!registrations_user_id_fkey(id, full_name, email, department, avatar_url)
                 `)
                 .eq('event_id', eventId)
                 .order('registered_at', { ascending: true });
@@ -254,7 +254,7 @@ export const useEventRegistrationList = (eventId) => {
 };
 
 // ─── Admin: Override actions for registrations ─────────────────────────────
-export const useAdminRegistrationOverrides = () => {
+export const useRegistrationManagementActions = () => {
     const queryClient = useQueryClient();
     const { user } = useAuthStore();
 
@@ -274,7 +274,7 @@ export const useAdminRegistrationOverrides = () => {
                     .from('registrations')
                     .update({
                         status: 'confirmed',
-                        admin_note: note || 'Admin override: force registered.',
+                        admin_note: note || 'Registration confirmed by coordinator.',
                         force_registered_by: user?.id,
                         registered_at: new Date().toISOString()
                     })
@@ -287,7 +287,7 @@ export const useAdminRegistrationOverrides = () => {
                         event_id: eventId,
                         user_id: studentId,
                         status: 'confirmed',
-                        admin_note: note || 'Admin override: force registered.',
+                        admin_note: note || 'Registration confirmed by coordinator.',
                         force_registered_by: user?.id,
                     }]);
                 if (error) throw error;
@@ -296,19 +296,19 @@ export const useAdminRegistrationOverrides = () => {
             // Log admin action
             await writeAuditLog({
                 user_id: user?.id,
-                action: 'admin_force_register',
+                action: 'registration_force_register',
                 target_id: eventId,
                 meta: { student_id: studentId, note }
             });
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['eventRegistrations'] });
-            toast.success('Student force-registered successfully.');
+            toast.success('Registration confirmed successfully.');
         },
         onError: (err) => toast.error(err.message)
     });
 
-    // Remove registration (admin)
+    // Remove registration from the event roster
     const removeRegistration = useMutation({
         mutationFn: async ({ registrationId, eventId, note }) => {
             const { error } = await supabase
@@ -316,14 +316,14 @@ export const useAdminRegistrationOverrides = () => {
                 .update({
                     status: 'cancelled',
                     cancelled_at: new Date().toISOString(),
-                    admin_note: note || 'Admin override: removed.'
+                    admin_note: note || 'Removed from the event roster.'
                 })
                 .eq('id', registrationId);
             if (error) throw error;
 
             await writeAuditLog({
                 user_id: user?.id,
-                action: 'admin_remove_registration',
+                action: 'registration_remove',
                 target_id: eventId,
                 meta: { registration_id: registrationId, note }
             });
@@ -335,7 +335,7 @@ export const useAdminRegistrationOverrides = () => {
         onError: (err) => toast.error(err.message)
     });
 
-    // Lock registration early
+    // Close registration early
     const lockRegistration = useMutation({
         mutationFn: async (eventId) => {
             const { error } = await supabase
@@ -346,14 +346,14 @@ export const useAdminRegistrationOverrides = () => {
 
             await writeAuditLog({
                 user_id: user?.id,
-                action: 'admin_lock_registration',
+                action: 'registration_lock',
                 target_id: eventId,
                 meta: { locked_at: new Date().toISOString() }
             });
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['events'] });
-            toast.success('Registration locked early by admin.');
+            toast.success('Registration closed early.');
         },
         onError: (err) => toast.error(err.message)
     });
@@ -369,7 +369,7 @@ export const useAdminRegistrationOverrides = () => {
 
             await writeAuditLog({
                 user_id: user?.id,
-                action: 'admin_manual_waitlist_promote',
+                action: 'registration_manual_waitlist_promote',
                 target_id: eventId,
                 meta: { registration_id: registrationId }
             });
@@ -383,6 +383,8 @@ export const useAdminRegistrationOverrides = () => {
 
     return { forceRegister, removeRegistration, lockRegistration, manualPromote };
 };
+
+export const useAdminRegistrationOverrides = useRegistrationManagementActions;
 
 // ─── Admin: Platform-wide registration analytics ───────────────────────────
 export const useRegistrationAnalytics = () => {

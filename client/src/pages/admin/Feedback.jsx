@@ -5,7 +5,6 @@ import {
     Box,
     Paper,
     Rating,
-    CircularProgress,
     Card,
     CardContent,
     Grid,
@@ -15,6 +14,7 @@ import {
 import { DataGrid } from '@mui/x-data-grid';
 import { Star as StarIcon, EmojiEvents as TrophyIcon, Visibility as ViewIcon } from '@mui/icons-material';
 import { useAdminFeedbackOverview } from '../../hooks/useFeedback';
+import LoadingDots from '../../components/LoadingDots';
 
 const AdminFeedback = () => {
     const navigate = useNavigate();
@@ -22,10 +22,7 @@ const AdminFeedback = () => {
 
 
     if (isLoading) return (
-        <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" height="60vh" gap={2}>
-            <CircularProgress size={40} thickness={4} />
-            <Typography color="text.secondary" fontWeight={500}>Analyzing campus feedback...</Typography>
-        </Box>
+        <LoadingDots label="Analyzing campus feedback..." minHeight="60vh" />
     );
 
     if (isError) return (

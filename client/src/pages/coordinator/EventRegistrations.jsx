@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-    Box, Typography, Chip, CircularProgress, Button, Paper, Stack,
+    Box, Typography, Chip, Button, Paper, Stack,
     // eslint-disable-next-line no-unused-vars
     Grid, Card, CardContent, Tabs, Tab, TextField, InputAdornment,
     // eslint-disable-next-line no-unused-vars
@@ -21,17 +21,23 @@ import { useQuery } from '@tanstack/react-query';
 // eslint-disable-next-line no-unused-vars
 import { supabase } from '../../services/supabaseClient';
 import { useEventById } from '../../hooks/useEventById';
-import { useAdminRegistrationOverrides, useEventRegistrationList } from '../../hooks/useMyRegistrations';
+import { useEventRegistrationList, useRegistrationManagementActions } from '../../hooks/useMyRegistrations';
 import RolePageHeader from '../../components/RolePageHeader';
 import {
     AreaChart, Area, XAxis, YAxis, Tooltip as ReTooltip,
     ResponsiveContainer, PieChart, Pie, Cell, Legend
 } from 'recharts';
 import { DataGrid, GridActionsCellItem } from '@mui/x-data-grid';
+import LoadingDots from '../../components/LoadingDots';
 
 const STATUS_COLORS = {
     registered: '#10b981', waitlisted: '#f59e0b', cancelled: '#ef4444',
     confirmed: '#3b82f6', attended: '#8b5cf6', no_show: '#6b7280'
+};
+
+const escapeCsvValue = (value) => {
+    const text = value == null ? '' : String(value);
+    return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 };
 
 const StatCard = ({ title, value, icon, color }) => (
@@ -59,7 +65,7 @@ const EventRegistrations = () => {
 
     const { data: registrations, isLoading } = useEventRegistrationList(id);
     const { data: event } = useEventById(id);
-    const { removeRegistration, manualPromote, lockRegistration } = useAdminRegistrationOverrides();
+    const { removeRegistration, manualPromote, lockRegistration } = useRegistrationManagementActions();
 
     const stats = useMemo(() => {
         if (!registrations) return {};
@@ -101,10 +107,18 @@ const EventRegistrations = () => {
 
     const handleExportCSV = () => {
         if (!registrations?.length) return;
-        const csv = "Student Name,Email,Dept,Status,Registered At,Attended\n" +
-            registrations.map(r =>
-                `${r.student?.full_name},${r.student?.email},${r.student?.department || 'N/A'},${r.status},${new Date(r.registered_at).toLocaleString()},${r.attended ? 'Yes' : 'No'}`
-            ).join("\n");
+        const header = ['Student Name', 'Email', 'Department', 'Status', 'Registered At', 'Attended']
+            .map(escapeCsvValue)
+            .join(',');
+        const rows = registrations.map((registration) => ([
+            registration.student?.full_name,
+            registration.student?.email,
+            registration.student?.department || 'N/A',
+            registration.status,
+            registration.registered_at ? new Date(registration.registered_at).toLocaleString() : '',
+            registration.attended ? 'Yes' : 'No'
+        ].map(escapeCsvValue).join(',')));
+        const csv = `${header}\n${rows.join('\n')}`;
         const link = document.createElement("a");
         link.href = "data:text/csv;charset=utf-8," + encodeURI(csv);
         link.download = `registrations_${event?.title || 'event'}.csv`;
@@ -176,14 +190,14 @@ const EventRegistrations = () => {
         }
     ];
 
-    if (isLoading) return <Box display="flex" justifyContent="center" p={8}><CircularProgress /></Box>;
+    if (isLoading) return <LoadingDots label="Loading registrations..." minHeight="50vh" />;
 
     return (
         <Box sx={{ pb: 6 }}>
             <RolePageHeader
-                kicker="Coordinator Suite"
+                kicker="Coordinator Dashboard"
                 title="Event Registrations"
-                subtitle="Manage attendee lists and approval status."
+                subtitle="Manage attendee lists and registration status."
             />
             {/* Header Banner */}
             <Box
@@ -208,9 +222,9 @@ const EventRegistrations = () => {
                         </Button>
                         {event?.status === 'registration_open' && (
                             <Button variant="outlined" startIcon={<LockIcon />}
-                                onClick={() => { if (window.confirm('Lock registrations early?')) lockRegistration.mutate(id); }}
+                                onClick={() => { if (window.confirm('Close registration early?')) lockRegistration.mutate(id); }}
                                 sx={{ borderColor: 'rgba(255,165,0,0.4)', color: '#fbbf24', fontWeight: 700, borderRadius: '10px' }}>
-                                Lock Early
+                                Close Registration
                             </Button>
                         )}
                     </Stack>

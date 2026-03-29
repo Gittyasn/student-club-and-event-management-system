@@ -15,16 +15,18 @@ const LoadingDots = ({
     minHeight = '40vh',
     size = 10,
     color = 'var(--mui-palette-primary-main, #2563eb)',
+    inline = false,
+    gap = 1.5,
 }) => (
     <Box
         sx={{
-            minHeight,
-            width: '100%',
+            minHeight: inline ? 'auto' : minHeight,
+            width: inline ? 'auto' : '100%',
             display: 'flex',
-            flexDirection: 'column',
+            flexDirection: inline ? 'row' : 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: 1.5,
+            gap,
         }}
     >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -33,7 +35,7 @@ const LoadingDots = ({
             <Box sx={dotStyle('240ms', size, color)} />
             <Box sx={dotStyle('360ms', size, color)} />
         </Box>
-        {label ? (
+        {!inline && label ? (
             <Typography variant="body2" color="text.secondary" fontWeight={700}>
                 {label}
             </Typography>

@@ -87,18 +87,50 @@ create index if not exists idx_audit_logs_user_id on public.audit_logs(user_id);
 
 -- UPDATE MODIFY POLICIES FOR RLS
 -- Allow coordinators to view their club details
+drop policy if exists "Coordinators can view their club details." on public.clubs;
 create policy "Coordinators can view their club details." on public.clubs for select using (
   exists (
-    select 1 from public.profiles
-    where id = auth.uid() and role = 'coordinator' and club_id = public.clubs.id
+    select 1
+    from public.profiles p
+    left join public.clubs c on c.id = public.clubs.id
+    where p.id = auth.uid()
+      and p.role = 'coordinator'
+      and (
+        p.club_id = public.clubs.id
+        or c.coordinator_id = auth.uid()
+        or exists (
+          select 1
+          from public.club_memberships cm
+          where cm.club_id = public.clubs.id
+            and cm.user_id = auth.uid()
+            and cm.status = 'approved'
+            and cm.role = 'sub_coordinator'
+        )
+      )
   )
 );
 
 -- Allow coordinators to update their club
+drop policy if exists "Coordinators can update their own club." on public.clubs;
 create policy "Coordinators can update their own club." on public.clubs for update using (
   exists (
-    select 1 from public.profiles
-    where id = auth.uid() and role = 'coordinator' and club_id = public.clubs.id
+    select 1
+    from public.profiles p
+    left join public.clubs c on c.id = public.clubs.id
+    where p.id = auth.uid()
+      and p.role = 'coordinator'
+      and (
+        p.club_id = public.clubs.id
+        or c.coordinator_id = auth.uid()
+        or exists (
+          select 1
+          from public.club_memberships cm
+          where cm.club_id = public.clubs.id
+            and cm.user_id = auth.uid()
+            and cm.status = 'approved'
+            and cm.role = 'sub_coordinator'
+        )
+      )
   )
 );
 

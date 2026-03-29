@@ -8,8 +8,20 @@ export const useUsers = () => {
             const { data, error } = await supabase
                 .from('profiles')
                 .select(`
-                    *,
-                    club:clubs!club_id(id, name)
+                    id,
+                    email,
+                    full_name,
+                    role,
+                    account_status,
+                    club_id,
+                    avatar_url,
+                    department,
+                    year,
+                    phone,
+                    bio,
+                    created_at,
+                    club:clubs!club_id(id, name),
+                    registrations:registrations!registrations_user_id_fkey(count)
                 `)
                 .order('created_at', { ascending: false });
 

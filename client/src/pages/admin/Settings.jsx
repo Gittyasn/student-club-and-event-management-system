@@ -7,7 +7,6 @@ import {
     // eslint-disable-next-line no-unused-vars
     FormControlLabel,
     Divider,
-    CircularProgress,
     Chip,
     Alert,
     List,
@@ -22,6 +21,7 @@ import { Settings as SettingsIcon, CheckCircle as SavedIcon, Numbers as NumbersI
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../services/supabaseClient';
 import { toast } from 'sonner';
+import LoadingDots from '../../components/LoadingDots';
 
 const SETTING_LABELS = {
     allow_student_registrations: { label: 'Student Registrations', description: 'Allow students to register for events platform-wide.' },
@@ -69,7 +69,7 @@ const AdminSettings = () => {
         }
     };
 
-    if (isLoading) return <Box display="flex" justifyContent="center" p={10}><CircularProgress /></Box>;
+    if (isLoading) return <LoadingDots label="Loading settings..." minHeight="50vh" />;
 
     const isMaintenance = settings?.maintenance_mode === 'true';
 

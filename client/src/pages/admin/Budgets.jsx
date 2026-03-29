@@ -1,8 +1,9 @@
 import { useState, useMemo } from 'react';
+import LoadingDots from '../../components/LoadingDots';
 import {
     Box, Typography, Grid, Paper, Table, TableBody, TableCell,
     TableContainer, TableHead, TableRow, Chip, Button, TextField,
-    CircularProgress, useTheme, Dialog, DialogTitle, DialogContent,
+    useTheme, Dialog, DialogTitle, DialogContent,
     DialogActions, FormControl, InputLabel, Select, MenuItem,
     // eslint-disable-next-line no-unused-vars
     IconButton, Tooltip, LinearProgress, Divider, Alert
@@ -53,7 +54,7 @@ const AddItemDialog = ({ open, onClose, clubs, events, onSave }) => {
                 <FormControl fullWidth size="small">
                     <InputLabel>Event (optional)</InputLabel>
                     <Select value={form.event_id} label="Event (optional)" onChange={e => set('event_id', e.target.value)}>
-                        <MenuItem value="">— None —</MenuItem>
+                        <MenuItem value="">ï¿½ None ï¿½</MenuItem>
                         {filteredEvents.map(e => <MenuItem key={e.id} value={e.id}>{e.title}</MenuItem>)}
                     </Select>
                 </FormControl>
@@ -259,7 +260,7 @@ const Budgets = () => {
                     </FormControl>
                 </Box>
                 {isLoading ? (
-                    <Box sx={{ p: 4, textAlign: 'center' }}><CircularProgress /></Box>
+                    <LoadingDots label="Loading budgets..." minHeight="180px" />
                 ) : (
                     <TableContainer>
                         <Table>
@@ -278,8 +279,8 @@ const Budgets = () => {
                                 {(items || []).map((item, idx) => (
                                     <TableRow key={item.id} component={motion.tr} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: idx * 0.03 }} sx={{ '&:hover': { bgcolor: 'action.hover' } }}>
                                         <TableCell><Typography variant="body2" fontWeight={700}>{item.label}</Typography></TableCell>
-                                        <TableCell><Chip label={item.clubs?.name || '—'} size="small" icon={<ClubIcon sx={{ fontSize: '14px !important' }} />} sx={{ fontWeight: 600, bgcolor: 'action.selected' }} /></TableCell>
-                                        <TableCell><Typography variant="body2" color="text.secondary">{item.events?.title || '—'}</Typography></TableCell>
+                                        <TableCell><Chip label={item.clubs?.name || 'ï¿½'} size="small" icon={<ClubIcon sx={{ fontSize: '14px !important' }} />} sx={{ fontWeight: 600, bgcolor: 'action.selected' }} /></TableCell>
+                                        <TableCell><Typography variant="body2" color="text.secondary">{item.events?.title || 'ï¿½'}</Typography></TableCell>
                                         <TableCell>
                                             <Chip label={item.type === 'income' ? '?? Income' : '?? Expense'} size="small"
                                                 sx={{ fontWeight: 700, bgcolor: item.type === 'income' ? '#10b98120' : '#ef444420', color: item.type === 'income' ? '#10b981' : '#ef4444' }} />

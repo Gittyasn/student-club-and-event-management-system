@@ -1,5 +1,5 @@
 import { useState, lazy, Suspense } from 'react';
-import { Box, Typography, Paper, CircularProgress, Button, Chip, Stack, Alert } from '@mui/material';
+import { Box, Typography, Paper, Button, Chip, Stack, Alert } from '@mui/material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../services/supabaseClient';
 import { sendNotification } from '../../services/notificationService';
@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { useAuthStore } from '../../store/authStore';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import LoadingDots from '../../components/LoadingDots';
 import {
     QrCodeScanner as ScanIcon, CheckCircle as SuccessIcon,
     // eslint-disable-next-line no-unused-vars
@@ -184,7 +185,7 @@ const ScanAttendance = () => {
                                         <Box sx={{ position: 'absolute', bottom: -2, right: -2, width: 24, height: 24, borderBottom: '4px solid #6366f1', borderRight: '4px solid #6366f1', borderRadius: '0 0 4px 0' }} />
                                     </Box>
                                 </Box>
-                                <Suspense fallback={<Box sx={{ py: 10, textAlign: 'center' }}><CircularProgress /></Box>}>
+                                <Suspense fallback={<LoadingDots label="Preparing scanner..." minHeight="180px" />}>
                                     <QrReader
                                         onResult={handleResult}
                                         constraints={{ facingMode: 'environment' }}
@@ -200,7 +201,7 @@ const ScanAttendance = () => {
                     {step === 'processing' && (
                         <motion.div key="processing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                             <Box sx={{ py: 6, textAlign: 'center' }}>
-                                <CircularProgress size={60} thickness={3} sx={{ mb: 3 }} />
+                                <LoadingDots size={7} label="Verifying your attendance..." minHeight="120px" />
                                 <Typography fontWeight={800} gutterBottom>Verifying your attendance...</Typography>
                                 <Typography color="text.secondary" variant="body2">Checking registration and event status.</Typography>
                             </Box>

@@ -14,8 +14,7 @@ import {
     FormControl,
     InputLabel,
     Select,
-    MenuItem,
-    CircularProgress
+    MenuItem
 } from '@mui/material';
 import { DataGrid, GridActionsCellItem } from '@mui/x-data-grid';
 import {
@@ -38,6 +37,7 @@ import { useClubCategories } from '../../hooks/useClubCategories';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../services/supabaseClient';
 import { toast } from 'sonner';
+import LoadingDots from '../../components/LoadingDots';
 
 // Validation Schema
 const clubSchema = z.object({
@@ -81,7 +81,7 @@ const ClubAnalyticsDialog = ({ open, onClose, club }) => {
             <DialogTitle>Analytics: {club?.name}</DialogTitle>
             <DialogContent>
                 {isLoading ? (
-                    <Box display="flex" justifyContent="center" p={4}><CircularProgress /></Box>
+                    <LoadingDots minHeight="180px" label="Loading club analytics..." />
                 ) : (
                     <Grid container spacing={2} sx={{ mt: 1 }}>
                         {[
@@ -424,7 +424,9 @@ const Clubs = () => {
                             <Select defaultValue="" label="Primary Coordinator" {...register('coordinator_id')}>
                                 <MenuItem value=""><em>Unassigned</em></MenuItem>
                                 {isLoadingUsers ? (
-                                    <MenuItem disabled><em>Loading users...</em></MenuItem>
+                                    <MenuItem disabled sx={{ justifyContent: 'center', py: 1.5 }}>
+                                        <LoadingDots inline size={4} />
+                                    </MenuItem>
                                 ) : coordinators.length === 0 ? (
                                     <MenuItem disabled><em>No users found</em></MenuItem>
                                 ) : (

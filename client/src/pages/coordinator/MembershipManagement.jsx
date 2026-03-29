@@ -6,12 +6,13 @@ import { useAuthStore } from '../../store/authStore';
 import {
     Box, Grid, Paper, Typography, Button, Table, TableBody, TableCell,
     // eslint-disable-next-line no-unused-vars
-    TableContainer, TableHead, TableRow, CircularProgress, Alert, Chip,
+    TableContainer, TableHead, TableRow, Alert, Chip,
     Dialog, DialogTitle, DialogContent, DialogActions, TextField, Avatar,
     Tabs, Tab, Card, CardContent, CardActions, IconButton, Tooltip, Stack, Divider, useTheme
 } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
 import RolePageHeader from '../../components/RolePageHeader';
+import LoadingDots from '../../components/LoadingDots';
 // eslint-disable-next-line no-unused-vars
 import { toast } from 'sonner';
 import {
@@ -34,15 +35,35 @@ const MembershipManagement = () => {
 
     // ... (keep queries and mutations logically same but ensure they match keys)
     const { data: coordinatorClub } = useQuery({
-        queryKey: ['coordinatorClub', profile?.club_id],
-        enabled: !!profile?.club_id && profile?.role === 'coordinator',
+        queryKey: ['coordinatorClub', profile?.id],
+        enabled: !!profile?.id && profile?.role === 'coordinator',
         queryFn: async () => {
-            const { data } = await supabase
-                .from('clubs')
-                .select('*')
-                .eq('id', profile.club_id)
-                .single();
-            return data;
+            const [profileClub, ownedClub, delegatedClub] = await Promise.all([
+                supabase.from('profiles').select('club_id').eq('id', profile.id).maybeSingle(),
+                supabase.from('clubs').select('*').eq('coordinator_id', profile.id).maybeSingle(),
+                supabase
+                    .from('club_memberships')
+                    .select('club:clubs(*)')
+                    .eq('user_id', profile.id)
+                    .eq('role', 'sub_coordinator')
+                    .eq('status', 'approved')
+                    .limit(1)
+                    .maybeSingle()
+            ]);
+
+            if (ownedClub.data) return ownedClub.data;
+
+            if (profileClub.data?.club_id) {
+                const { data, error } = await supabase
+                    .from('clubs')
+                    .select('*')
+                    .eq('id', profileClub.data.club_id)
+                    .maybeSingle();
+                if (error) throw error;
+                if (data) return data;
+            }
+
+            return delegatedClub.data?.club || null;
         }
     });
 
@@ -50,12 +71,13 @@ const MembershipManagement = () => {
         queryKey: ['pendingRequests', coordinatorClub?.id],
         enabled: !!coordinatorClub?.id,
         queryFn: async () => {
-            const { data } = await supabase
+            const { data, error } = await supabase
                 .from('club_memberships')
-                .select('*, profiles:user_id(id, full_name, email, avatar_url, department)')
+                .select('*, profiles:profiles!club_memberships_user_id_fkey(id, full_name, email, avatar_url, department)')
                 .eq('club_id', coordinatorClub.id)
                 .eq('status', 'pending')
                 .order('joined_at', { ascending: false });
+            if (error) throw error;
             return data || [];
         }
     });
@@ -64,12 +86,13 @@ const MembershipManagement = () => {
         queryKey: ['approvedMembers', coordinatorClub?.id],
         enabled: !!coordinatorClub?.id,
         queryFn: async () => {
-            const { data } = await supabase
+            const { data, error } = await supabase
                 .from('club_memberships')
-                .select('*, profiles:user_id(id, full_name, email, avatar_url, department)')
+                .select('*, profiles:profiles!club_memberships_user_id_fkey(id, full_name, email, avatar_url, department)')
                 .eq('club_id', coordinatorClub.id)
                 .eq('status', 'approved')
                 .order('joined_at', { ascending: false });
+            if (error) throw error;
             return data || [];
         }
     });
@@ -114,7 +137,7 @@ const MembershipManagement = () => {
     return (
         <Box sx={{ pb: 6 }}>
             <RolePageHeader
-                kicker="Coordinator Suite"
+                kicker="Coordinator Dashboard"
                 title="Membership Management"
                 subtitle="Review requests and manage club members."
             />
@@ -179,7 +202,7 @@ const MembershipManagement = () => {
                 {tabValue === 0 ? (
                     <Box key="requests" component={motion.div} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}>
                         {isLoading ? (
-                            <Box sx={{ display: 'flex', justifyContent: 'center', p: 10 }}><CircularProgress /></Box>
+                            <LoadingDots label="Loading requests..." minHeight="40vh" />
                         ) : (!pendingRequests || pendingRequests.length === 0) ? (
                             <Box sx={{ p: 10, textAlign: 'center', opacity: 0.5 }}>
                                 <Typography variant="h6" fontWeight={600}>No pending applications</Typography>

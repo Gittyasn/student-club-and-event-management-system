@@ -212,6 +212,13 @@ CREATE POLICY "Coordinators can manage results for their events" ON public.resul
             WHERE e.id = results.event_id AND p.id = auth.uid() AND p.role = 'coordinator'
             AND (e.results_locked IS NULL OR e.results_locked = false)
         )
+    ) WITH CHECK (
+        EXISTS (
+            SELECT 1 FROM public.events e
+            JOIN public.profiles p ON p.club_id = e.club_id
+            WHERE e.id = results.event_id AND p.id = auth.uid() AND p.role = 'coordinator'
+            AND (e.results_locked IS NULL OR e.results_locked = false)
+        )
     );
 
 DROP POLICY IF EXISTS "Admins have full access to results" ON public.results;

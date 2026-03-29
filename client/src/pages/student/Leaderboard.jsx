@@ -3,8 +3,9 @@ import React from 'react';
 import {
     Box, Typography, Grid, Paper, Avatar, Chip,
     // eslint-disable-next-line no-unused-vars
-    CircularProgress, LinearProgress, Stack
+    LinearProgress, Stack
 } from '@mui/material';
+import LoadingDots from '../../components/LoadingDots';
 import {
     // eslint-disable-next-line no-unused-vars
     EmojiEvents, WorkspacePremium, Bolt, People
@@ -27,7 +28,7 @@ const EngagementLeaderboard = () => {
     const { user } = useAuthStore();
     const maxScore = leaderboard?.[0]?.score || 1;
 
-    if (isLoading) return <Box display="flex" justifyContent="center" p={8}><CircularProgress /></Box>;
+    if (isLoading) return <LoadingDots label="Loading leaderboard..." minHeight="50vh" />;
 
     const myRank = leaderboard ? leaderboard.findIndex(u => u.id === user?.id) : -1;
 

@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-    Box, Typography, Button, Paper, Grid, TextField, Divider, Chip, CircularProgress, Stack, Avatar, useTheme, Card, CardContent
+    Box, Typography, Button, Paper, Grid, TextField, Divider, Chip, Stack, Avatar, useTheme, Card, CardContent
 } from '@mui/material';
+import LoadingDots from '../../components/LoadingDots';
 import {
     Person as PersonIcon, Add as AddIcon, ExitToApp as LeaveIcon, Send as SubmitIcon, GitHub as GitHubIcon, VideoLibrary as VideoIcon, ErrorOutline, CheckCircle, AssignmentInd, BusinessCenter, RocketLaunch, Groups
 } from '@mui/icons-material';
@@ -26,7 +27,7 @@ const Teams = () => {
     const [demoUrl, setDemoUrl] = useState('');
 
     if (eventLoading || teamsLoading || userTeamLoading) {
-        return <Box display="flex" justifyContent="center" alignItems="center" height="60vh"><CircularProgress /></Box>;
+        return <LoadingDots label="Loading teams..." minHeight="60vh" />;
     }
 
     if (event?.event_type !== 'hackathon') {
@@ -241,14 +242,14 @@ const Teams = () => {
                         <Paper elevation={0} sx={{ p: 4, borderRadius: 3, border: `1px solid ${theme.palette.divider}`, height: '100%' }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
                                 <AssignmentInd sx={{ color: theme.palette.primary.main }} />
-                                <Typography variant="h6" fontWeight={800}>Join Active Matrix</Typography>
+                                <Typography variant="h6" fontWeight={800}>Join an Active Team</Typography>
                             </Box>
 
                             {(!teams || teams.length === 0) ? (
                                 <Box sx={{ p: 6, textAlign: 'center', border: `1px dashed ${theme.palette.divider}`, borderRadius: 2 }}>
                                     <Groups sx={{ fontSize: 48, color: 'text.disabled', mb: 2 }} />
-                                    <Typography variant="subtitle1" fontWeight={700} sx={{ color: 'text.primary' }}>No Available Units</Typography>
-                                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>The server matrix is currently empty. Initialize a squad to begin.</Typography>
+                                    <Typography variant="subtitle1" fontWeight={700} sx={{ color: 'text.primary' }}>No Teams Available</Typography>
+                                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>No teams are open right now. Create one to get started.</Typography>
                                 </Box>
                             ) : (
                                 <Grid container spacing={3}>

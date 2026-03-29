@@ -6,9 +6,9 @@ import {
     Grid,
     Chip,
     Button,
-    CircularProgress,
     Divider
 } from '@mui/material';
+import LoadingDots from '../../components/LoadingDots';
 import {
     AccessTime as PendingIcon,
     CheckCircle as ApprovedIcon,
@@ -36,7 +36,7 @@ const MyClubs = () => {
     const visibleMembershipStatuses = new Set(['pending', 'approved']);
     const actionableMembershipStatuses = new Set(['pending', 'approved']);
 
-    if (loadingMemberships || loadingClubs) return <CircularProgress sx={{ display: 'block', m: '50px auto' }} />;
+    if (loadingMemberships || loadingClubs) return <LoadingDots label="Loading your clubs..." minHeight="40vh" />;
 
     const handleLeave = (id) => {
         if (window.confirm("Are you sure you want to leave this club?")) {

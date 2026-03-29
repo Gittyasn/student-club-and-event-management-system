@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
     Avatar,
+    Alert,
     Box,
     Button,
     Chip,
@@ -9,10 +10,14 @@ import {
     DialogActions,
     DialogContent,
     DialogTitle,
+    Divider,
+    Drawer,
     FormControl,
+    Grid,
     InputAdornment,
     InputLabel,
     MenuItem,
+    Paper,
     Select,
     Stack,
     TextField,
@@ -36,24 +41,38 @@ import { useAuthStore } from '../../store/authStore';
 import LoadingDots from '../../components/LoadingDots';
 
 const roleConfig = {
-    admin: { bg: '#ef444418', color: '#f87171', border: '#ef444430', icon: <AdminPanelSettings sx={{ fontSize: 14 }} /> },
-    coordinator: { bg: '#3b82f618', color: '#60a5fa', border: '#3b82f630', icon: <SupervisorAccount sx={{ fontSize: 14 }} /> },
-    student: { bg: '#10b98118', color: '#34d399', border: '#10b98130', icon: <Person sx={{ fontSize: 14 }} /> },
+    admin: { bg: '#ef444418', color: '#f87171', border: '#ef444430', icon: <AdminPanelSettings sx={{ fontSize: 14 }} />, label: 'Admin' },
+    coordinator: { bg: '#3b82f618', color: '#60a5fa', border: '#3b82f630', icon: <SupervisorAccount sx={{ fontSize: 14 }} />, label: 'Coordinator' },
+    student: { bg: '#10b98118', color: '#34d399', border: '#10b98130', icon: <Person sx={{ fontSize: 14 }} />, label: 'Student' },
 };
 
 const statusConfig = {
-    active: { bg: '#10b98118', color: '#10b981', border: '#10b98130' },
-    blocked: { bg: '#ef444418', color: '#ef4444', border: '#ef444430' },
+    active: { bg: '#10b98118', color: '#10b981', border: '#10b98130', label: 'Active' },
+    blocked: { bg: '#ef444418', color: '#ef4444', border: '#ef444430', label: 'Blocked' },
 };
 
+const getEngagementCount = (user) => user.registrations?.[0]?.count || 0;
+
+const DetailRow = ({ label, value }) => (
+    <Box>
+        <Typography variant="caption" color="text.secondary" fontWeight={700}>
+            {label}
+        </Typography>
+        <Typography variant="body2" fontWeight={700} sx={{ mt: 0.25 }}>
+            {value || '-'}
+        </Typography>
+    </Box>
+);
+
 const Users = () => {
-    const { data: users, isLoading } = useUsers();
+    const { data: users, isLoading, error } = useUsers();
     const { data: clubs } = useClubs();
     const { updateUser } = useUserMutations();
     const { user: currentUser } = useAuthStore();
 
     const [open, setOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState(null);
+    const [drawerUser, setDrawerUser] = useState(null);
     const [role, setRole] = useState('student');
     const [clubId, setClubId] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
@@ -64,6 +83,7 @@ const Users = () => {
             window.alert('You cannot edit your own role.');
             return;
         }
+
         setSelectedUser(user);
         setRole(user.role);
         setClubId(user.club_id || '');
@@ -77,6 +97,7 @@ const Users = () => {
 
     const handleSave = () => {
         if (!selectedUser) return;
+
         updateUser.mutate(
             {
                 id: selectedUser.id,
@@ -91,6 +112,7 @@ const Users = () => {
             window.alert('You cannot change your own status.');
             return;
         }
+
         if (window.confirm(`Mark this user as ${newStatus}?`)) {
             updateUser.mutate({ id: user.id, updates: { account_status: newStatus } });
         }
@@ -98,18 +120,25 @@ const Users = () => {
 
     const filteredUsers = useMemo(() => {
         if (!users) return [];
+
         let filtered = users.filter((entry) => entry.account_status !== 'deleted');
-        if (roleFilter !== 'all') filtered = filtered.filter((entry) => entry.role === roleFilter);
+
+        if (roleFilter !== 'all') {
+            filtered = filtered.filter((entry) => entry.role === roleFilter);
+        }
+
         if (searchTerm) {
-            const searchValue = searchTerm.toLowerCase();
+            const query = searchTerm.toLowerCase();
             filtered = filtered.filter(
                 (entry) =>
-                    entry.email?.toLowerCase().includes(searchValue) ||
-                    entry.full_name?.toLowerCase().includes(searchValue)
+                    entry.email?.toLowerCase().includes(query) ||
+                    entry.full_name?.toLowerCase().includes(query) ||
+                    entry.club?.name?.toLowerCase().includes(query)
             );
         }
+
         return filtered;
-    }, [users, roleFilter, searchTerm]);
+    }, [roleFilter, searchTerm, users]);
 
     const stats = useMemo(
         () => ({
@@ -125,34 +154,29 @@ const Users = () => {
     const columns = [
         {
             field: 'full_name',
-            headerName: 'User Profile',
-            flex: 1.5,
+            headerName: 'User',
+            flex: 1.6,
+            sortable: false,
             renderCell: (params) => (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.75, py: 1, minWidth: 0 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 1, minWidth: 0 }}>
                     <Avatar
                         src={params.row.avatar_url || undefined}
                         sx={{
-                            width: 40,
-                            height: 40,
-                            fontSize: '0.95rem',
+                            width: 42,
+                            height: 42,
                             fontWeight: 800,
                             background: `linear-gradient(135deg, ${roleConfig[params.row.role]?.color || '#60a5fa'}, ${(roleConfig[params.row.role]?.color || '#60a5fa')}88)`,
                             color: 'white',
-                            border: '2px solid white',
-                            boxShadow: '0 4px 10px rgba(15,23,42,0.08)',
                         }}
                     >
                         {params.value?.charAt(0) || '?'}
                     </Avatar>
                     <Box sx={{ minWidth: 0 }}>
-                        <Typography variant="body2" fontWeight={800} color="text.primary" noWrap>
+                        <Typography variant="body2" fontWeight={800} noWrap>
                             {params.value || 'Anonymous'}
                         </Typography>
-                        <Typography variant="caption" color="text.secondary" fontWeight={600} noWrap>
+                        <Typography variant="caption" color="text.secondary" fontWeight={600} noWrap display="block">
                             {params.row.email}
-                        </Typography>
-                        <Typography variant="caption" color="text.disabled" fontWeight={700} noWrap>
-                            {params.row.department || 'Department not set'}
                         </Typography>
                     </Box>
                 </Box>
@@ -160,20 +184,18 @@ const Users = () => {
         },
         {
             field: 'role',
-            headerName: 'Designation',
-            width: 145,
+            headerName: 'Role',
+            width: 150,
             renderCell: (params) => {
                 const config = roleConfig[params.value] || roleConfig.student;
+
                 return (
                     <Chip
                         icon={config.icon}
-                        label={params.value}
+                        label={config.label}
                         size="small"
                         sx={{
                             fontWeight: 800,
-                            fontSize: '0.65rem',
-                            textTransform: 'uppercase',
-                            letterSpacing: 1,
                             bgcolor: config.bg,
                             color: config.color,
                             border: `1px solid ${config.border}`,
@@ -184,64 +206,39 @@ const Users = () => {
         },
         {
             field: 'account_status',
-            headerName: 'Governance',
-            width: 135,
-            renderCell: (params) => {
-                const config = statusConfig[params.value] || statusConfig.active;
-                return (
-                    <Stack direction="row" spacing={1} alignItems="center">
-                        <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: config.color }} />
-                        <Typography variant="caption" fontWeight={800} sx={{ color: config.color, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                            {params.value || 'active'}
-                        </Typography>
-                    </Stack>
-                );
-            },
-        },
-        {
-            field: 'engagement',
-            headerName: 'Engagement',
+            headerName: 'Status',
             width: 140,
             renderCell: (params) => {
-                const count = params.row.registrations?.[0]?.count || 0;
+                const config = statusConfig[params.value] || statusConfig.active;
+
                 return (
-                    <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                        <Typography variant="body2" fontWeight={800} color="text.primary">
-                            {count}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                            Event registrations
-                        </Typography>
-                    </Box>
+                    <Chip
+                        label={config.label}
+                        size="small"
+                        sx={{
+                            fontWeight: 800,
+                            bgcolor: config.bg,
+                            color: config.color,
+                            border: `1px solid ${config.border}`,
+                        }}
+                    />
                 );
             },
-        },
-        {
-            field: 'club_name',
-            headerName: 'Organization',
-            flex: 1,
-            valueGetter: (_value, row) => row.club?.name || '—',
-            renderCell: (params) => (
-                <Box sx={{ minWidth: 0 }}>
-                    <Typography variant="body2" fontWeight={700} color="text.primary" noWrap>
-                        {params.value || '—'}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary" noWrap>
-                        {params.row.role === 'coordinator' ? 'Assigned workspace' : 'Linked organization'}
-                    </Typography>
-                </Box>
-            ),
         },
         {
             field: 'actions',
             type: 'actions',
-            headerName: 'Control',
-            width: 100,
+            headerName: 'Actions',
+            width: 110,
+            headerClassName: 'sticky-actions',
+            cellClassName: 'sticky-actions',
             getActions: (params) => {
                 const user = params.row;
                 const isSelf = user.id === currentUser?.id;
                 const isBlocked = user.account_status === 'blocked';
+
                 return [
+                    <GridActionsCellItem key="details" icon={<Person />} label="View Details" onClick={() => setDrawerUser(user)} showInMenu />,
                     <GridActionsCellItem key="edit" icon={<EditIcon />} label="Edit Access" onClick={() => handleEdit(user)} disabled={isSelf} showInMenu />,
                     <GridActionsCellItem
                         key="toggle"
@@ -254,7 +251,7 @@ const Users = () => {
                     <GridActionsCellItem
                         key="delete"
                         icon={<DeleteIcon color="error" />}
-                        label="Revoke Identity"
+                        label="Delete Account"
                         onClick={() => handleStatusToggle(user, 'deleted')}
                         disabled={isSelf}
                         showInMenu
@@ -273,47 +270,47 @@ const Users = () => {
                 sx={{
                     mb: 4,
                     p: { xs: 3, md: 4 },
-                    borderRadius: '16px',
+                    borderRadius: 3,
                     background: (theme) =>
                         theme.palette.mode === 'dark'
                             ? 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%)'
                             : 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
                     border: (theme) => `1px solid ${theme.palette.divider}`,
-                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
                 }}
             >
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, justifyContent: 'space-between', alignItems: 'center' }}>
                     <Box>
-                        <Typography variant="h4" fontWeight={900} sx={{ color: 'text.primary', letterSpacing: -1.5 }}>
+                        <Typography variant="h4" fontWeight={900} sx={{ color: 'text.primary', letterSpacing: -1 }}>
                             User Management
                         </Typography>
-                        <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 500, mt: 0.5 }}>
-                            Configure system roles, access protocols, and account status across the institution.
+                        <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5 }}>
+                            Review accounts, roles, and access without overloading the table.
                         </Typography>
                     </Box>
-                    <Stack direction="row" spacing={1.5} flexWrap="wrap">
+                    <Stack direction="row" spacing={1.5} flexWrap="wrap" useFlexGap>
                         {[
                             { label: 'Total', value: stats.total, color: '#3b82f6' },
                             { label: 'Students', value: stats.students, color: '#10b981' },
-                            { label: 'Staff', value: stats.coordinators, color: '#a855f7' },
+                            { label: 'Coordinators', value: stats.coordinators, color: '#a855f7' },
                             { label: 'Blocked', value: stats.blocked, color: '#ef4444' },
                         ].map((item) => (
                             <Box
                                 key={item.label}
                                 sx={{
-                                    textAlign: 'center',
-                                    minWidth: 90,
+                                    minWidth: 96,
                                     px: 2,
                                     py: 1.5,
-                                    borderRadius: '12px',
-                                    bgcolor: (theme) => (theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'white'),
-                                    border: (theme) => `1px solid ${theme.palette.divider}`,
+                                    textAlign: 'center',
+                                    borderRadius: 2,
+                                    bgcolor: 'background.paper',
+                                    border: '1px solid',
+                                    borderColor: 'divider',
                                 }}
                             >
-                                <Typography variant="h5" fontWeight={900} sx={{ color: item.color, letterSpacing: -1 }}>
+                                <Typography variant="h5" fontWeight={900} sx={{ color: item.color, lineHeight: 1 }}>
                                     {item.value}
                                 </Typography>
-                                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700 }}>
                                     {item.label}
                                 </Typography>
                             </Box>
@@ -325,7 +322,7 @@ const Users = () => {
             <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap', alignItems: 'center' }}>
                 <TextField
                     size="small"
-                    placeholder="Search by name or email..."
+                    placeholder="Search by name, email, or club"
                     value={searchTerm}
                     onChange={(event) => setSearchTerm(event.target.value)}
                     InputProps={{
@@ -335,53 +332,142 @@ const Users = () => {
                             </InputAdornment>
                         ),
                     }}
-                    sx={{ flex: 1, minWidth: 240 }}
+                    sx={{ flex: 1, minWidth: 260 }}
                 />
-                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
                     {['all', 'student', 'coordinator', 'admin'].map((entry) => (
                         <Chip
                             key={entry}
                             label={entry.charAt(0).toUpperCase() + entry.slice(1)}
                             onClick={() => setRoleFilter(entry)}
-                            size="small"
                             sx={{
                                 fontWeight: 700,
                                 cursor: 'pointer',
-                                bgcolor: roleFilter === entry ? '#3b82f6' : 'transparent',
+                                bgcolor: roleFilter === entry ? '#2563eb' : 'transparent',
                                 color: roleFilter === entry ? 'white' : 'text.secondary',
-                                border: `1px solid ${roleFilter === entry ? '#3b82f6' : 'rgba(148,163,184,0.35)'}`,
+                                border: `1px solid ${roleFilter === entry ? '#2563eb' : 'rgba(148,163,184,0.35)'}`,
                             }}
                         />
                     ))}
-                </Box>
+                </Stack>
             </Box>
 
-            <Box sx={{ height: 580 }}>
+            {error ? (
+                <Alert severity="error" sx={{ mb: 3, borderRadius: 3 }}>
+                    Failed to load user accounts. {error.message}
+                </Alert>
+            ) : null}
+
+            <Box sx={{ height: 620 }}>
                 <DataGrid
                     rows={filteredUsers}
                     columns={columns}
                     loading={isLoading}
                     getRowHeight={() => 84}
+                    onRowClick={(params) => setDrawerUser(params.row)}
                     slots={{
                         loadingOverlay: () => <LoadingDots minHeight="240px" label="Loading users..." />,
                         noRowsOverlay: () => <LoadingDots minHeight="180px" label="No users found for this filter." />,
                     }}
                     initialState={{ pagination: { paginationModel: { page: 0, pageSize: 10 } } }}
-                    pageSizeOptions={[5, 10, 20]}
+                    pageSizeOptions={[10, 20, 50]}
                     disableRowSelectionOnClick
                     sx={{
                         border: '1px solid',
                         borderColor: 'divider',
-                        borderRadius: '18px',
+                        borderRadius: 3,
                         overflow: 'hidden',
-                        '& .MuiDataGrid-cell': { py: 1.25, alignItems: 'center' },
+                        '& .MuiDataGrid-cell': {
+                            py: 1.25,
+                            alignItems: 'center',
+                        },
+                        '& .sticky-actions': {
+                            position: 'sticky',
+                            right: 0,
+                            zIndex: 2,
+                            bgcolor: 'background.paper',
+                        },
+                        '& .MuiDataGrid-columnHeaders .sticky-actions': {
+                            zIndex: 3,
+                        },
                     }}
                 />
             </Box>
 
+            <Drawer
+                anchor="right"
+                open={!!drawerUser}
+                onClose={() => setDrawerUser(null)}
+                PaperProps={{ sx: { width: 360, p: 3 } }}
+            >
+                {drawerUser ? (
+                    <Stack spacing={2.5}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                            <Avatar src={drawerUser.avatar_url || undefined} sx={{ width: 56, height: 56 }}>
+                                {drawerUser.full_name?.charAt(0) || '?'}
+                            </Avatar>
+                            <Box>
+                                <Typography variant="h6" fontWeight={900}>
+                                    {drawerUser.full_name || 'Anonymous'}
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                    {drawerUser.email}
+                                </Typography>
+                            </Box>
+                        </Box>
+
+                        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                            <Chip label={roleConfig[drawerUser.role]?.label || 'User'} sx={{ fontWeight: 700 }} />
+                            <Chip label={statusConfig[drawerUser.account_status]?.label || 'Active'} color={drawerUser.account_status === 'blocked' ? 'error' : 'success'} sx={{ fontWeight: 700 }} />
+                        </Stack>
+
+                        <Divider />
+
+                        <Grid container spacing={2}>
+                            <Grid item xs={6}>
+                                <DetailRow label="Department" value={drawerUser.department || 'Not set'} />
+                            </Grid>
+                            <Grid item xs={6}>
+                                <DetailRow label="Club" value={drawerUser.club?.name || 'Not linked'} />
+                            </Grid>
+                            <Grid item xs={6}>
+                                <DetailRow label="Registrations" value={getEngagementCount(drawerUser)} />
+                            </Grid>
+                            <Grid item xs={6}>
+                                <DetailRow label="Joined" value={drawerUser.created_at ? new Date(drawerUser.created_at).toLocaleDateString('en-IN') : '-'} />
+                            </Grid>
+                        </Grid>
+
+                        <Paper elevation={0} sx={{ p: 2, borderRadius: 2.5, border: '1px solid', borderColor: 'divider' }}>
+                            <Typography variant="body2" fontWeight={800} sx={{ mb: 0.5 }}>
+                                Default table view
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                                The table keeps only the main identity, role, and account status visible. Secondary details live here to make scanning easier on smaller screens.
+                            </Typography>
+                        </Paper>
+
+                        <Stack direction="row" spacing={1.5}>
+                            <Button variant="outlined" onClick={() => handleEdit(drawerUser)} disabled={drawerUser.id === currentUser?.id} sx={{ fontWeight: 700 }}>
+                                Edit role
+                            </Button>
+                            <Button
+                                variant="contained"
+                                color={drawerUser.account_status === 'blocked' ? 'success' : 'warning'}
+                                onClick={() => handleStatusToggle(drawerUser, drawerUser.account_status === 'blocked' ? 'active' : 'blocked')}
+                                disabled={drawerUser.id === currentUser?.id}
+                                sx={{ fontWeight: 800 }}
+                            >
+                                {drawerUser.account_status === 'blocked' ? 'Restore access' : 'Restrict access'}
+                            </Button>
+                        </Stack>
+                    </Stack>
+                ) : null}
+            </Drawer>
+
             <Dialog open={open} onClose={handleClose} maxWidth="xs" fullWidth>
                 <DialogTitle sx={{ fontWeight: 900, letterSpacing: -0.5 }}>
-                    Edit User Role
+                    Edit user role
                     {selectedUser ? (
                         <Typography variant="caption" display="block" color="text.secondary" fontWeight={600} sx={{ mt: 0.5 }}>
                             {selectedUser.email}

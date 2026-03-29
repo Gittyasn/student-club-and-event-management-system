@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import {
     Box, Typography, Paper, TextField, Button, Grid,
-    MenuItem, Select, FormControl, InputLabel, Alert, CircularProgress
+    MenuItem, Select, FormControl, InputLabel, Alert
 } from '@mui/material';
 import { Campaign as CampaignIcon, Send as SendIcon } from '@mui/icons-material';
 import { useNotificationStore } from '../../store/notificationStore';
 import { supabase } from '../../services/supabaseClient';
 import { toast } from 'sonner';
+import LoadingDots from '../../components/LoadingDots';
 
 const BroadcastNotification = () => {
     const { broadcastNotification } = useNotificationStore();
@@ -140,7 +141,7 @@ const BroadcastNotification = () => {
                                 color="error"
                                 size="large"
                                 disabled={loading || !title.trim() || !message.trim()}
-                                startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <SendIcon />}
+                                startIcon={loading ? <LoadingDots inline size={5} color="currentColor" /> : <SendIcon />}
                                 sx={{ px: 4, py: 1.5, borderRadius: 2 }}
                             >
                                 Dispatch Broadcast

@@ -3,10 +3,6 @@ import { Box, Typography, Button } from '@mui/material';
 import { ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 import ChatWindow from '../../components/ChatWindow';
 
-/**
- * TeamChat Page integration
- * Connects the ChatWindow engine specifically to a team context.
- */
 const TeamChat = () => {
     const { teamId } = useParams();
     const navigate = useNavigate();
@@ -18,15 +14,14 @@ const TeamChat = () => {
                     Back to Team
                 </Button>
                 <Typography variant="h5" sx={{ fontWeight: 800, color: 'primary.main' }}>
-                    Squad Intelligence
+                    Team Chat
                 </Typography>
             </Box>
 
-            {/* Enterprise Chat Engine Integration */}
             <ChatWindow
                 chatType="team"
                 referenceId={teamId}
-                title="Squad Comms"
+                title="Team Conversation"
             />
         </Box>
     );

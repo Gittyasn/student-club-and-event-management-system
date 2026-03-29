@@ -11,8 +11,8 @@ import {
     FormControlLabel,
     Checkbox,
     Stack,
-    CircularProgress
 } from '@mui/material';
+import LoadingDots from '../../components/LoadingDots';
 import { useSubmitFeedback, useCheckFeedback } from '../../hooks/useFeedback';
 import { useEventById } from '../../hooks/useEventById';
 import { useAuthStore } from '../../store/authStore';
@@ -38,7 +38,7 @@ const SubmitFeedback = () => {
     const isEligible = profile?.role === 'student' && myRegistration?.attendance_status === 'present';
 
     if (eventLoading || regsLoading || checkLoading) {
-        return <Box display="flex" justifyContent="center" p={4}><CircularProgress /></Box>;
+        return <LoadingDots label="Loading feedback form..." minHeight="30vh" />;
     }
 
     if (!isEligible) {

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Box, Typography, Paper, Switch, FormControlLabel, Divider, CircularProgress, Alert } from '@mui/material';
+import { Box, Typography, Paper, Switch, FormControlLabel, Divider, Alert } from '@mui/material';
+import LoadingDots from '../LoadingDots';
 import {
     Email as EmailIcon,
     Event as EventIcon,
@@ -32,7 +33,7 @@ const NotificationSettings = () => {
         }
     };
 
-    if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}><CircularProgress /></Box>;
+    if (loading) return <LoadingDots label="Loading notification settings..." minHeight="160px" />;
 
     if (!preferences) return <Alert severity="error">Unable to load notification preferences.</Alert>;
 

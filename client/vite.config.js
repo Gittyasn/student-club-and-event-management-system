@@ -63,6 +63,9 @@ export default defineConfig({
                     ) {
                         return 'vendor-router'
                     }
+                    if (normalizedId.includes('/node_modules/@mui/x-data-grid/')) {
+                        return 'vendor-mui-grid'
+                    }
                     if (normalizedId.includes('/node_modules/@mui/icons-material/')) {
                         return 'vendor-mui-icons'
                     }

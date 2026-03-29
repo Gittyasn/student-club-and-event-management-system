@@ -4,7 +4,7 @@ import ChatWindow from '../../components/ChatWindow';
 
 const BroadcastChannel = () => {
     return (
-        <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+        <Container maxWidth={false} sx={{ mt: 4, mb: 4, maxWidth: '1180px' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
                 <Box sx={{
                     width: 48, height: 48, borderRadius: '12px',

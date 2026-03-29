@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-    Box, Typography, Button, Paper, Grid, CircularProgress, Avatar, Divider, Chip, useTheme
+    Box, Typography, Button, Paper, Grid, Avatar, Divider, Chip, useTheme
 } from '@mui/material';
 import {
     ArrowBack as BackIcon, EmojiEvents, Code, Memory, Public, Flag
@@ -8,6 +8,7 @@ import {
 import { useEventResults } from '../../hooks/useResults';
 import { useEventById } from '../../hooks/useEventById';
 import { motion } from 'framer-motion';
+import LoadingDots from '../../components/LoadingDots';
 
 const EventResults = () => {
     const { id: eventId } = useParams();
@@ -17,7 +18,7 @@ const EventResults = () => {
     const { data: results, isLoading: resultsLoading } = useEventResults(eventId);
     const { data: event, isLoading: eventLoading } = useEventById(eventId, { publicOnly: true });
 
-    if (resultsLoading || eventLoading) return <Box display="flex" justifyContent="center" alignItems="center" height="60vh"><CircularProgress /></Box>;
+    if (resultsLoading || eventLoading) return <LoadingDots label="Loading results..." minHeight="60vh" />;
 
     const getPositionConfig = (pos) => {
         switch (pos) {
@@ -42,13 +43,13 @@ const EventResults = () => {
             {/* Hero Header */}
             <Box sx={{ mb: 6, textAlign: 'center' }}>
                 <Typography variant="overline" sx={{ color: theme.palette.primary.main, fontWeight: 800, letterSpacing: 2, display: 'block', mb: 1 }}>
-                    {isHackathon ? 'OFFICIAL HACKATHON LEADERBOARD' : 'EVENT STANDINGS'}
+                    {isHackathon ? 'OFFICIAL HACKATHON RESULTS' : 'EVENT RESULTS'}
                 </Typography>
                 <Typography variant="h3" fontWeight={900} sx={{ letterSpacing: -1, mb: 1, color: 'text.primary' }}>
                     {event?.title}
                 </Typography>
                 <Typography variant="body1" sx={{ color: 'text.secondary', fontWeight: 500, maxWidth: 600, mx: 'auto' }}>
-                    Finalized evaluation metrics and judicial results.
+                    Final rankings and published scores.
                 </Typography>
             </Box>
 
@@ -100,7 +101,7 @@ const EventResults = () => {
                                                 <Chip icon={<Code fontSize="small" />} label={STACKS[index % STACKS.length]} size="small" sx={{ fontWeight: 700 }} />
                                             )}
                                             {result.score > 0 && (
-                                                <Chip label={`${result.score} JUDGE PTS`} size="small" color={isFirst ? "warning" : "default"} sx={{ fontWeight: 800 }} />
+                                                <Chip label={`${result.score} points`} size="small" color={isFirst ? "warning" : "default"} sx={{ fontWeight: 800 }} />
                                             )}
                                         </Box>
 
@@ -113,7 +114,7 @@ const EventResults = () => {
 
                                     {isFirst && isHackathon && result.teams?.github_url && (
                                         <Button variant="contained" component="a" href={result.teams.github_url} target="_blank" endIcon={<Public />} sx={{ fontWeight: 700, borderRadius: 2, bgcolor: '#000', color: '#fff', '&:hover': { bgcolor: '#333' } }}>
-                                            Inspect Source
+                                            View Project
                                         </Button>
                                     )}
                                 </Paper>
@@ -125,7 +126,7 @@ const EventResults = () => {
                     {results.length > 3 && (
                         <Grid item xs={12} sx={{ mt: 4 }}>
                             <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
-                                <Typography variant="h6" fontWeight={800}>Complete Matrix</Typography>
+                                <Typography variant="h6" fontWeight={800}>Full Rankings</Typography>
                                 <Box sx={{ flex: 1, height: 1, bgcolor: 'divider' }} />
                             </Box>
 
@@ -147,7 +148,7 @@ const EventResults = () => {
                                             <Box sx={{ flex: 1 }}>
                                                 <Typography variant="subtitle1" fontWeight={800}>{result.team_id ? result.teams?.team_name : result.profiles?.full_name}</Typography>
                                                 <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
-                                                    {result.remarks || 'No execution remarks logged.'}
+                                                    {result.remarks || 'No remarks shared.'}
                                                 </Typography>
                                             </Box>
 
@@ -168,8 +169,8 @@ const EventResults = () => {
             ) : (
                 <Paper elevation={0} sx={{ p: 8, textAlign: 'center', border: `1px solid ${theme.palette.divider}`, borderRadius: 3, bgcolor: theme.palette.background.paper, maxWidth: 600, mx: 'auto' }}>
                     <Memory sx={{ fontSize: 48, color: 'text.disabled', mb: 2 }} />
-                    <Typography variant="h6" fontWeight={700} sx={{ mb: 1 }}>Evaluation Pending</Typography>
-                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>Final scores have not been committed to the public ledger yet. Please hold until administrators complete the judicial pipeline.</Typography>
+                    <Typography variant="h6" fontWeight={700} sx={{ mb: 1 }}>Results not published yet</Typography>
+                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>Final scores will appear here after the event team publishes them.</Typography>
                 </Paper>
             )
             }

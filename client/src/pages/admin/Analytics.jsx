@@ -127,7 +127,7 @@ const AdminAnalytics = () => {
                     ADMIN ANALYTICS
                 </Typography>
                 <Typography variant="h4" fontWeight={900} color="text.primary" sx={{ mt: 0.5 }}>
-                    Platform Intelligence Dashboard
+                    Platform Analytics Dashboard
                 </Typography>
                 <Typography color="text.secondary" fontWeight={600}>
                     High-priority growth, engagement, attendance, and feedback metrics arranged from most valuable to operational detail.

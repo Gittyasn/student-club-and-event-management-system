@@ -177,6 +177,71 @@ CREATE POLICY "Coordinators can moderate club/event messages" ON public.messages
         )
     );
 
+CREATE OR REPLACE FUNCTION public.guard_message_update()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    is_admin boolean;
+    is_coordinator_moderator boolean;
+BEGIN
+    SELECT EXISTS (
+        SELECT 1
+        FROM public.profiles
+        WHERE id = auth.uid()
+          AND role = 'admin'
+    )
+    INTO is_admin;
+
+    SELECT EXISTS (
+        SELECT 1
+        FROM public.chats c
+        JOIN public.profiles p ON p.id = auth.uid()
+        WHERE p.role = 'coordinator'
+          AND c.id = OLD.chat_id
+          AND (
+              (c.type = 'club' AND c.reference_id = p.club_id) OR
+              (c.type = 'event' AND c.reference_id IN (
+                  SELECT e.id
+                  FROM public.events e
+                  WHERE e.club_id = p.club_id
+              ))
+          )
+    )
+    INTO is_coordinator_moderator;
+
+    IF is_admin OR is_coordinator_moderator THEN
+        RETURN NEW;
+    END IF;
+
+    IF OLD.sender_id <> auth.uid() THEN
+        RAISE EXCEPTION 'You can only update your own messages.';
+    END IF;
+
+    IF NEW.is_pinned IS DISTINCT FROM OLD.is_pinned THEN
+        RAISE EXCEPTION 'Only coordinators or admins can pin messages.';
+    END IF;
+
+    IF NEW.is_announcement IS DISTINCT FROM OLD.is_announcement THEN
+        RAISE EXCEPTION 'Only coordinators or admins can publish announcements.';
+    END IF;
+
+    IF NEW.chat_id IS DISTINCT FROM OLD.chat_id OR NEW.sender_id IS DISTINCT FROM OLD.sender_id THEN
+        RAISE EXCEPTION 'Message ownership and channel cannot be changed.';
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_guard_message_update ON public.messages;
+CREATE TRIGGER trg_guard_message_update
+    BEFORE UPDATE ON public.messages
+    FOR EACH ROW
+    EXECUTE FUNCTION public.guard_message_update();
+
 -- ==============================================================================
 -- BROADCAST PUSH FUNCTION
 -- ==============================================================================

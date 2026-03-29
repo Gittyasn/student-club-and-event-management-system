@@ -80,10 +80,23 @@ ON public.club_memberships
 FOR UPDATE 
 USING (
     exists (
-        select 1 from public.profiles
-        where id = auth.uid() 
-          and role = 'coordinator' 
-          and club_id = public.club_memberships.club_id
+        select 1
+        from public.profiles p
+        left join public.clubs c on c.id = public.club_memberships.club_id
+        where p.id = auth.uid() 
+          and p.role = 'coordinator'
+          and (
+            p.club_id = public.club_memberships.club_id
+            or c.coordinator_id = auth.uid()
+            or exists (
+                select 1
+                from public.club_memberships cm
+                where cm.club_id = public.club_memberships.club_id
+                  and cm.user_id = auth.uid()
+                  and cm.status = 'approved'
+                  and cm.role = 'sub_coordinator'
+            )
+          )
     )
     OR exists (select 1 from public.profiles where id = auth.uid() and role = 'admin')
 );

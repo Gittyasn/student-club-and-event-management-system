@@ -1,4 +1,4 @@
-import { Box, TextField, IconButton, CircularProgress, Chip, Typography, FormControlLabel, Switch } from '@mui/material';
+import { Box, TextField, IconButton, Chip, Typography, FormControlLabel, Switch } from '@mui/material';
 import {
     Send as SendIcon,
     AttachFile as AttachFileIcon,
@@ -6,6 +6,7 @@ import {
     Reply as ReplyIcon
 } from '@mui/icons-material';
 import { useState, useRef } from 'react';
+import LoadingDots from '../LoadingDots';
 
 const MessageInput = ({ onSend, onUpload, isModerator, replyTo, onCancelReply }) => {
     const [content, setContent] = useState('');
@@ -141,7 +142,7 @@ const MessageInput = ({ onSend, onUpload, isModerator, replyTo, onCancelReply })
                         width: 40, height: 40
                     }}
                 >
-                    {isUploading ? <CircularProgress size={20} color="inherit" /> : <SendIcon fontSize="small" />}
+                    {isUploading ? <LoadingDots inline size={5} color="currentColor" /> : <SendIcon fontSize="small" />}
                 </IconButton>
             </Box>
         </Box>

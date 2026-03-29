@@ -122,7 +122,7 @@ const RegistrationOverview = () => {
                 .from('registrations')
                 .select(`
                     id, status, registered_at,
-                    student:profiles(full_name, email, avatar_url),
+                    student:profiles!registrations_user_id_fkey(full_name, email, avatar_url),
                     event:events(id, title, start_time, clubs:clubs(name))
                 `)
                 .order('registered_at', { ascending: false })
@@ -190,10 +190,10 @@ const RegistrationOverview = () => {
                 <Box sx={{ position: 'relative', zIndex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 3 }}>
                     <Box>
                         <Typography variant="h3" fontWeight={900} sx={{ letterSpacing: -1.5, mb: 1 }}>
-                            Registration Control Center
+                            Registration Overview
                         </Typography>
                         <Typography sx={{ opacity: 0.75, fontWeight: 500 }}>
-                            Platform-wide enrollment oversight, analytics, and admin overrides.
+                            Platform-wide registration oversight, analytics, and admin support tools.
                         </Typography>
                     </Box>
                     <Button

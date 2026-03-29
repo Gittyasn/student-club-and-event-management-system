@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import {
     Box, Typography, Paper, Grid, TextField, Switch,
-    FormControlLabel, Button, CircularProgress, MenuItem,
+    FormControlLabel, Button, MenuItem,
     // eslint-disable-next-line no-unused-vars
     Stack, Card, CardContent, Divider, useTheme
 } from '@mui/material';
@@ -17,10 +17,11 @@ import { z } from 'zod';
 import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../services/supabaseClient';
-import { useAuthStore } from '../../store/authStore';
 import { useClubCategories } from '../../hooks/useClubCategories';
+import { useCoordinatorClub } from '../../hooks/useCoordinatorClub';
 import { motion } from 'framer-motion';
 import RolePageHeader from '../../components/RolePageHeader';
+import LoadingDots from '../../components/LoadingDots';
 
 const settingsSchema = z.object({
     name: z.string().min(2, 'Name is required'),
@@ -39,19 +40,19 @@ const settingsSchema = z.object({
 });
 
 const CoordinatorSettings = () => {
-    const { profile } = useAuthStore();
     const theme = useTheme();
     const queryClient = useQueryClient();
     const { data: categories } = useClubCategories();
+    const { data: coordinatorClub } = useCoordinatorClub();
 
     const { data: clubData, isLoading } = useQuery({
-        queryKey: ['coordinatorClubSettings', profile?.club_id],
-        enabled: !!profile?.club_id,
+        queryKey: ['coordinatorClubSettings', coordinatorClub?.id],
+        enabled: !!coordinatorClub?.id,
         queryFn: async () => {
             const { data, error } = await supabase
                 .from('clubs')
                 .select('*')
-                .eq('id', profile.club_id)
+                .eq('id', coordinatorClub.id)
                 .single();
             if (error) throw error;
             return data;
@@ -63,7 +64,7 @@ const CoordinatorSettings = () => {
             const { error } = await supabase
                 .from('clubs')
                 .update(updates)
-                .eq('id', profile.club_id);
+                .eq('id', coordinatorClub.id);
             if (error) throw error;
         },
         onSuccess: () => {
@@ -116,13 +117,13 @@ const CoordinatorSettings = () => {
         updateClubMutation.mutate(payload);
     };
 
-    if (isLoading) return <Box display="flex" justifyContent="center" mt={10}><CircularProgress /></Box>;
+    if (isLoading) return <LoadingDots label="Loading settings..." minHeight="50vh" />;
     if (!clubData) return <Box p={4}><Typography color="error">Organization data not found.</Typography></Box>;
 
     return (
         <Box sx={{ pb: 8, maxWidth: 1000, mx: 'auto' }}>
             <RolePageHeader
-                kicker="Coordinator Suite"
+                kicker="Coordinator Dashboard"
                 title="Settings"
                 subtitle="Control preferences, policies, and notifications."
             />

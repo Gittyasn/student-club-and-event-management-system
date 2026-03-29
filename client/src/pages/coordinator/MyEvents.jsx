@@ -18,6 +18,7 @@ import { useNavigate } from 'react-router-dom';
 import { useCoordinatorEvents } from '../../hooks/useCoordinatorEvents';
 import { useEventMutations } from '../../hooks/useEventMutations';
 import { useUpdateEventStatus } from '../../hooks/useEvents';
+import LoadingDots from '../../components/LoadingDots';
 import RolePageHeader from '../../components/RolePageHeader';
 
 const EventsTable = lazy(() => import('./EventsTable'));
@@ -37,7 +38,7 @@ const statusConfig = {
 
 const EventCard = ({ event, onDelete, onSubmit, navigate, index }) => {
     const [menuAnchor, setMenuAnchor] = useState(null);
-    const status = event.status || 'draft';
+    const status = event.approval_status === 'rejected' ? 'rejected' : (event.status || 'draft');
     const config = statusConfig[status] || statusConfig.draft;
 
     return (
@@ -100,7 +101,7 @@ const EventCard = ({ event, onDelete, onSubmit, navigate, index }) => {
                         </Box>
                     ))}
 
-                    {event.rejection_reason && status === 'draft' && (
+                    {event.rejection_reason && event.approval_status === 'rejected' && (
                         <Box sx={{ mt: 1, p: 1.5, bgcolor: '#ef444415', borderRadius: '10px', border: '1px solid #ef444430' }}>
                             <Typography variant="caption" fontWeight={800} sx={{ color: '#ef4444', display: 'block', mb: 0.5 }}>REJECTION REASON:</Typography>
                             <Typography variant="caption" sx={{ color: 'text.secondary', fontStyle: 'italic' }}>&quot;{event.rejection_reason}&quot;</Typography>
@@ -185,17 +186,18 @@ const MyEvents = () => {
     const [filterStatus, setFilterStatus] = useState('all');
 
     const handleDelete = (id) => {
-        if (window.confirm('Eradicate this event node? This cannot be undone.')) deleteEvent.mutate(id);
+        if (window.confirm('Delete this event? This cannot be undone.')) deleteEvent.mutate(id);
     };
     const handleSubmit = (id) => {
-        if (window.confirm('Execute submission for admin authorization?')) {
+        if (window.confirm('Submit this event for admin review?')) {
             updateEventStatus.mutate({ id, status: 'pending' });
         }
     };
 
     const filtered = (events || []).filter(e => {
         const matchSearch = !search || e.title?.toLowerCase().includes(search.toLowerCase()) || e.location?.toLowerCase().includes(search.toLowerCase());
-        const matchStatus = filterStatus === 'all' || e.status === filterStatus;
+        const displayStatus = e.approval_status === 'rejected' ? 'rejected' : e.status;
+        const matchStatus = filterStatus === 'all' || displayStatus === filterStatus;
         return matchSearch && matchStatus;
     });
 
@@ -209,7 +211,7 @@ const MyEvents = () => {
     return (
         <Box sx={{ pb: 6 }}>
             <RolePageHeader
-                kicker="Coordinator Suite"
+                kicker="Coordinator Dashboard"
                 title="My Events"
                 subtitle="Manage submissions, approvals, and participant activity."
             />
@@ -285,17 +287,17 @@ const MyEvents = () => {
                         <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1.2, ease: 'linear' }}>
                             <EventIcon sx={{ fontSize: 48, color: '#10b981' }} />
                         </motion.div>
-                        <Typography color="text.secondary" fontWeight={700} sx={{ mt: 2 }}>Synchronizing event logs...</Typography>
+                        <Typography color="text.secondary" fontWeight={700} sx={{ mt: 2 }}>Loading your events...</Typography>
                     </Box>
                 ) : viewMode === 'cards' ? (
                     <Box key="cards">
                         {filtered.length === 0 ? (
                             <Box sx={{ py: 10, textAlign: 'center', opacity: 0.5 }}>
                                 <EventIcon sx={{ fontSize: 64, mb: 2 }} />
-                                <Typography variant="h6" fontWeight={700}>No Event Telemetry</Typography>
-                                <Typography color="text.secondary">Initiate your first blueprint to establish an activity node.</Typography>
+                                <Typography variant="h6" fontWeight={700}>No events yet</Typography>
+                                <Typography color="text.secondary">Create your first event to start planning registrations and attendance.</Typography>
                                 <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate('/coordinator/events/create')} sx={{ mt: 3, fontWeight: 700 }}>
-                                    Synthesize Node
+                                    Create Event
                                 </Button>
                             </Box>
                         ) : (
@@ -310,7 +312,7 @@ const MyEvents = () => {
                     </Box>
                 ) : (
                     <Box key="table">
-                        <Suspense fallback={<Box sx={{ py: 6, textAlign: 'center' }}><Typography color="text.secondary" fontWeight={700}>Loading table view...</Typography></Box>}>
+                        <Suspense fallback={<LoadingDots label="Loading table view..." minHeight="160px" />}>
                             <EventsTable
                                 rows={filtered}
                                 isLoading={isLoading}

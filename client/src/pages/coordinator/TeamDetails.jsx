@@ -1,12 +1,13 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-    Box, Typography, Button, Paper, CircularProgress, Stack, Chip, Divider, Avatar, useTheme, Grid
+    Box, Typography, Button, Paper, Stack, Chip, Divider, Avatar, useTheme, Grid
 } from '@mui/material';
 import {
     ArrowBack as BackIcon, GitHub as GitHubIcon, VideoLibrary as VideoIcon, Person, Block, Restore, EmojiEvents, Gavel
 } from '@mui/icons-material';
 import RolePageHeader from '../../components/RolePageHeader';
+import LoadingDots from '../../components/LoadingDots';
 import { supabase } from '../../services/supabaseClient';
 import { toast } from 'sonner';
 
@@ -115,14 +116,14 @@ const TeamDetails = () => {
         onError: (e) => toast.error(e.message || 'Pipeline override failed')
     });
 
-    if (isLoading) return <Box display="flex" justifyContent="center" alignItems="center" height="60vh"><CircularProgress /></Box>;
+    if (isLoading) return <LoadingDots label="Loading team details..." minHeight="60vh" />;
 
     if (!team) {
         return (
             <Box sx={{ p: 8, textAlign: 'center', border: `1px solid ${theme.palette.divider}`, borderRadius: 3 }}>
-                <Typography variant="h6" color="text.secondary" fontWeight={700}>Squad Identity Not Found (404)</Typography>
+                <Typography variant="h6" color="text.secondary" fontWeight={700}>Team not found</Typography>
                 <Button startIcon={<BackIcon />} onClick={() => navigate(`/coordinator/events/${eventId}/teams`)} sx={{ mt: 3, fontWeight: 600 }}>
-                    Return to Matrix
+                    Back to Teams
                 </Button>
             </Box>
         );
@@ -131,12 +132,12 @@ const TeamDetails = () => {
     return (
         <Box sx={{ maxWidth: 1200, mx: 'auto', pb: 6 }}>
             <RolePageHeader
-                kicker="Coordinator Suite"
+                kicker="Coordinator Dashboard"
                 title="Team Details"
                 subtitle="Review submissions, status, and member activity."
             />
             <Button startIcon={<BackIcon />} onClick={() => navigate(`/coordinator/events/${eventId}/teams`)} sx={{ mb: 3, fontWeight: 600, color: 'text.secondary', '&:hover': { color: 'text.primary' } }}>
-                Back to Database Directory
+                Back to Teams
             </Button>
 
             <Grid container spacing={4}>
@@ -213,7 +214,7 @@ const TeamDetails = () => {
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                                 <Gavel sx={{ color: theme.palette.primary.main }} />
-                                <Typography variant="h6" fontWeight={800}>Judicial Pipeline</Typography>
+                                <Typography variant="h6" fontWeight={800}>Submission Review</Typography>
                             </Box>
                             <Button
                                 variant="outlined"
@@ -221,18 +222,18 @@ const TeamDetails = () => {
                                 onClick={() => navigate(`/coordinator/events/${eventId}/results`)}
                                 sx={{ fontWeight: 700, borderRadius: 2, size: 'small' }}
                             >
-                                Evaluation CLI
+                                Review Results
                             </Button>
                         </Box>
 
                         <Typography variant="body2" sx={{ color: 'text.secondary', mb: 4 }}>
-                            Evaluate modular artifacts submitted in multi-stage sequential rounds.
+                            Review submissions, links, and scores for each round.
                         </Typography>
 
                         {(submissions || []).length === 0 ? (
                             <Box sx={{ p: 6, textAlign: 'center', border: `1px dashed ${theme.palette.divider}`, borderRadius: 2, bgcolor: theme.palette.background.default }}>
-                                <Typography variant="subtitle1" fontWeight={700} sx={{ color: 'text.primary', mb: 1 }}>Pipeline Empty</Typography>
-                                <Typography variant="body2" sx={{ color: 'text.secondary' }}>This squad has not provisioned any code blocks or telemetry assets for stage verification yet.</Typography>
+                                <Typography variant="subtitle1" fontWeight={700} sx={{ color: 'text.primary', mb: 1 }}>No submissions yet</Typography>
+                                <Typography variant="body2" sx={{ color: 'text.secondary' }}>This team has not uploaded any submission links for review yet.</Typography>
                             </Box>
                         ) : (
                             <Stack spacing={3}>
@@ -272,7 +273,7 @@ const TeamDetails = () => {
                                                     onClick={() => s.github_link && window.open(s.github_link, '_blank')}
                                                     sx={{ justifyContent: 'flex-start', borderRadius: 1.5, textTransform: 'none', fontWeight: 600, color: s.github_link ? 'text.primary' : 'text.disabled', borderColor: s.github_link ? theme.palette.divider : 'transparent' }}
                                                 >
-                                                    {s.github_link ? 'Source Repository' : 'NULL Pointer'}
+                                                    {s.github_link ? 'Source Repository' : 'No repository link'}
                                                 </Button>
                                             </Grid>
                                             <Grid item xs={12} sm={6}>
@@ -284,7 +285,7 @@ const TeamDetails = () => {
                                                     onClick={() => s.demo_link && window.open(s.demo_link, '_blank')}
                                                     sx={{ justifyContent: 'flex-start', borderRadius: 1.5, textTransform: 'none', fontWeight: 600, color: s.demo_link ? 'text.primary' : 'text.disabled', borderColor: s.demo_link ? theme.palette.divider : 'transparent' }}
                                                 >
-                                                    {s.demo_link ? 'Telemetry Log' : 'NULL Pointer'}
+                                                    {s.demo_link ? 'Demo Link' : 'No demo link'}
                                                 </Button>
                                             </Grid>
                                         </Grid>
@@ -299,7 +300,7 @@ const TeamDetails = () => {
                                                 disabled={toggleSubmissionLock.isPending}
                                                 sx={{ fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.5 }}
                                             >
-                                                {s.is_locked ? 'UNLOCK PIPELINE' : 'FREEZE THREAD'}
+                                                {s.is_locked ? 'Unlock Submission' : 'Lock Submission'}
                                             </Button>
                                         </Box>
                                     </Paper>

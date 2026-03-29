@@ -15,8 +15,23 @@ CREATE POLICY "Coordinators can manage memberships for their club" ON public.clu
     FOR UPDATE TO authenticated
     USING (
         EXISTS (
-            SELECT 1 FROM public.profiles p
-            WHERE p.id = auth.uid() AND p.role = 'coordinator' AND p.club_id = public.club_memberships.club_id
+            SELECT 1
+            FROM public.profiles p
+            LEFT JOIN public.clubs c ON c.id = public.club_memberships.club_id
+            WHERE p.id = auth.uid()
+              AND p.role = 'coordinator'
+              AND (
+                p.club_id = public.club_memberships.club_id
+                OR c.coordinator_id = auth.uid()
+                OR EXISTS (
+                    SELECT 1
+                    FROM public.club_memberships cm
+                    WHERE cm.club_id = public.club_memberships.club_id
+                      AND cm.user_id = auth.uid()
+                      AND cm.status = 'approved'
+                      AND cm.role = 'sub_coordinator'
+                )
+              )
         ) OR EXISTS (
             SELECT 1 FROM public.profiles p2 WHERE p2.id = auth.uid() AND p2.role = 'admin'
         )

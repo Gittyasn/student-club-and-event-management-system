@@ -2,6 +2,7 @@ import { Drawer, Box, Typography, List, ListItem, ListItemAvatar, Avatar, ListIt
 import { Close as CloseIcon, Person as PersonIcon } from '@mui/icons-material';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../services/supabaseClient';
+import LoadingDots from '../LoadingDots';
 
 const UserList = ({ open, onClose, chatType, referenceId }) => {
 
@@ -11,18 +12,20 @@ const UserList = ({ open, onClose, chatType, referenceId }) => {
         enabled: open && !!chatType,
         queryFn: async () => {
             if (chatType === 'club') {
-                const { data } = await supabase
+                const { data, error } = await supabase
                     .from('club_memberships')
-                    .select('profiles(id, full_name, avatar_url, role)')
+                    .select('profiles:profiles!club_memberships_user_id_fkey(id, full_name, avatar_url, role)')
                     .eq('club_id', referenceId)
                     .eq('status', 'approved');
+                if (error) throw error;
                 return data?.map(d => d.profiles) || [];
             } else if (chatType === 'event') {
-                const { data } = await supabase
+                const { data, error } = await supabase
                     .from('registrations')
-                    .select('profiles(id, full_name, avatar_url, role)')
+                    .select('profiles:profiles!registrations_user_id_fkey(id, full_name, avatar_url, role)')
                     .eq('event_id', referenceId)
                     .eq('status', 'registered');
+                if (error) throw error;
                 return data?.map(d => d.profiles) || [];
             }
             return [];
@@ -42,7 +45,7 @@ const UserList = ({ open, onClose, chatType, referenceId }) => {
 
                 <Box sx={{ flex: 1, overflowY: 'auto' }}>
                     {isLoading ? (
-                        <Typography sx={{ p: 3, textAlign: 'center' }}>Loading members...</Typography>
+                        <LoadingDots label="Loading members..." minHeight="140px" />
                     ) : (
                         <List>
                             {members.map(member => (

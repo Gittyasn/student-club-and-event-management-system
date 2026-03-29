@@ -124,12 +124,12 @@ BEGIN
     SELECT 
         e.id,
         e.title,
-        e.banner_url,
+        COALESCE(e.poster_url, c.banner_url),
         e.start_time,
         -- Calculate Match Score
         COALESCE(uc.cat_weight, 0) * 10 + 
         (CASE WHEN cl.club_id IS NOT NULL THEN 20 ELSE 0 END) +
-        (CASE WHEN e.capacity > 0 AND (SELECT count(*) FROM public.registrations r WHERE r.event_id = e.id) >= (e.capacity * 0.8) THEN 5 ELSE 0 END) AS match_score,
+        (CASE WHEN COALESCE(e.max_participants, 0) > 0 AND (SELECT count(*) FROM public.registrations r WHERE r.event_id = e.id) >= (COALESCE(e.max_participants, 0) * 0.8) THEN 5 ELSE 0 END) AS match_score,
         -- Reason
         CASE 
             WHEN cl.club_id IS NOT NULL THEN 'From your clubs'
@@ -137,6 +137,7 @@ BEGIN
             ELSE 'Trending'
         END AS recommendation_reason
     FROM public.events e
+    LEFT JOIN public.clubs c ON c.id = e.club_id
     LEFT JOIN UserCategories uc ON e.category_id = uc.category_id
     LEFT JOIN UserClubs cl ON e.club_id = cl.club_id
     WHERE e.status = 'approved' 
@@ -174,11 +175,12 @@ BEGIN
         c.id,
         c.name,
         c.logo_url,
-        COALESCE(ae.hit_rate, 0) * 15 + 
-        (CASE WHEN c.department = user_dept THEN 25 ELSE 0 END) AS match_score,
+        COALESCE(ae.hit_rate, 0) * 15 +
+        COALESCE(ROUND(COALESCE(c.rating, 0) * 5), 0)::INT +
+        (CASE WHEN COALESCE(c.member_count, 0) >= 25 THEN 10 ELSE 0 END) AS match_score,
         CASE 
-            WHEN c.department = user_dept THEN 'Matches your department'
             WHEN ae.hit_rate > 0 THEN 'Based on events attended'
+            WHEN user_dept IS NOT NULL THEN 'Recommended for active students in your department'
             ELSE 'Popular on campus'
         END AS recommendation_reason
     FROM public.clubs c

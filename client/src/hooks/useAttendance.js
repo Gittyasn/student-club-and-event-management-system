@@ -9,6 +9,11 @@ import { useCertificateMutations } from './useCertificates';
 // Late threshold: minutes after event start to be marked as "Late"
 const LATE_THRESHOLD_MINUTES = 15;
 
+const escapeCsvValue = (value) => {
+    const normalized = value == null ? '' : String(value);
+    return `"${normalized.replace(/"/g, '""')}"`;
+};
+
 // ─── Fetch registrations for an event (with attendance status) ────────────────
 export const useEventRegistrations = (eventId) => {
     return useQuery({
@@ -19,7 +24,7 @@ export const useEventRegistrations = (eventId) => {
                 .from('registrations')
                 .select(`
                     id, status, user_id,
-                    profiles:profiles(id, full_name, email, department, avatar_url)
+                    profiles:profiles!registrations_user_id_fkey(id, full_name, email, department, avatar_url)
                 `)
                 .eq('event_id', eventId)
                 .in('status', ['registered', 'confirmed', 'attended', 'no_show']);
@@ -356,8 +361,8 @@ export const useAttendanceMutations = (eventId) => {
             Method: r.attendance?.method || '-',
             MarkedAt: r.attendance?.marked_at ? new Date(r.attendance.marked_at).toLocaleString() : '-'
         }));
-        const header = Object.keys(rows[0]).join(',');
-        const csv = header + '\n' + rows.map(r => Object.values(r).join(',')).join('\n');
+        const header = Object.keys(rows[0]).map(escapeCsvValue).join(',');
+        const csv = header + '\n' + rows.map(r => Object.values(r).map(escapeCsvValue).join(',')).join('\n');
         const link = document.createElement('a');
         link.href = 'data:text/csv;charset=utf-8,' + encodeURI(csv);
         link.download = `attendance_${eventTitle || eventId}.csv`;

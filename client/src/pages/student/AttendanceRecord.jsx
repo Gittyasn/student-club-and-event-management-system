@@ -1,7 +1,7 @@
 // eslint-disable-next-line no-unused-vars
 import React, { useMemo } from 'react';
 import {
-    Box, Typography, Paper, Grid, CircularProgress, Chip, LinearProgress,
+    Box, Typography, Paper, Grid, Chip, LinearProgress,
     // eslint-disable-next-line no-unused-vars
     Stack, Card, CardContent, Divider, Alert, Table, TableBody,
     // eslint-disable-next-line no-unused-vars
@@ -20,6 +20,7 @@ import {
     Cell, RadialBarChart, RadialBar, PieChart, Pie, Legend
 } from 'recharts';
 import { useMyAttendance } from '../../hooks/useAttendance';
+import LoadingDots from '../../components/LoadingDots';
 
 const STATUS_CFG = {
     present: { label: 'Present', color: '#10b981', icon: <PresentIcon fontSize="small" />, chip: 'success' },
@@ -80,7 +81,7 @@ const AttendanceRecord = () => {
         return { total, present, late, absent, excused, attended, rate, lateRate, noShows, byClub, pieData };
     }, [records]);
 
-    if (isLoading) return <Box display="flex" justifyContent="center" alignItems="center" height="50vh"><CircularProgress /></Box>;
+    if (isLoading) return <LoadingDots label="Loading attendance..." minHeight="50vh" />;
 
     return (
         <Box sx={{ pb: 8 }}>

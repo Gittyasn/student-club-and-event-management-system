@@ -1,3 +1,4 @@
+import { lazy, Suspense, useEffect, useMemo } from 'react';
 import { Box, Typography, Grid, Chip, Button, Stack, Paper, useTheme } from '@mui/material';
 import {
     Event as EventIcon, EmojiEvents, Category, Notifications,
@@ -8,11 +9,10 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../services/supabaseClient';
 import { useAuthStore } from '../../store/authStore';
+import { useNotificationStore } from '../../store/notificationStore';
 import LoadingDots from '../../components/LoadingDots';
-import {
-    Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
-    ResponsiveContainer, Tooltip as RechartsTooltip
-} from 'recharts';
+
+const StudentDashboardActivityChart = lazy(() => import('./components/StudentDashboardActivityChart'));
 
 const StatCard = ({ title, value, icon, subtitle }) => {
     const theme = useTheme();
@@ -104,28 +104,26 @@ const Panel = ({ title, subtitle, children, action }) => {
     );
 };
 
-const CustomTooltip = ({ active, payload, label }) => {
-    const theme = useTheme();
-    if (!active || !payload?.length) return null;
-    return (
-        <Paper sx={{ p: 1.5, border: `1px solid ${theme.palette.divider}`, boxShadow: theme.shadows[3] }}>
-            {label && <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.primary', display: 'block', mb: 0.5 }}>{label}</Typography>}
-            {payload.map((p, i) => (
-                <Box key={i} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: p.color || p.fill || theme.palette.primary.main }} />
-                    <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary' }}>
-                        {p.name}: {p.value}
-                    </Typography>
-                </Box>
-            ))}
-        </Paper>
-    );
+const getNotificationPriority = (type) => {
+    switch (type) {
+        case 'alert':
+            return { label: 'Urgent', color: 'error' };
+        case 'announcement':
+            return { label: 'Announcement', color: 'warning' };
+        case 'certificate':
+            return { label: 'Certificate', color: 'success' };
+        case 'event':
+            return { label: 'Event', color: 'primary' };
+        default:
+            return { label: 'Info', color: 'default' };
+    }
 };
 
 const StudentDashboard = () => {
     const navigate = useNavigate();
     const { user, profile } = useAuthStore();
     const theme = useTheme();
+    const { notifications, unreadCount, fetchNotifications } = useNotificationStore();
 
     const { data, isLoading } = useQuery({
         queryKey: ['studentDashPro', user?.id],
@@ -176,6 +174,18 @@ const StudentDashboard = () => {
         }
     });
 
+    useEffect(() => {
+        if (user?.id) {
+            fetchNotifications(user.id);
+        }
+    }, [fetchNotifications, user?.id]);
+
+    const latestNotifications = useMemo(() => notifications.slice(0, 3), [notifications]);
+    const urgentCount = useMemo(
+        () => notifications.filter((notification) => !notification.is_read && notification.type === 'alert').length,
+        [notifications]
+    );
+
     if (isLoading) return <LoadingDots label="Loading dashboard data..." minHeight="60vh" />;
 
     const kpis = [
@@ -216,7 +226,7 @@ const StudentDashboard = () => {
                 <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', md: 'center' }, gap: 3 }}>
                     <Box>
                         <Typography variant="overline" sx={{ color: 'text.secondary', fontWeight: 700, letterSpacing: 1 }}>
-                            Student Command Center
+                            Student Dashboard
                         </Typography>
                         <Typography variant="h4" sx={{ fontWeight: 800, color: 'text.primary', mb: 1 }}>
                             Welcome back, {profile?.full_name?.split(' ')[0] || 'Student'}
@@ -280,14 +290,108 @@ const StudentDashboard = () => {
                     </Panel>
                 </Grid>
                 <Grid item xs={12} md={5} sx={{ display: 'flex', flexDirection: 'column' }}>
-                    <Panel title="Notifications" subtitle="Recent updates and alerts" action={<Button variant="text" size="small" sx={{ fontWeight: 600 }} onClick={() => navigate('/student/notifications')}>Open Inbox</Button>}>
-                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, py: 4 }}>
-                            <Box sx={{ p: 2, borderRadius: '50%', bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)', mb: 2 }}>
-                                <Notifications sx={{ fontSize: 32, color: 'text.secondary' }} />
+                    <Panel title="Inbox Summary" subtitle="Unread updates, urgent items, and your latest alerts" action={<Button variant="text" size="small" sx={{ fontWeight: 600 }} onClick={() => navigate('/student/notifications')}>View All</Button>}>
+                        <Stack spacing={2} sx={{ height: '100%' }}>
+                            <Box
+                                sx={{
+                                    p: 2,
+                                    borderRadius: 2.5,
+                                    border: `1px solid ${theme.palette.divider}`,
+                                    bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(15,23,42,0.02)',
+                                }}
+                            >
+                                <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 2 }}>
+                                    <Box>
+                                        <Typography variant="overline" sx={{ color: 'text.secondary', fontWeight: 700, letterSpacing: 1 }}>
+                                            Unread
+                                        </Typography>
+                                        <Typography variant="h4" sx={{ fontWeight: 800, lineHeight: 1.1 }}>
+                                            {unreadCount}
+                                        </Typography>
+                                    </Box>
+                                    <Chip
+                                        label={urgentCount > 0 ? `${urgentCount} urgent` : 'No urgent items'}
+                                        color={urgentCount > 0 ? 'error' : 'default'}
+                                        size="small"
+                                        sx={{ fontWeight: 700 }}
+                                    />
+                                </Box>
                             </Box>
-                            <Typography variant="body1" sx={{ fontWeight: 600, color: 'text.primary', mb: 0.5 }}>You&apos;re all caught up</Typography>
-                            <Typography variant="body2" sx={{ color: 'text.secondary', textAlign: 'center' }}>No new notifications at this time.</Typography>
-                        </Box>
+
+                            {latestNotifications.length > 0 ? (
+                                <Stack spacing={1.5} sx={{ flex: 1 }}>
+                                    {latestNotifications.map((notification) => {
+                                        const priority = getNotificationPriority(notification.type);
+
+                                        return (
+                                            <Box
+                                                key={notification.id}
+                                                onClick={() => navigate('/student/notifications')}
+                                                sx={{
+                                                    p: 2,
+                                                    borderRadius: 2,
+                                                    border: `1px solid ${theme.palette.divider}`,
+                                                    cursor: 'pointer',
+                                                    transition: 'all 0.2s',
+                                                    '&:hover': {
+                                                        borderColor: theme.palette.primary.main,
+                                                        bgcolor: theme.palette.action.hover,
+                                                    },
+                                                }}
+                                            >
+                                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, mb: 0.75 }}>
+                                                    <Typography variant="body2" sx={{ fontWeight: notification.is_read ? 700 : 800 }} noWrap>
+                                                        {notification.title}
+                                                    </Typography>
+                                                    <Chip label={priority.label} color={priority.color} size="small" sx={{ fontWeight: 700 }} />
+                                                </Box>
+                                                <Typography
+                                                    variant="caption"
+                                                    sx={{
+                                                        color: 'text.secondary',
+                                                        display: '-webkit-box',
+                                                        WebkitLineClamp: 2,
+                                                        WebkitBoxOrient: 'vertical',
+                                                        overflow: 'hidden',
+                                                        mb: 0.75,
+                                                    }}
+                                                >
+                                                    {notification.message}
+                                                </Typography>
+                                                <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 600 }}>
+                                                    {new Date(notification.created_at).toLocaleString([], {
+                                                        month: 'short',
+                                                        day: 'numeric',
+                                                        hour: '2-digit',
+                                                        minute: '2-digit',
+                                                    })}
+                                                </Typography>
+                                            </Box>
+                                        );
+                                    })}
+                                </Stack>
+                            ) : (
+                                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, py: 4 }}>
+                                    <Box sx={{ p: 2, borderRadius: '50%', bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)', mb: 2 }}>
+                                        <Notifications sx={{ fontSize: 32, color: 'text.secondary' }} />
+                                    </Box>
+                                    <Typography variant="body1" sx={{ fontWeight: 600, color: 'text.primary', mb: 0.5 }}>
+                                        No notifications yet
+                                    </Typography>
+                                    <Typography variant="body2" sx={{ color: 'text.secondary', textAlign: 'center' }}>
+                                        New alerts, event updates, and certificates will appear here.
+                                    </Typography>
+                                </Box>
+                            )}
+
+                            <Button
+                                variant="outlined"
+                                onClick={() => navigate('/student/notifications')}
+                                sx={{ alignSelf: 'flex-start', fontWeight: 700, mt: 'auto' }}
+                            >
+                                View all notifications
+                            </Button>
+                        </Stack>
                     </Panel>
                 </Grid>
             </Grid>
@@ -296,7 +400,7 @@ const StudentDashboard = () => {
             <Grid container spacing={3} sx={{ mt: 1, mb: 4, display: 'flex' }} alignItems="stretch">
                 <Grid item xs={12} md={6} sx={{ display: 'flex', flexDirection: 'column' }}>
                     <Panel title="Recent Registrations" subtitle="Your latest event signups"
-                        action={<Button variant="text" size="small" endIcon={<ChevronRight />} onClick={() => navigate('/student/events')} sx={{ fontWeight: 600 }}>View All</Button>}>
+                        action={<Button variant="text" size="small" endIcon={<ChevronRight />} onClick={() => navigate('/student/registrations')} sx={{ fontWeight: 600 }}>View All</Button>}>
                         <Stack spacing={2} sx={{ mt: 1 }}>
                             {(data?.recentRegs || []).map((reg) => {
                                 const isUpcoming = new Date(reg.event?.start_time) > new Date();
@@ -333,19 +437,9 @@ const StudentDashboard = () => {
                     </Panel>
                 </Grid>
                 <Grid item xs={12} md={6} sx={{ display: 'flex', flexDirection: 'column' }}>
-                    <Panel title="Activity Distribution" subtitle="Your engagement across categories">
-                        <Box sx={{ height: 200, width: '100%', mt: 0 }}>
-                            <ResponsiveContainer width="100%" height="100%">
-                                <RadarChart cx="50%" cy="50%" outerRadius="70%" data={data?.radarData || []}>
-                                    <PolarGrid stroke={theme.palette.divider} />
-                                    <PolarAngleAxis dataKey="subject" tick={{ fill: theme.palette.text.secondary, fontSize: 12, fontWeight: 500 }} />
-                                    <PolarRadiusAxis angle={30} domain={[0, 'dataMax + 2']} tick={false} axisLine={false} />
-                                    <Radar name="Activity" dataKey="A" stroke={theme.palette.primary.main} strokeWidth={2} fill={theme.palette.primary.main} fillOpacity={0.2} />
-                                    <RechartsTooltip content={<CustomTooltip />} />
-                                </RadarChart>
-                            </ResponsiveContainer>
-                        </Box>
-                    </Panel>
+                    <Suspense fallback={<LoadingDots label="Loading chart..." minHeight="220px" />}>
+                        <StudentDashboardActivityChart data={data} />
+                    </Suspense>
                 </Grid>
             </Grid>
             

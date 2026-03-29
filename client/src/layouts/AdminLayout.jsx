@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Outlet, Link as RouterLink, useNavigate, useLocation } from 'react-router-dom';
 import {
     // eslint-disable-next-line no-unused-vars
@@ -178,7 +178,7 @@ const SidebarContent = ({ location, profile }) => (
                                 </ListItemIcon>
                                 <ListItemText
                                     primary={item.text}
-                                    primaryTypographyProps={{ fontSize: '0.85rem', fontWeight: isActive ? 700 : 500, color: isActive ? '#fff' : 'rgba(255,255,255,0.55)' }}
+                                    primaryTypographyProps={{ fontSize: '0.88rem', fontWeight: isActive ? 700 : 600, color: isActive ? '#fff' : 'rgba(255,255,255,0.78)' }}
                                 />
                                 {isActive && <ChevronRight sx={{ fontSize: 16, color: item.color, opacity: 0.5 }} />}
                             </ListItemButton>
@@ -212,6 +212,33 @@ const AdminLayout = () => {
 
     const drawerSx = { '& .MuiDrawer-paper': { boxSizing: 'border-box', width: DRAWER_WIDTH, border: 'none', background: 'transparent' } };
 
+    useEffect(() => {
+        const preloadAdminRoutes = () => {
+            [
+                () => import('../pages/admin/Clubs'),
+                () => import('../pages/admin/Users'),
+                () => import('../pages/admin/Events'),
+                () => import('../pages/admin/Analytics'),
+                () => import('../pages/admin/EventApprovals'),
+                () => import('../pages/admin/RegistrationOverview'),
+                () => import('../pages/admin/AttendanceOverview'),
+                () => import('../pages/admin/ResultsOverview'),
+                () => import('../pages/admin/CertificateManagement'),
+                () => import('../pages/admin/Security'),
+                () => import('../pages/admin/AIGovernance'),
+                () => import('../pages/admin/AIReports'),
+            ].forEach((load) => load().catch(() => undefined));
+        };
+
+        if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+            const idleId = window.requestIdleCallback(preloadAdminRoutes, { timeout: 1500 });
+            return () => window.cancelIdleCallback(idleId);
+        }
+
+        const timeoutId = window.setTimeout(preloadAdminRoutes, 350);
+        return () => window.clearTimeout(timeoutId);
+    }, []);
+
     return (
         <Box className="app-style" sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
             {/* Topbar */}
@@ -230,10 +257,10 @@ const AdminLayout = () => {
 
                 {/* Page title from route */}
                 <Box sx={{ flex: 1 }}>
-                    <Typography variant="body2" fontWeight={800} sx={{ color: 'text.primary', letterSpacing: 0.3 }}>
+                    <Typography variant="h6" fontWeight={800} sx={{ color: 'text.primary', letterSpacing: 0.1, fontSize: { xs: '1rem', md: '1.2rem' }, lineHeight: 1.1 }}>
                         {menuItems.find(m => m.exact ? location.pathname === m.path : location.pathname.startsWith(m.path))?.text || 'Admin'}
                     </Typography>
-                    <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+                    <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, fontSize: '0.78rem' }}>
                         NEXTGEN EDUTECH UNIVERSITY | {new Date().toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}
                     </Typography>
                 </Box>

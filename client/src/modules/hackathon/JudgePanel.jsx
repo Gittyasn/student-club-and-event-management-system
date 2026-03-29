@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { useHackathonSubmissions, useSubmitEvaluation } from '../../hooks/useHackathon';
 import { useAuthStore } from '../../store/authStore';
+import LoadingDots from '../../components/LoadingDots';
 
 const criteriaList = [
     { key: 'technical', label: 'Technical Implementation', icon: <Target size={18} />, weight: 0.35, description: 'Code quality, architecture, and technical depth.' },
@@ -44,7 +45,7 @@ const JudgePanel = ({ eventId }) => {
         });
     };
 
-    if (isLoading) return <Typography>Loading submissions...</Typography>;
+    if (isLoading) return <LoadingDots label="Loading submissions..." minHeight="40vh" />;
 
     return (
         <Grid container spacing={4}>

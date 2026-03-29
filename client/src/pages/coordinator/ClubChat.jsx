@@ -11,7 +11,7 @@ const ClubChat = () => {
     return (
         <Box sx={{ maxWidth: 1000, mx: 'auto', mt: 2, p: { xs: 1, md: 3 } }}>
             <RolePageHeader
-                kicker="Coordinator Suite"
+                kicker="Coordinator Dashboard"
                 title="Club Chat"
                 subtitle="Coordinate with members in real time."
             />

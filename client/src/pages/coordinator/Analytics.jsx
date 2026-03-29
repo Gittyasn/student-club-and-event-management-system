@@ -1,47 +1,77 @@
-// eslint-disable-next-line no-unused-vars
-import React from 'react';
 import {
-    Box, Typography, Grid, Paper, Card, CardContent,
-    // eslint-disable-next-line no-unused-vars
-    CircularProgress, Chip, LinearProgress, Divider
+    Box,
+    Typography,
+    Grid,
+    Paper,
+    Card,
+    CardContent,
+    Chip,
 } from '@mui/material';
 import {
-    // eslint-disable-next-line no-unused-vars
-    Event, People, TrendingUp, StarRate, EmojiEvents,
-    TrendingDown, WorkspacePremium, FactCheck
+    Event,
+    People,
+    TrendingUp,
+    StarRate,
+    WorkspacePremium,
+    FactCheck,
+    TrendingDown,
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import {
-    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
-    ResponsiveContainer, AreaChart, Area, PieChart, Pie, Cell
+    BarChart,
+    Bar,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip,
+    Legend,
+    ResponsiveContainer,
+    AreaChart,
+    Area,
+    PieChart,
+    Pie,
+    Cell,
 } from 'recharts';
 import { useCoordinatorAnalytics } from '../../hooks/useAnalytics';
 import RolePageHeader from '../../components/RolePageHeader';
-import { useAuthStore } from '../../store/authStore';
-
-// eslint-disable-next-line no-unused-vars
-const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#3b82f6', '#8b5cf6', '#ec4899'];
+import LoadingDots from '../../components/LoadingDots';
 
 const KpiCard = ({ title, value, icon, color = '#6366f1', sub }) => (
-    <Card component={motion.div} whileHover={{ y: -3 }}
-        sx={{ borderRadius: '18px', border: `1px solid ${color}20`, height: '100%', boxShadow: `0 4px 16px ${color}08` }}>
+    <Card
+        component={motion.div}
+        whileHover={{ y: -3 }}
+        sx={{
+            borderRadius: '18px',
+            border: `1px solid ${color}20`,
+            height: '100%',
+            boxShadow: `0 4px 16px ${color}08`,
+        }}
+    >
         <CardContent sx={{ p: 2.5, '&:last-child': { pb: 2.5 } }}>
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={1.5}>
-                <Box sx={{ p: 1, borderRadius: '9px', bgcolor: `${color}15`, color, display: 'flex' }}>{icon}</Box>
-                <Typography variant="caption" color="text.secondary" fontWeight={700} textTransform="uppercase" textAlign="right">{title}</Typography>
+                <Box sx={{ p: 1, borderRadius: '9px', bgcolor: `${color}15`, color, display: 'flex' }}>
+                    {icon}
+                </Box>
+                <Typography variant="caption" color="text.secondary" fontWeight={700} textTransform="uppercase" textAlign="right">
+                    {title}
+                </Typography>
             </Box>
-            <Typography variant="h3" fontWeight={900} sx={{ color }}>{value}</Typography>
-            {sub && <Typography variant="caption" color="text.secondary" display="block" mt={0.3}>{sub}</Typography>}
+            <Typography variant="h3" fontWeight={900} sx={{ color }}>
+                {value}
+            </Typography>
+            {sub ? (
+                <Typography variant="caption" color="text.secondary" display="block" mt={0.3}>
+                    {sub}
+                </Typography>
+            ) : null}
         </CardContent>
     </Card>
 );
 
 const CoordinatorAnalytics = () => {
-    // eslint-disable-next-line no-unused-vars
-    const { profile } = useAuthStore();
     const { data, isLoading } = useCoordinatorAnalytics();
 
-    if (isLoading) return <Box display="flex" justifyContent="center" p={8}><CircularProgress /></Box>;
+    if (isLoading) return <LoadingDots label="Loading analytics..." minHeight="50vh" />;
     if (!data) return null;
 
     const d = data;
@@ -49,49 +79,76 @@ const CoordinatorAnalytics = () => {
         { name: 'Participation', value: d.certByType.participation, color: '#3b82f6' },
         { name: 'Winner', value: d.certByType.winner, color: '#fbbf24' },
         { name: 'Merit', value: d.certByType.merit, color: '#8b5cf6' },
-    ].filter(x => x.value > 0);
+    ].filter((x) => x.value > 0);
 
     return (
         <Box sx={{ pb: 8 }}>
             <RolePageHeader
-                kicker="Coordinator Suite"
+                kicker="Coordinator Dashboard"
                 title="Analytics"
-                subtitle="Track performance, engagement, and outcomes."
+                subtitle="Track participation, attendance, and outcomes."
             />
-            {/* Hero */}
-            <Box component={motion.div} initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
+
+            <Box
+                component={motion.div}
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
                 sx={{
-                    mb: 5, p: { xs: 3, md: 4 }, borderRadius: '24px',
-                    background: 'linear-gradient(135deg, #065f46 0%, #10b981 100%)', color: 'white', position: 'relative', overflow: 'hidden'
-                }}>
-                <Box sx={{ position: 'absolute', top: -80, right: -80, width: 300, height: 300, borderRadius: '50%', background: 'radial-gradient(circle, rgba(59,130,246,0.15) 0%, transparent 70%)' }} />
+                    mb: 5,
+                    p: { xs: 3, md: 4 },
+                    borderRadius: '24px',
+                    background: 'linear-gradient(135deg, #065f46 0%, #10b981 100%)',
+                    color: 'white',
+                    position: 'relative',
+                    overflow: 'hidden',
+                }}
+            >
+                <Box
+                    sx={{
+                        position: 'absolute',
+                        top: -80,
+                        right: -80,
+                        width: 300,
+                        height: 300,
+                        borderRadius: '50%',
+                        background: 'radial-gradient(circle, rgba(59,130,246,0.15) 0%, transparent 70%)',
+                    }}
+                />
                 <Box sx={{ position: 'relative', zIndex: 1 }}>
-                    <Typography variant="overline" sx={{ color: '#60a5fa', fontWeight: 900, letterSpacing: 3 }}>COORDINATOR</Typography>
-                    <Typography variant="h4" fontWeight={900} sx={{ letterSpacing: -1, mb: 0.5 }}>Club Analytics</Typography>
-                    <Typography sx={{ opacity: 0.65 }}>Event performance, member growth, and engagement insights for your club.</Typography>
+                    <Typography variant="overline" sx={{ color: '#60a5fa', fontWeight: 900, letterSpacing: 3 }}>
+                        COORDINATOR
+                    </Typography>
+                    <Typography variant="h4" fontWeight={900} sx={{ letterSpacing: -1, mb: 0.5 }}>
+                        Club Analytics
+                    </Typography>
+                    <Typography sx={{ opacity: 0.78 }}>
+                        Event performance, member growth, attendance quality, and certificate outcomes for your club.
+                    </Typography>
                 </Box>
             </Box>
 
-            {/* KPIs */}
             <Grid container spacing={2} sx={{ mb: 4 }}>
                 {[
                     { title: 'Total Events', value: d.totalEvents, icon: <Event />, color: '#6366f1' },
                     { title: 'Total Registered', value: d.totalReg, icon: <People />, color: '#3b82f6' },
-                    { title: 'Avg Reg/Event', value: d.avgReg, icon: <TrendingUp />, color: '#10b981' },
+                    { title: 'Avg Reg / Event', value: d.avgReg, icon: <TrendingUp />, color: '#10b981' },
                     { title: 'Attendance Rate', value: `${d.attendancePct}%`, icon: <FactCheck />, color: '#f59e0b', sub: `${d.noShowRate}% no-show` },
                     { title: 'Members', value: d.totalMembers, icon: <People />, color: '#8b5cf6' },
-                    { title: 'Avg Rating', value: d.avgRating !== 'N/A' ? `${d.avgRating}★` : 'N/A', icon: <StarRate />, color: '#fbbf24' },
+                    { title: 'Avg Rating', value: d.avgRating !== 'N/A' ? `${d.avgRating}/5` : 'N/A', icon: <StarRate />, color: '#fbbf24' },
                     { title: 'Certificates', value: d.totalCerts, icon: <WorkspacePremium />, color: '#ec4899' },
                     { title: 'No-show Rate', value: `${d.noShowRate}%`, icon: <TrendingDown />, color: '#ef4444' },
-                ].map(s => <Grid item xs={6} md={3} key={s.title}><KpiCard {...s} /></Grid>)}
+                ].map((s) => (
+                    <Grid item xs={6} md={3} key={s.title}>
+                        <KpiCard {...s} />
+                    </Grid>
+                ))}
             </Grid>
 
-            {/* Best / Worst Event highlight */}
             <Grid container spacing={3} sx={{ mb: 4 }}>
                 {d.bestEvent && (
                     <Grid item xs={12} md={6}>
                         <Paper sx={{ p: 2.5, borderRadius: '16px', border: '2px solid #10b98140', background: 'linear-gradient(135deg, #10b98108, transparent)' }}>
-                            <Chip label="⭐ Most Popular Event" size="small" sx={{ bgcolor: '#10b98120', color: '#10b981', fontWeight: 800, mb: 1 }} />
+                            <Chip label="Top Event" size="small" sx={{ bgcolor: '#10b98120', color: '#10b981', fontWeight: 800, mb: 1 }} />
                             <Typography variant="h6" fontWeight={900}>{d.bestEvent.title}</Typography>
                             <Typography color="text.secondary" variant="body2">{d.bestEvent.reg} registrations</Typography>
                         </Paper>
@@ -100,7 +157,7 @@ const CoordinatorAnalytics = () => {
                 {d.worstEvent && d.bestEvent?.title !== d.worstEvent?.title && (
                     <Grid item xs={12} md={6}>
                         <Paper sx={{ p: 2.5, borderRadius: '16px', border: '2px solid #ef444440', background: 'linear-gradient(135deg, #ef444408, transparent)' }}>
-                            <Chip label="📉 Least Attended Event" size="small" sx={{ bgcolor: '#ef444420', color: '#ef4444', fontWeight: 800, mb: 1 }} />
+                            <Chip label="Lowest Reach Event" size="small" sx={{ bgcolor: '#ef444420', color: '#ef4444', fontWeight: 800, mb: 1 }} />
                             <Typography variant="h6" fontWeight={900}>{d.worstEvent.title}</Typography>
                             <Typography color="text.secondary" variant="body2">{d.worstEvent.reg} registrations</Typography>
                         </Paper>
@@ -108,8 +165,7 @@ const CoordinatorAnalytics = () => {
                 )}
             </Grid>
 
-            {/* Event Performance */}
-            <Typography variant="h6" fontWeight={900} sx={{ mb: 2 }}>📊 Event Performance</Typography>
+            <Typography variant="h6" fontWeight={900} sx={{ mb: 2 }}>Event Performance</Typography>
             <Paper sx={{ p: 3, borderRadius: '20px', border: '1px solid', borderColor: 'divider', mb: 4 }}>
                 <ResponsiveContainer width="100%" height={280}>
                     <BarChart data={d.eventPerf} margin={{ bottom: 30 }}>
@@ -127,9 +183,8 @@ const CoordinatorAnalytics = () => {
             </Paper>
 
             <Grid container spacing={4}>
-                {/* Member Growth */}
                 <Grid item xs={12} md={7}>
-                    <Typography variant="h6" fontWeight={900} sx={{ mb: 2 }}>📈 Member Growth Trend</Typography>
+                    <Typography variant="h6" fontWeight={900} sx={{ mb: 2 }}>Member Growth Trend</Typography>
                     <Paper sx={{ p: 3, borderRadius: '20px', border: '1px solid', borderColor: 'divider' }}>
                         <ResponsiveContainer width="100%" height={220}>
                             <AreaChart data={d.memberGrowth}>
@@ -149,9 +204,8 @@ const CoordinatorAnalytics = () => {
                     </Paper>
                 </Grid>
 
-                {/* Certificate distribution */}
                 <Grid item xs={12} md={5}>
-                    <Typography variant="h6" fontWeight={900} sx={{ mb: 2 }}>🎓 Certificate Distribution</Typography>
+                    <Typography variant="h6" fontWeight={900} sx={{ mb: 2 }}>Certificate Distribution</Typography>
                     <Paper sx={{ p: 3, borderRadius: '20px', border: '1px solid', borderColor: 'divider' }}>
                         {certPieData.length > 0 ? (
                             <ResponsiveContainer width="100%" height={220}>
@@ -164,7 +218,9 @@ const CoordinatorAnalytics = () => {
                                 </PieChart>
                             </ResponsiveContainer>
                         ) : (
-                            <Box py={6} textAlign="center"><Typography color="text.secondary">No certificates issued yet.</Typography></Box>
+                            <Box py={6} textAlign="center">
+                                <Typography color="text.secondary">No certificates issued yet.</Typography>
+                            </Box>
                         )}
                     </Paper>
                 </Grid>

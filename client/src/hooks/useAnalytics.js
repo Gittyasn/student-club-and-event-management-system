@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../services/supabaseClient';
 import { useAuthStore } from '../store/authStore';
+import { useCoordinatorClub } from './useCoordinatorClub';
 
 const PRESENT_STATUSES = ['present', 'late'];
 const APPROVED_MEMBERSHIP_STATUSES = ['approved', 'core_member', 'sub_coordinator'];
@@ -265,8 +266,8 @@ export const useAdminAnalytics = () => {
 };
 
 export const useCoordinatorAnalytics = () => {
-    const { profile } = useAuthStore();
-    const clubId = profile?.club_id;
+    const { data: coordinatorClub } = useCoordinatorClub();
+    const clubId = coordinatorClub?.id;
 
     return useQuery({
         queryKey: ['coordinatorAnalytics', clubId],

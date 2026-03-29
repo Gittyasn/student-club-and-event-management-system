@@ -1,246 +1,364 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import {
-    // eslint-disable-next-line no-unused-vars
-    Box, Typography, Paper, Grid, Chip, Avatar, LinearProgress,
-    // eslint-disable-next-line no-unused-vars
-    CircularProgress, Stack, Alert, Card, CardContent, Divider,
-    // eslint-disable-next-line no-unused-vars
-    Table, TableBody, TableCell, TableContainer, TableHead, TableRow
+    Avatar,
+    Box,
+    Chip,
+    Divider,
+    Grid,
+    LinearProgress,
+    Paper,
+    Stack,
+    Typography,
 } from '@mui/material';
 import {
-    EmojiEvents as TrophyIcon, Assessment, TrendingUp,
-    // eslint-disable-next-line no-unused-vars
-    Star as StarIcon, WorkspacePremium, ErrorOutline
+    Assessment as AssessmentIcon,
+    EmojiEvents as TrophyIcon,
+    Event as EventIcon,
+    MilitaryTech as PodiumIcon,
+    TrendingUp as TrendingUpIcon,
 } from '@mui/icons-material';
-import { motion, AnimatePresence } from 'framer-motion';
-import {
-    RadialBarChart, RadialBar, PolarAngleAxis,
-    // eslint-disable-next-line no-unused-vars
-    ResponsiveContainer, Tooltip, PieChart, Pie, Cell, Legend
-} from 'recharts';
+import LoadingDots from '../../components/LoadingDots';
 import { useMyResults } from '../../hooks/useResults';
 
-const RANK_MAP = { 1: { label: '🥇 1st Place', bg: 'linear-gradient(135deg,#f59e0b,#fbbf24)', text: '#7c2d12' }, 2: { label: '🥈 2nd Place', bg: 'linear-gradient(135deg,#9ca3af,#d1d5db)', text: '#111827' }, 3: { label: '🥉 3rd Place', bg: 'linear-gradient(135deg,#b45309,#d97706)', text: '#451a03' } };
+const RANK_MAP = {
+    1: { label: '1st Place', color: '#b45309', bg: '#fef3c7' },
+    2: { label: '2nd Place', color: '#475569', bg: '#e2e8f0' },
+    3: { label: '3rd Place', color: '#92400e', bg: '#fde68a' },
+};
 
-const ScoreGauge = ({ score, max }) => {
-    const pct = max > 0 ? Math.round((score / max) * 100) : Math.round(score);
-    const color = pct >= 80 ? '#10b981' : pct >= 60 ? '#3b82f6' : pct >= 40 ? '#f59e0b' : '#ef4444';
-    return (
-        <Box sx={{ height: 100, position: 'relative' }}>
-            <ResponsiveContainer width="100%" height="100%">
-                <RadialBarChart cx="50%" cy="80%" innerRadius="60%" outerRadius="90%" startAngle={180} endAngle={0} data={[{ value: pct }]}>
-                    <PolarAngleAxis type="number" domain={[0, 100]} angleAxisId={0} tick={false} />
-                    <RadialBar background={{ fill: '#f1f5f9' }} dataKey="value" angleAxisId={0} fill={color} cornerRadius={10} />
-                </RadialBarChart>
-            </ResponsiveContainer>
-            <Box sx={{ position: 'absolute', bottom: 2, left: '50%', transform: 'translateX(-50%)', textAlign: 'center' }}>
-                <Typography variant="h5" fontWeight={900} sx={{ color }}>{pct}%</Typography>
-                <Typography variant="caption" color="text.secondary">{score}/{max}</Typography>
+const formatDate = (value) => {
+    if (!value) return 'Date not available';
+    return new Date(value).toLocaleDateString('en-IN', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+    });
+};
+
+const getResultTypeLabel = (resultType) => {
+    if (resultType === 'score') return 'Score';
+    if (resultType === 'rank') return 'Rank';
+    return 'Participation';
+};
+
+const SummaryCard = ({ icon, label, value, helper, color }) => (
+    <Paper
+        elevation={0}
+        sx={{
+            p: 2.5,
+            height: '100%',
+            borderRadius: 3,
+            border: '1px solid',
+            borderColor: 'divider',
+            background: `linear-gradient(180deg, ${color}12 0%, rgba(255,255,255,0) 100%)`,
+        }}
+    >
+        <Box
+            sx={{
+                width: 42,
+                height: 42,
+                mb: 1.5,
+                borderRadius: 2,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                bgcolor: `${color}18`,
+                color,
+            }}
+        >
+            {icon}
+        </Box>
+        <Typography variant="body2" color="text.secondary" fontWeight={700}>
+            {label}
+        </Typography>
+        <Typography variant="h4" fontWeight={900} sx={{ color, lineHeight: 1.1, mt: 0.5 }}>
+            {value}
+        </Typography>
+        <Typography variant="caption" color="text.secondary">
+            {helper}
+        </Typography>
+    </Paper>
+);
+
+const ResultMetric = ({ result }) => {
+    const hasScore = result.result_type === 'score' && result.score !== null && result.max_score;
+    const hasRank = result.result_type === 'rank' && result.rank;
+    const scorePct = hasScore ? Math.round((result.score / result.max_score) * 100) : null;
+    const rankInfo = result.rank ? RANK_MAP[result.rank] : null;
+
+    if (hasScore) {
+        return (
+            <Box sx={{ minWidth: 220 }}>
+                <Typography variant="overline" color="text.secondary" fontWeight={800}>
+                    Score
+                </Typography>
+                <Typography variant="h5" fontWeight={900} sx={{ mb: 1 }}>
+                    {result.score}/{result.max_score}
+                </Typography>
+                <LinearProgress
+                    variant="determinate"
+                    value={scorePct}
+                    sx={{
+                        height: 10,
+                        borderRadius: 999,
+                        bgcolor: 'rgba(148,163,184,0.18)',
+                        '& .MuiLinearProgress-bar': {
+                            borderRadius: 999,
+                            bgcolor: scorePct >= 80 ? '#10b981' : scorePct >= 60 ? '#2563eb' : '#f59e0b',
+                        },
+                    }}
+                />
+                <Typography variant="caption" color="text.secondary" sx={{ mt: 0.75, display: 'block' }}>
+                    Performance: {scorePct}%
+                </Typography>
             </Box>
+        );
+    }
+
+    if (hasRank) {
+        return (
+            <Box sx={{ textAlign: { xs: 'left', md: 'center' } }}>
+                <Typography variant="overline" color="text.secondary" fontWeight={800}>
+                    Rank
+                </Typography>
+                <Typography variant="h4" fontWeight={900} color="primary">
+                    #{result.rank}
+                </Typography>
+                <Chip
+                    label={rankInfo?.label || `Rank ${result.rank}`}
+                    size="small"
+                    sx={{
+                        mt: 1,
+                        fontWeight: 800,
+                        bgcolor: rankInfo?.bg || 'action.hover',
+                        color: rankInfo?.color || 'text.primary',
+                    }}
+                />
+            </Box>
+        );
+    }
+
+    return (
+        <Box>
+            <Typography variant="overline" color="text.secondary" fontWeight={800}>
+                Result
+            </Typography>
+            <Typography variant="h6" fontWeight={800}>
+                Participant
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+                Your attendance or completion was recorded for this event.
+            </Typography>
         </Box>
     );
 };
 
-const ResultCard = React.forwardRef(({ result, index }, ref) => {
-    const rankCfg = result.rank ? RANK_MAP[result.rank] : null;
-    const pct = result.score && result.max_score ? Math.round((result.score / result.max_score) * 100) : null;
-    // eslint-disable-next-line no-unused-vars
-    const scoreColor = pct ? (pct >= 80 ? '#10b981' : pct >= 60 ? '#3b82f6' : pct >= 40 ? '#f59e0b' : '#ef4444') : '#6366f1';
+const ResultCard = ({ result }) => {
+    const rankInfo = result.rank ? RANK_MAP[result.rank] : null;
+    const clubName = result.event?.club?.name || 'Club';
+    const categoryName = result.event?.category?.name || 'Category';
 
     return (
-        <motion.div
-            ref={ref}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.06 }}
+        <Paper
+            elevation={0}
+            sx={{
+                p: 3,
+                borderRadius: 3,
+                border: '1px solid',
+                borderColor: 'divider',
+            }}
         >
-            <Card sx={{
-                borderRadius: '20px', overflow: 'hidden', border: '1px solid', borderColor: 'divider',
-                boxShadow: '0 4px 24px rgba(0,0,0,0.06)', mb: 2,
-                position: 'relative',
-                '&:hover': { boxShadow: '0 8px 40px rgba(0,0,0,0.1)', transform: 'translateY(-2px)', transition: 'all 0.2s' }
-            }}>
-                {/* Top accent bar */}
-                {rankCfg && (
-                    <Box sx={{ height: 4, background: rankCfg.bg }} />
-                )}
-                <CardContent sx={{ p: 3, '&:last-child': { pb: 3 } }}>
-                    <Grid container spacing={2} alignItems="center">
-                        {/* Event info */}
-                        <Grid item xs={12} md={5}>
-                            <Box display="flex" alignItems="center" gap={1.5} mb={1}>
-                                <Avatar src={result.event?.club?.logo_url}
-                                    sx={{ width: 40, height: 40, bgcolor: '#6366f120', fontSize: '1rem' }}>
-                                    {result.event?.club?.name?.charAt(0)}
-                                </Avatar>
-                                <Box>
-                                    <Typography variant="subtitle1" fontWeight={800} sx={{ lineHeight: 1.2 }}>
-                                        {result.event?.title}
-                                    </Typography>
-                                    <Typography variant="caption" color="text.secondary">
-                                        {result.event?.club?.name} · {result.event?.category?.name}
-                                    </Typography>
-                                </Box>
-                            </Box>
-                            {result.event?.start_time && (
-                                <Typography variant="caption" color="text.secondary">
-                                    📅 {new Date(result.event.start_time).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-                                </Typography>
-                            )}
-                        </Grid>
-
-                        {/* Score / Rank visual */}
-                        <Grid item xs={12} md={3} sx={{ display: 'flex', justifyContent: 'center' }}>
-                            {result.result_type === 'score' && result.score !== null && result.max_score ? (
-                                <ScoreGauge score={result.score} max={result.max_score} />
-                            ) : result.result_type === 'rank' && result.rank ? (
-                                <Box textAlign="center">
-                                    <Typography sx={{ fontSize: '2.5rem' }}>
-                                        {result.rank === 1 ? '🥇' : result.rank === 2 ? '🥈' : result.rank === 3 ? '🥉' : `#${result.rank}`}
-                                    </Typography>
-                                    <Typography variant="caption" fontWeight={800} color="text.secondary">
-                                        {rankCfg?.label || `Rank #${result.rank}`}
-                                    </Typography>
-                                </Box>
-                            ) : (
-                                <Box textAlign="center">
-                                    <Typography sx={{ fontSize: '2.5rem' }}>🎫</Typography>
-                                    <Typography variant="caption" fontWeight={700} color="text.secondary">Participant</Typography>
-                                </Box>
-                            )}
-                        </Grid>
-
-                        {/* Chips & metadata */}
-                        <Grid item xs={12} md={4}>
-                            <Stack spacing={1} alignItems={{ xs: 'flex-start', md: 'flex-end' }}>
-                                {result.prize_title && (
-                                    <Chip label={result.prize_title} size="small"
-                                        sx={{ fontWeight: 800, bgcolor: '#fbbf2420', color: '#b45309', border: '1px solid #fbbf2450' }} />
-                                )}
-                                {result.grade && (
-                                    <Chip label={`Grade: ${result.grade}`} size="small" variant="outlined" color="primary" sx={{ fontWeight: 800 }} />
-                                )}
-                                {result.is_winner && (
-                                    <Chip icon={<TrophyIcon fontSize="small" />} label="Winner" size="small" color="warning" sx={{ fontWeight: 800 }} />
-                                )}
-                                {result.score !== null && !result.max_score && (
-                                    <Chip label={`Score: ${result.score}`} size="small" color="info" sx={{ fontWeight: 800 }} />
-                                )}
+            <Grid container spacing={2.5} alignItems="center">
+                <Grid item xs={12} md={5}>
+                    <Box sx={{ display: 'flex', gap: 1.75 }}>
+                        <Avatar
+                            src={result.event?.club?.logo_url}
+                            sx={{ width: 46, height: 46, bgcolor: 'primary.main', fontWeight: 800 }}
+                        >
+                            {clubName.charAt(0)}
+                        </Avatar>
+                        <Box sx={{ minWidth: 0 }}>
+                            <Typography variant="h6" fontWeight={800} sx={{ lineHeight: 1.2 }}>
+                                {result.event?.title || 'Event'}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                                {[clubName, categoryName].filter(Boolean).join(' | ')}
+                            </Typography>
+                            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mt: 1.25 }}>
                                 <Chip
-                                    label={result.status}
+                                    icon={<EventIcon fontSize="small" />}
+                                    label={`Event Date: ${formatDate(result.event?.start_time)}`}
                                     size="small"
-                                    color={result.status === 'locked' ? 'error' : 'success'}
                                     variant="outlined"
-                                    sx={{ fontWeight: 700, fontSize: '0.65rem', textTransform: 'capitalize' }}
                                 />
+                                <Chip label={`Result Type: ${getResultTypeLabel(result.result_type)}`} size="small" variant="outlined" />
                             </Stack>
-                            {result.remarks && (
-                                <Typography variant="caption" color="text.secondary" fontStyle="italic" display="block" mt={1} textAlign={{ xs: 'left', md: 'right' }}>
-                                    &quot;{result.remarks}&quot;
-                                </Typography>
-                            )}
-                        </Grid>
-                    </Grid>
-                </CardContent>
-            </Card>
-        </motion.div>
+                        </Box>
+                    </Box>
+                </Grid>
+
+                <Grid item xs={12} md={3}>
+                    <ResultMetric result={result} />
+                </Grid>
+
+                <Grid item xs={12} md={4}>
+                    <Stack spacing={1} alignItems={{ xs: 'flex-start', md: 'flex-end' }}>
+                        {result.prize_title ? (
+                            <Chip
+                                icon={<PodiumIcon fontSize="small" />}
+                                label={result.prize_title}
+                                size="small"
+                                sx={{
+                                    fontWeight: 800,
+                                    bgcolor: rankInfo?.bg || '#eff6ff',
+                                    color: rankInfo?.color || '#1d4ed8',
+                                }}
+                            />
+                        ) : null}
+                        {result.grade ? <Chip label={`Grade: ${result.grade}`} size="small" color="primary" variant="outlined" /> : null}
+                        {result.is_winner ? <Chip icon={<TrophyIcon fontSize="small" />} label="Winner" size="small" color="warning" /> : null}
+                        <Chip
+                            label={result.status === 'locked' ? 'Locked' : 'Published'}
+                            size="small"
+                            color={result.status === 'locked' ? 'error' : 'success'}
+                            variant="outlined"
+                        />
+                        {result.remarks ? (
+                            <Typography variant="body2" color="text.secondary" sx={{ textAlign: { xs: 'left', md: 'right' } }}>
+                                {result.remarks}
+                            </Typography>
+                        ) : null}
+                    </Stack>
+                </Grid>
+            </Grid>
+        </Paper>
     );
-});
-ResultCard.displayName = 'ResultCard';
+};
 
 const MyResults = () => {
     const { data: results, isLoading } = useMyResults();
 
     const stats = useMemo(() => {
-        if (!results) return {};
-        const total = results.length;
-        const wins = results.filter(r => r.is_winner).length;
-        const top3 = results.filter(r => r.rank !== null && r.rank <= 3).length;
-        const avgScore = (() => {
-            const scored = results.filter(r => r.score !== null && r.max_score);
-            if (!scored.length) return null;
-            return (scored.reduce((s, r) => s + (r.score / r.max_score) * 100, 0) / scored.length).toFixed(1);
-        })();
+        if (!results?.length) {
+            return {
+                total: 0,
+                wins: 0,
+                top3: 0,
+                avgScore: null,
+            };
+        }
 
-        const rankResults = results.filter(r => r.result_type === 'rank');
-        const scoreResults = results.filter(r => r.result_type === 'score');
-        const participationResults = results.filter(r => r.result_type === 'participation');
+        const scoredResults = results.filter((entry) => entry.score !== null && entry.max_score);
 
-        const pieData = [
-            { name: 'Rank-Based', value: rankResults.length, color: '#6366f1' },
-            { name: 'Score-Based', value: scoreResults.length, color: '#10b981' },
-            { name: 'Participation', value: participationResults.length, color: '#f59e0b' },
-        ].filter(d => d.value > 0);
-
-        return { total, wins, top3, avgScore, pieData, rankResults, scoreResults, participationResults };
+        return {
+            total: results.length,
+            wins: results.filter((entry) => entry.is_winner).length,
+            top3: results.filter((entry) => entry.rank !== null && entry.rank <= 3).length,
+            avgScore: scoredResults.length
+                ? `${Math.round(
+                    scoredResults.reduce((sum, entry) => sum + ((entry.score / entry.max_score) * 100), 0) / scoredResults.length
+                )}%`
+                : 'N/A',
+        };
     }, [results]);
 
-    if (isLoading) return <Box display="flex" justifyContent="center" p={8}><CircularProgress /></Box>;
+    if (isLoading) {
+        return <LoadingDots label="Loading results..." minHeight="50vh" />;
+    }
 
     return (
         <Box sx={{ pb: 8 }}>
-            {/* Hero */}
-            <Box component={motion.div} initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
+            <Paper
+                elevation={0}
                 sx={{
-                    mb: 5, p: 4, borderRadius: '28px',
-                    background: 'linear-gradient(135deg, #0c0d1c 0%, #1a0a2e 50%, #0d1b3e 100%)',
-                    color: 'white', position: 'relative', overflow: 'hidden'
-                }}>
-                <Box sx={{ position: 'absolute', width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle, rgba(251,191,36,0.1) 0%, transparent 70%)', top: -100, right: -100 }} />
-                <Box sx={{ position: 'relative', zIndex: 1 }}>
-                    <Typography variant="h3" fontWeight={900} sx={{ letterSpacing: -1.5, mb: 1 }}>My Results</Typography>
-                    <Typography sx={{ opacity: 0.7, fontWeight: 500 }}>
-                        Your rankings, scores, and achievements across all events.
-                    </Typography>
-                </Box>
-            </Box>
+                    p: { xs: 3, md: 4 },
+                    mb: 4,
+                    borderRadius: 4,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    background: 'linear-gradient(135deg, rgba(14,116,144,0.08) 0%, rgba(37,99,235,0.08) 100%)',
+                }}
+            >
+                <Typography variant="h4" fontWeight={900} sx={{ letterSpacing: -1, mb: 1 }}>
+                    My Results
+                </Typography>
+                <Typography variant="body1" color="text.secondary">
+                    Review your scores, ranks, and published achievements across campus events.
+                </Typography>
+            </Paper>
 
-            {/* Stats */}
-            <Grid container spacing={2.5} sx={{ mb: 5 }}>
-                {[
-                    { label: 'Events', value: stats.total ?? 0, color: '#3b82f6', icon: <Assessment /> },
-                    { label: 'Wins 🏆', value: stats.wins ?? 0, color: '#fbbf24', icon: <TrophyIcon /> },
-                    { label: 'Top 3 Finishes', value: stats.top3 ?? 0, color: '#10b981', icon: <WorkspacePremium /> },
-                    { label: 'Avg Score', value: stats.avgScore !== null ? `${stats.avgScore}%` : 'N/A', color: '#6366f1', icon: <TrendingUp /> },
-                ].map(s => (
-                    <Grid item xs={6} md={3} key={s.label}>
-                        <Paper sx={{ p: 2.5, borderRadius: '16px', textAlign: 'center', border: `1px solid ${s.color}25`, boxShadow: `0 4px 20px ${s.color}08` }}>
-                            <Box sx={{ color: s.color, mb: 0.5, display: 'flex', justifyContent: 'center' }}>{s.icon}</Box>
-                            <Typography variant="caption" color="text.secondary" fontWeight={700} display="block">{s.label}</Typography>
-                            <Typography variant="h4" fontWeight={900} sx={{ color: s.color }}>{s.value}</Typography>
-                        </Paper>
-                    </Grid>
-                ))}
+            <Grid container spacing={2.5} sx={{ mb: 4 }}>
+                <Grid item xs={12} sm={6} md={3}>
+                    <SummaryCard
+                        icon={<AssessmentIcon />}
+                        label="Published Results"
+                        value={stats.total}
+                        helper="Total events with results"
+                        color="#2563eb"
+                    />
+                </Grid>
+                <Grid item xs={12} sm={6} md={3}>
+                    <SummaryCard
+                        icon={<TrophyIcon />}
+                        label="Wins"
+                        value={stats.wins}
+                        helper="Entries marked as winner"
+                        color="#d97706"
+                    />
+                </Grid>
+                <Grid item xs={12} sm={6} md={3}>
+                    <SummaryCard
+                        icon={<PodiumIcon />}
+                        label="Top 3"
+                        value={stats.top3}
+                        helper="Podium finishes"
+                        color="#059669"
+                    />
+                </Grid>
+                <Grid item xs={12} sm={6} md={3}>
+                    <SummaryCard
+                        icon={<TrendingUpIcon />}
+                        label="Average Score"
+                        value={stats.avgScore ?? 'N/A'}
+                        helper="Across scored events"
+                        color="#7c3aed"
+                    />
+                </Grid>
             </Grid>
 
-            {(!results || results.length === 0) ? (
-                <Paper sx={{ p: 6, borderRadius: '20px', textAlign: 'center', border: '1px solid', borderColor: 'divider' }}>
-                    <ErrorOutline sx={{ fontSize: 56, color: 'text.disabled', mb: 2 }} />
-                    <Typography variant="h6" fontWeight={700} color="text.secondary">No published results yet</Typography>
-                    <Typography variant="body2" color="text.disabled">Results will appear here once coordinators publish them.</Typography>
+            {!results?.length ? (
+                <Paper
+                    elevation={0}
+                    sx={{
+                        p: 6,
+                        textAlign: 'center',
+                        borderRadius: 3,
+                        border: '1px solid',
+                        borderColor: 'divider',
+                    }}
+                >
+                    <Typography variant="h6" fontWeight={800} sx={{ mb: 1 }}>
+                        No published results yet
+                    </Typography>
+                    <Typography color="text.secondary">
+                        Results will appear here after coordinators publish them.
+                    </Typography>
                 </Paper>
             ) : (
-                <Box>
-                    {/* Winners section */}
-                    {stats.wins > 0 && (
-                        <Box mb={5}>
-                            <Typography variant="h5" fontWeight={900} sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                                🏆 Wins & Podium Finishes
-                            </Typography>
-                            {results.filter(r => r.is_winner || (r.rank && r.rank <= 3)).map((r, i) => (
-                                <ResultCard key={r.id} result={r} index={i} />
-                            ))}
-                        </Box>
-                    )}
-
-                    {/* All results */}
-                    <Typography variant="h5" fontWeight={900} sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                        <Assessment color="primary" /> All Results ({stats.total})
-                    </Typography>
-                    <AnimatePresence>
-                        {results.map((r, i) => <ResultCard key={r.id} result={r} index={i} />)}
-                    </AnimatePresence>
-                </Box>
+                <Stack spacing={2.25}>
+                    <Box>
+                        <Typography variant="h5" fontWeight={900}>
+                            Result History
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                            Latest published entries appear first.
+                        </Typography>
+                    </Box>
+                    <Divider />
+                    {results.map((result) => (
+                        <ResultCard key={result.id} result={result} />
+                    ))}
+                </Stack>
             )}
         </Box>
     );

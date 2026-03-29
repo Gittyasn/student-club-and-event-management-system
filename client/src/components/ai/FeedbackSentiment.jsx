@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
-import { Box, Typography, Paper, CircularProgress, LinearProgress, useTheme } from '@mui/material';
+import { Box, Typography, Paper, LinearProgress, useTheme } from '@mui/material';
 import { Psychology, SentimentVerySatisfied, SentimentNeutral, SentimentVeryDissatisfied } from '@mui/icons-material';
+import LoadingDots from '../LoadingDots';
 
 const FeedbackSentiment = ({ reviews = [], isLoaded = true }) => {
     const theme = useTheme();
@@ -23,9 +24,8 @@ const FeedbackSentiment = ({ reviews = [], isLoaded = true }) => {
 
     if (!isLoaded) {
         return (
-            <Paper elevation={0} sx={{ p: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: `1px solid ${theme.palette.divider}`, borderRadius: 2 }}>
-                <CircularProgress size={32} sx={{ mb: 2 }} />
-                <Typography variant="body2" sx={{ color: 'text.secondary' }}>Running NLP algorithms on feedback...</Typography>
+            <Paper elevation={0} sx={{ p: 4, border: `1px solid ${theme.palette.divider}`, borderRadius: 2 }}>
+                <LoadingDots label="Running NLP algorithms on feedback..." minHeight="140px" />
             </Paper>
         );
     }

@@ -8,7 +8,7 @@ import {
     // eslint-disable-next-line no-unused-vars
     Box, Paper, Typography, Button, Table, TableBody, TableCell,
     // eslint-disable-next-line no-unused-vars
-    TableContainer, TableHead, TableRow, CircularProgress, Alert, Chip,
+    TableContainer, TableHead, TableRow, Alert, Chip,
     Dialog, DialogTitle, DialogContent, DialogActions, TextField,
     Card, CardContent, Grid, Tabs, Tab, IconButton, Tooltip, Avatar
 } from '@mui/material';
@@ -32,7 +32,7 @@ const EventApprovalWorkflow = () => {
     const { data: events, isLoading } = useQuery({
         queryKey: ['allEvents'],
         queryFn: async () => {
-            const { data } = await supabase
+            const { data, error } = await supabase
                 .from('events')
                 .select(`
                     *,
@@ -40,6 +40,7 @@ const EventApprovalWorkflow = () => {
                     profiles:created_by(id, full_name, avatar_url, email)
                 `)
                 .order('created_at', { ascending: false });
+            if (error) throw error;
             return data || [];
         },
         enabled: profile?.role === 'admin'
@@ -58,11 +59,8 @@ const EventApprovalWorkflow = () => {
                 .update({
                     approval_status: 'approved',
                     status: 'registration_open',
-                    approved_by: profile?.id,
                     approved_at: new Date().toISOString(),
-                    rejection_reason: null,
-                    rejected_by: null,
-                    rejected_at: null
+                    rejection_reason: null
                 })
                 .eq('id', eventId);
             if (error) throw error;
@@ -78,10 +76,9 @@ const EventApprovalWorkflow = () => {
             const { error } = await supabase
                 .from('events')
                 .update({
+                    status: 'draft',
                     approval_status: 'rejected',
-                    rejection_reason: reason,
-                    rejected_by: profile?.id,
-                    rejected_at: new Date().toISOString()
+                    rejection_reason: reason
                 })
                 .eq('id', eventId);
             if (error) throw error;

@@ -9,11 +9,11 @@ import {
     Stack,
     MenuItem,
     Alert,
-    CircularProgress
 } from '@mui/material';
 import { Campaign as AnnouncementIcon, Send as SendIcon } from '@mui/icons-material';
 import { supabase } from '../../services/supabaseClient';
 import { toast } from 'sonner';
+import LoadingDots from '../../components/LoadingDots';
 
 const Announcements = () => {
     const [message, setMessage] = useState('');
@@ -94,7 +94,7 @@ const Announcements = () => {
                                 variant="contained"
                                 color="secondary"
                                 type="submit"
-                                startIcon={loading ? <CircularProgress size={20} /> : <SendIcon />}
+                                startIcon={loading ? <LoadingDots inline size={5} color="currentColor" /> : <SendIcon />}
                                 disabled={loading || !message}
                             >
                                 Broadcast Now

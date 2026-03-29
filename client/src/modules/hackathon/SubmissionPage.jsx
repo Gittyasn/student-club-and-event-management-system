@@ -4,11 +4,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import {
     Box, Button, TextField, Typography, Paper, Grid, Alert,
-    CircularProgress, Stack, Tooltip, IconButton
+    Stack, Tooltip, IconButton
 } from '@mui/material';
 import { motion } from 'framer-motion';
 import { Github, PlayCircle, Presentation, Send, Lock, HelpCircle } from 'lucide-react';
 import { useSubmitProject } from '../../hooks/useHackathon';
+import LoadingDots from '../../components/LoadingDots';
 
 const submissionSchema = z.object({
     title: z.string().min(5, 'Title must be at least 5 characters'),
@@ -188,7 +189,7 @@ const SubmissionPage = ({ eventId, teamId, roundId: _roundId, existingSubmission
                                         textTransform: 'none'
                                     }}
                                 >
-                                    {submitProject.isPending ? <CircularProgress size={24} color="inherit" /> : 'Submit Project'}
+                                    {submitProject.isPending ? <LoadingDots inline size={5} color="currentColor" /> : 'Submit Project'}
                                 </Button>
                             </Stack>
                         </Grid>

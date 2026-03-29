@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
-import { Box, Typography, Paper, CircularProgress, Grid, useTheme } from '@mui/material';
+import { Box, Typography, Paper, Grid, useTheme } from '@mui/material';
 import { AutoGraph, Lightbulb } from '@mui/icons-material';
+import LoadingDots from '../LoadingDots';
 
 const AttendancePrediction = ({ currentRegistrations = 0, capacity = 100, isLoaded = true }) => {
     const theme = useTheme();
@@ -28,9 +29,8 @@ const AttendancePrediction = ({ currentRegistrations = 0, capacity = 100, isLoad
 
     if (!isLoaded) {
         return (
-            <Paper elevation={0} sx={{ p: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: `1px solid ${theme.palette.divider}`, borderRadius: 2 }}>
-                <CircularProgress size={32} sx={{ mb: 2 }} />
-                <Typography variant="body2" sx={{ color: 'text.secondary' }}>Synthesizing turnout forecasts...</Typography>
+            <Paper elevation={0} sx={{ p: 4, border: `1px solid ${theme.palette.divider}`, borderRadius: 2 }}>
+                <LoadingDots label="Synthesizing turnout forecasts..." minHeight="140px" />
             </Paper>
         );
     }

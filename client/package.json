@@ -8,7 +8,10 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test:cert": "node ./scripts/generate_test_certificate.js"
+    "test:cert": "node ./scripts/generate_test_certificate.js",
+    "test:live-smoke": "node ./__tests__/live-smoke.js",
+    "test:live-full-flow": "node ./__tests__/live-full-flow.js",
+    "test:live-modules": "node ./__tests__/live-module-audit.js"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

@@ -1,4 +1,5 @@
-import { Box, Typography, Grid, Chip, Button, Divider, Paper, useTheme } from '@mui/material';
+import { lazy, Suspense } from 'react';
+import { Box, Typography, Grid, Chip, Button, Paper, useTheme } from '@mui/material';
 import {
     Event as EventIcon, HowToReg as RegIcon, HourglassEmpty as PendingIcon,
     Star, FactCheck, DateRange, Campaign, Category
@@ -8,11 +9,8 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../services/supabaseClient';
 import { useAuthStore } from '../../store/authStore';
 import LoadingDots from '../../components/LoadingDots';
-import {
-    AreaChart, Area, PieChart, Pie, Cell,
-    XAxis, YAxis, CartesianGrid, ResponsiveContainer,
-    Tooltip as RechartsTooltip
-} from 'recharts';
+
+const CoordinatorDashboardCharts = lazy(() => import('./components/CoordinatorDashboardCharts'));
 
 const StatCard = ({ title, value, icon, subtitle }) => {
     const theme = useTheme();
@@ -104,26 +102,6 @@ const Panel = ({ title, subtitle, children, action }) => {
     );
 };
 
-const CHART_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'];
-
-const CustomTooltip = ({ active, payload, label }) => {
-    const theme = useTheme();
-    if (!active || !payload?.length) return null;
-    return (
-        <Paper sx={{ p: 1.5, border: `1px solid ${theme.palette.divider}`, boxShadow: theme.shadows[3] }}>
-            {label && <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.primary', display: 'block', mb: 0.5 }}>{label}</Typography>}
-            {payload.map((p, i) => (
-                <Box key={i} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: p.color || p.fill || theme.palette.primary.main }} />
-                    <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary' }}>
-                        {p.name}: {p.value?.toLocaleString()}
-                    </Typography>
-                </Box>
-            ))}
-        </Paper>
-    );
-};
-
 const CoordinatorDashboard = () => {
     const navigate = useNavigate();
     const { user, profile } = useAuthStore();
@@ -135,13 +113,14 @@ const CoordinatorDashboard = () => {
         queryFn: async () => {
             // Start all relevant fetches in parallel to minimize latency
             // 1. Get user's club details first (either from profile or memberships)
-            const [pRes, mRes] = await Promise.all([
+            const [pRes, clubRes, membershipRes] = await Promise.all([
                 supabase.from('profiles').select('club_id').eq('id', user.id).maybeSingle(),
+                supabase.from('clubs').select('id, name, rating').eq('coordinator_id', user.id).limit(1).maybeSingle(),
                 supabase.from('club_memberships')
                     .select('club_id, club:clubs(name, rating, status)')
                     .eq('user_id', user.id)
-                    .eq('role', 'coordinator')
-                    .in('status', ['active', 'approved'])
+                    .eq('role', 'sub_coordinator')
+                    .eq('status', 'approved')
                     .limit(1)
             ]);
 
@@ -151,9 +130,12 @@ const CoordinatorDashboard = () => {
             if (clubId) {
                 const { data } = await supabase.from('clubs').select('name, rating').eq('id', clubId).maybeSingle();
                 clubInfo = data;
-            } else if (mRes.data?.length > 0) {
-                clubId = mRes.data[0].club_id;
-                clubInfo = mRes.data[0].club;
+            } else if (clubRes.data?.id) {
+                clubId = clubRes.data.id;
+                clubInfo = clubRes.data;
+            } else if (membershipRes.data?.length > 0) {
+                clubId = membershipRes.data[0].club_id;
+                clubInfo = membershipRes.data[0].club;
             }
 
             if (!clubId) return { hasClub: false };
@@ -261,7 +243,7 @@ const CoordinatorDashboard = () => {
                 <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', md: 'center' }, gap: 2 }}>
                     <Box>
                         <Typography variant="overline" sx={{ color: 'text.secondary', fontWeight: 700, letterSpacing: 1 }}>
-                            Coordinator Command Center
+                            Coordinator Dashboard
                         </Typography>
                         <Typography variant="h4" sx={{ fontWeight: 800, color: 'text.primary', mb: 1 }}>
                             {stats?.clubName || 'Coordinator Dashboard'}
@@ -301,69 +283,9 @@ const CoordinatorDashboard = () => {
                 ))}
             </Grid>
 
-            {/* Main Content Rows */}
-            <Grid container spacing={3} sx={{ mb: 4, display: 'flex' }} alignItems="stretch">
-                <Grid item xs={12} lg={6} sx={{ display: 'flex', flexDirection: 'column' }}>
-                    <Panel title="Event Activity Trend" subtitle="Events hosted over the last 5 months"
-                        action={<Button variant="text" size="small" sx={{ fontWeight: 600 }}>Analytics Report</Button>}>
-                        <ResponsiveContainer width="100%" height={260} style={{ marginTop: 8 }}>
-                            <AreaChart data={stats?.timeline || []} margin={{ top: 5, right: 10, left: -25, bottom: 0 }}>
-                                <defs>
-                                    <linearGradient id="colorEvents" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor={theme.palette.primary.main} stopOpacity={0.2} />
-                                        <stop offset="95%" stopColor={theme.palette.primary.main} stopOpacity={0} />
-                                    </linearGradient>
-                                </defs>
-                                <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} vertical={false} />
-                                <XAxis dataKey="month" tick={{ fontSize: 12, fill: theme.palette.text.secondary }} axisLine={false} tickLine={false} />
-                                <YAxis tick={{ fontSize: 12, fill: theme.palette.text.secondary }} axisLine={false} tickLine={false} />
-                                <RechartsTooltip content={<CustomTooltip />} />
-                                <Area type="monotone" dataKey="Events" stroke={theme.palette.primary.main} strokeWidth={3} fill="url(#colorEvents)" dot={{ fill: theme.palette.primary.main, r: 4 }} activeDot={{ r: 6 }} />
-                            </AreaChart>
-                        </ResponsiveContainer>
-                    </Panel>
-                </Grid>
-                <Grid item xs={12} sm={6} lg={6} sx={{ display: 'flex', flexDirection: 'column' }}>
-                    <Panel title="Budget Tracking" subtitle="Income vs Expenses tracking">
-                        <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', pt: 1 }}>
-                            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, flex: 1 }}>
-                                <ResponsiveContainer width="100%" height={220}>
-                                    <PieChart>
-                                        <Pie data={stats?.hasBudgetData ? stats.budgetPie : [{ name: 'Empty', value: 1 }]}
-                                            cx="50%" cy="50%" innerRadius={55} outerRadius={85} paddingAngle={3} dataKey="value" strokeWidth={0}>
-                                            {stats?.hasBudgetData ? 
-                                                stats.budgetPie.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />) :
-                                                <Cell fill={theme.palette.action.hover} />
-                                            }
-                                        </Pie>
-                                        <RechartsTooltip content={<CustomTooltip />} />
-                                    </PieChart>
-                                </ResponsiveContainer>
-                                <Box sx={{ width: '100%', px: 1, pb: 1 }}>
-                                    {[
-                                        { label: 'Income', value: `₹${stats?.income?.toLocaleString() || 0}`, color: CHART_COLORS[0] },
-                                        { label: 'Expenses', value: `₹${stats?.expenses?.toLocaleString() || 0}`, color: CHART_COLORS[1] },
-                                        { label: 'Pending', value: `₹${stats?.pendingParams?.toLocaleString() || 0}`, color: CHART_COLORS[2] },
-                                    ].map((r, i) => (
-                                        <Box key={i} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
-                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: r.color }} />
-                                                <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>{r.label}</Typography>
-                                            </Box>
-                                            <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.secondary' }}>{r.value}</Typography>
-                                        </Box>
-                                    ))}
-                                    <Divider sx={{ my: 1.5 }} />
-                                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                                        <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.secondary' }}>Net Balance</Typography>
-                                        <Typography variant="body1" sx={{ fontWeight: 700, color: 'text.primary' }}>₹{((stats?.income || 0) - (stats?.expenses || 0)).toLocaleString()}</Typography>
-                                    </Box>
-                                </Box>
-                            </Box>
-                        </Box>
-                    </Panel>
-                </Grid>
-            </Grid>
+            <Suspense fallback={<LoadingDots label="Loading charts..." minHeight="240px" />}>
+                <CoordinatorDashboardCharts stats={stats} />
+            </Suspense>
 
             {/* Bottom Row */}
             <Grid container spacing={3}>
@@ -406,7 +328,7 @@ const CoordinatorDashboard = () => {
                                             </Typography>
                                         </Box>
                                         <Box sx={{ mt: 'auto', pt: 2 }}>
-                                            <Button variant="outlined" size="small" fullWidth sx={{ fontWeight: 600, borderRadius: 1.5 }}>View Details</Button>
+                                            <Button variant="outlined" size="small" fullWidth sx={{ fontWeight: 600, borderRadius: 1.5 }} onClick={() => navigate(`/events/${event.id}`)}>View Details</Button>
                                         </Box>
                                     </Paper>
                                 </Grid>
@@ -430,3 +352,4 @@ const CoordinatorDashboard = () => {
 };
 
 export default CoordinatorDashboard;
+

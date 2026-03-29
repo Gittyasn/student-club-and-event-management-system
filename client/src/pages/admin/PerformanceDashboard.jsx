@@ -7,7 +7,7 @@ import {
     // eslint-disable-next-line no-unused-vars
     List, ListItem, ListItemIcon, ListItemText,
     // eslint-disable-next-line no-unused-vars
-    Divider, CircularProgress, useTheme
+    Divider, useTheme
 } from '@mui/material';
 import {
     Speed as SpeedIcon,
@@ -24,6 +24,7 @@ import {
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../services/supabaseClient';
 import { motion } from 'framer-motion';
+import LoadingDots from '../../components/LoadingDots';
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid,
     Tooltip as RechartsTooltip, ResponsiveContainer,
@@ -230,10 +231,10 @@ const PerformanceDashboard = () => {
                         </Box>
                         <Box>
                             <Typography variant="h4" fontWeight={900} sx={{ color: 'white', letterSpacing: -1, lineHeight: 1 }}>
-                                Performance Intelligence
+                                Performance Overview
                             </Typography>
                             <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.45)', fontWeight: 600, letterSpacing: 1.5, textTransform: 'uppercase', fontSize: '0.68rem' }}>
-                                Optimization Command Center — Module 19
+                                Optimization and delivery summary
                             </Typography>
                         </Box>
                     </Box>
@@ -288,7 +289,7 @@ const PerformanceDashboard = () => {
                         <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" mb={2}>
                             Live row counts across key tables
                         </Typography>
-                        {tableLoading ? <CircularProgress size={24} /> : (
+                        {tableLoading ? <LoadingDots inline size={5} /> : (
                             <Stack spacing={1}>
                                 {(tableData || []).map((t, i) => {
                                     const max = Math.max(...(tableData || []).map(x => x.count), 1);
@@ -384,7 +385,7 @@ const PerformanceDashboard = () => {
                             <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" mb={1.5}>
                                 mv_event_stats materialized view
                             </Typography>
-                            {statsLoading ? <CircularProgress size={20} /> : (
+                            {statsLoading ? <LoadingDots inline size={5} /> : (
                                 <>
                                     <Typography variant="caption" color="text.disabled" display="block" mb={1.5}>
                                         Last refreshed: {eventStats?.[0]?.last_refreshed
@@ -406,7 +407,7 @@ const PerformanceDashboard = () => {
                                     <Button
                                         fullWidth
                                         variant="outlined"
-                                        startIcon={refreshing ? <CircularProgress size={14} /> : <Refresh />}
+                                        startIcon={refreshing ? <LoadingDots inline size={5} color="currentColor" /> : <Refresh />}
                                         onClick={handleRefreshMV}
                                         disabled={refreshing}
                                         sx={{ mt: 2, fontWeight: 700, borderRadius: '10px', textTransform: 'none', borderColor: '#3b82f640', color: '#3b82f6', '&:hover': { bgcolor: '#3b82f610', borderColor: '#3b82f6' } }}

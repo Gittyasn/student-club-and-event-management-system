@@ -163,6 +163,15 @@ CREATE POLICY "Coordinators can update attendance for unlocked events" ON public
               AND p.role = 'coordinator'
               AND (e.attendance_locked IS NULL OR e.attendance_locked = false)
         )
+    ) WITH CHECK (
+        EXISTS (
+            SELECT 1 FROM public.events e
+            JOIN public.profiles p ON p.club_id = e.club_id
+            WHERE e.id = attendance_records.event_id
+              AND p.id = auth.uid()
+              AND p.role = 'coordinator'
+              AND (e.attendance_locked IS NULL OR e.attendance_locked = false)
+        )
     );
 
 -- Admin: full control

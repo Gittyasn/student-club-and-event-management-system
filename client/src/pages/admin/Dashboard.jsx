@@ -1,4 +1,5 @@
-import { Box, Typography, Grid, Button, Stack, Divider, Paper, useTheme } from '@mui/material';
+import { lazy, Suspense } from 'react';
+import { Box, Typography, Grid, Button, Stack, Paper, useTheme } from '@mui/material';
 import {
     Group as UsersIcon, Category as ClubIcon, Event as EventIcon,
     HourglassEmpty as PendingIcon, Shield, PeopleAlt
@@ -8,11 +9,8 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../services/supabaseClient';
 import LoadingDots from '../../components/LoadingDots';
 import { fetchAuditLogs } from '../../services/auditLogService';
-import {
-    AreaChart, Area, PieChart, Pie, Cell,
-    XAxis, YAxis, CartesianGrid, ResponsiveContainer,
-    Tooltip as RechartsTooltip, Legend
-} from 'recharts';
+
+const AdminDashboardCharts = lazy(() => import('./components/AdminDashboardCharts'));
 
 const StatCard = ({ title, value, icon, subtitle }) => {
     const theme = useTheme();
@@ -104,26 +102,6 @@ const Panel = ({ title, subtitle, children, action }) => {
     );
 };
 
-const CHART_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#06b6d4'];
-
-const CustomTooltip = ({ active, payload, label }) => {
-    const theme = useTheme();
-    if (!active || !payload?.length) return null;
-    return (
-        <Paper sx={{ p: 1.5, border: `1px solid ${theme.palette.divider}`, boxShadow: theme.shadows[3] }}>
-            {label && <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.primary', display: 'block', mb: 0.5 }}>{label}</Typography>}
-            {payload.map((p, i) => (
-                <Box key={i} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: p.color || p.fill || theme.palette.primary.main }} />
-                    <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary' }}>
-                        {p.name}: {p.value?.toLocaleString()}
-                    </Typography>
-                </Box>
-            ))}
-        </Paper>
-    );
-};
-
 const AdminDashboard = () => {
     const navigate = useNavigate();
     const theme = useTheme();
@@ -208,13 +186,13 @@ const AdminDashboard = () => {
             <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', md: 'center' }, gap: 3 }}>
                 <Box>
                     <Typography variant="overline" sx={{ color: 'text.secondary', fontWeight: 700, letterSpacing: 1 }}>
-                        Executive Command Center
+                        Admin Dashboard
                     </Typography>
                     <Typography variant="h4" sx={{ fontWeight: 800, color: 'text.primary', mb: 1 }}>
                         System Administration
                     </Typography>
                     <Typography variant="body2" sx={{ color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 1 }}>
-                        NEXTGEN EDUTECH UNIVERSITY | {currentDate}
+                        Campus operations summary | {currentDate}
                     </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', gap: 2 }}>
@@ -249,70 +227,9 @@ const AdminDashboard = () => {
                 ))}
             </Grid>
 
-            {/* Charts Row */}
-            <Grid container spacing={3} sx={{ mb: 4, display: 'flex' }} alignItems="stretch">
-                <Grid item xs={12} lg={7} sx={{ display: 'flex', flexDirection: 'column' }}>
-                    <Panel title="Platform Growth" subtitle="Users and Events acquired over 6 months">
-                        <ResponsiveContainer width="100%" height={220} style={{ marginTop: 8 }}>
-                            <AreaChart data={data?.timeline || []} margin={{ top: 5, right: 10, left: -25, bottom: 0 }}>
-                                <defs>
-                                    <linearGradient id="gE" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor={theme.palette.primary.main} stopOpacity={0.2} />
-                                        <stop offset="95%" stopColor={theme.palette.primary.main} stopOpacity={0} />
-                                    </linearGradient>
-                                    <linearGradient id="gU" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor={theme.palette.success.main || '#10b981'} stopOpacity={0.2} />
-                                        <stop offset="95%" stopColor={theme.palette.success.main || '#10b981'} stopOpacity={0} />
-                                    </linearGradient>
-                                </defs>
-                                <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} vertical={false} />
-                                <XAxis dataKey="month" tick={{ fontSize: 12, fill: theme.palette.text.secondary }} axisLine={false} tickLine={false} />
-                                <YAxis tick={{ fontSize: 12, fill: theme.palette.text.secondary }} axisLine={false} tickLine={false} />
-                                <RechartsTooltip content={<CustomTooltip />} />
-                                <Legend wrapperStyle={{ fontSize: '0.8rem', fontWeight: 500, paddingTop: 10 }} />
-                                <Area type="monotone" name="Events Published" dataKey="Events" stroke={theme.palette.primary.main} strokeWidth={2.5} fill="url(#gE)" dot={{ fill: theme.palette.primary.main, r: 4 }} activeDot={{ r: 6 }} />
-                                <Area type="monotone" name="New Users" dataKey="Users" stroke={theme.palette.success.main || '#10b981'} strokeWidth={2.5} fill="url(#gU)" dot={{ fill: theme.palette.success.main || '#10b981', r: 4 }} activeDot={{ r: 6 }} />
-                            </AreaChart>
-                        </ResponsiveContainer>
-                    </Panel>
-                </Grid>
-                <Grid item xs={12} sm={6} lg={5} sx={{ display: 'flex', flexDirection: 'column' }}>
-                    <Panel title="User Demographics" subtitle="Role distribution across platform">
-                        <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', pt: 1 }}>
-                            {/* Full-width donut chart */}
-                            <ResponsiveContainer width="100%" height={220}>
-                                <PieChart>
-                                    <Pie data={data?.rolePie?.filter(d => d.value > 0) || [{ name: 'No data', value: 1 }]}
-                                        cx="50%" cy="50%" innerRadius={50} outerRadius={75} paddingAngle={3} dataKey="value" strokeWidth={0}>
-                                        {(data?.rolePie || []).map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
-                                    </Pie>
-                                    <RechartsTooltip content={<CustomTooltip />} />
-                                </PieChart>
-                            </ResponsiveContainer>
-                            {/* Legend below chart */}
-                            <Box sx={{ px: 1, pt: 1 }}>
-                                {[
-                                    { label: 'Students', value: data?.students || 0, color: CHART_COLORS[0] },
-                                    { label: 'Coordinators', value: data?.coordinators || 0, color: CHART_COLORS[1] },
-                                ].map((r, i) => (
-                                    <Box key={i} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                            <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: r.color }} />
-                                            <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>{r.label}</Typography>
-                                        </Box>
-                                        <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.secondary' }}>{r.value?.toLocaleString()}</Typography>
-                                    </Box>
-                                ))}
-                                <Divider sx={{ my: 1.5 }} />
-                                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                                    <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.secondary' }}>Total Identities</Typography>
-                                    <Typography variant="body1" sx={{ fontWeight: 700, color: 'text.primary' }}>{data?.totalUsers?.toLocaleString() || 0}</Typography>
-                                </Box>
-                            </Box>
-                        </Box>
-                    </Panel>
-                </Grid>
-            </Grid>
+            <Suspense fallback={<LoadingDots label="Loading charts..." minHeight="240px" />}>
+                <AdminDashboardCharts data={data} />
+            </Suspense>
 
             {/* Bottom Row */}
             <Grid container spacing={3} sx={{ display: 'flex' }} alignItems="stretch">
@@ -350,7 +267,7 @@ const AdminDashboard = () => {
                                 <Button variant="outlined" size="small" onClick={() => navigate('/admin/broadcast')} sx={{ fontWeight: 600 }}>
                                     Broadcast Chat
                                 </Button>
-                                <Button variant="text" size="small" sx={{ fontWeight: 600 }}>Full Logs</Button>
+                                <Button variant="text" size="small" sx={{ fontWeight: 600 }} onClick={() => navigate('/admin/security')}>Full Logs</Button>
                             </Box>
                         }
                     >

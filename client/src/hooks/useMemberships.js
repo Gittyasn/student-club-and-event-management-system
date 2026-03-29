@@ -135,7 +135,29 @@ export const useUpdateMembershipStatus = () => {
 
     return useMutation({
         mutationFn: async ({ id, status, rejection_reason, removal_reason }) => {
-            const updates = { status };
+            const {
+                data: { user },
+            } = await supabase.auth.getUser();
+
+            const moderationReason = rejection_reason || removal_reason || null;
+            const updates = {
+                status,
+                updated_at: new Date().toISOString(),
+                approved_by: user?.id || null,
+            };
+
+            if (moderationReason) {
+                updates.removal_reason = moderationReason;
+            }
+
+            if (status === 'removed') {
+                updates.removed_at = new Date().toISOString();
+            }
+
+            if (status === 'approved') {
+                updates.removal_reason = null;
+                updates.removed_at = null;
+            }
 
             const { data, error } = await supabase
                 .from('club_memberships')
@@ -145,14 +167,6 @@ export const useUpdateMembershipStatus = () => {
                 .single();
 
             if (error) throw error;
-
-            if (status === 'rejected' && rejection_reason) {
-                console.info('Membership rejection reason:', rejection_reason);
-            }
-
-            if (status === 'removed' && removal_reason) {
-                console.info('Membership removal reason:', removal_reason);
-            }
 
             return data;
         },

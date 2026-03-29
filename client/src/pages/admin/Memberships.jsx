@@ -14,7 +14,6 @@ import {
     InputLabel,
     Select,
     MenuItem,
-    CircularProgress,
     Avatar,
     Stack,
     TextField,
@@ -31,6 +30,7 @@ import {
 } from '@mui/icons-material';
 import { useClubMemberships, useUpdateMembershipStatus } from '../../hooks/useMemberships';
 import { useClubs } from '../../hooks/useClubs';
+import LoadingDots from '../../components/LoadingDots';
 
 const AdminMemberships = () => {
     const { data: memberships, isLoading, error } = useClubMemberships(); // Fetch all
@@ -47,7 +47,7 @@ const AdminMemberships = () => {
         }
     };
 
-    if (isLoading) return <Box display="flex" justifyContent="center" p={4}><CircularProgress /></Box>;
+    if (isLoading) return <LoadingDots label="Loading memberships..." minHeight="40vh" />;
     if (error) return <Typography color="error">Error loading memberships</Typography>;
 
     const filteredMemberships = memberships?.filter(member => {

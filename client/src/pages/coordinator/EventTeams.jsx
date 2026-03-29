@@ -1,12 +1,13 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-    Box, Typography, Button, Paper, CircularProgress, IconButton, Chip, Tooltip, Avatar, AvatarGroup, useTheme
+    Box, Typography, Button, Paper, IconButton, Chip, Tooltip, Avatar, AvatarGroup, useTheme
 } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import { ArrowBack as BackIcon, GitHub as GitHubIcon, VideoLibrary as VideoIcon, Launch as LaunchIcon, CheckCircle, Warning } from '@mui/icons-material';
 import { useEventTeams } from '../../hooks/useTeams';
 import { useEventById } from '../../hooks/useEventById';
 import RolePageHeader from '../../components/RolePageHeader';
+import LoadingDots from '../../components/LoadingDots';
 
 const EventTeams = () => {
     const { id: eventId } = useParams();
@@ -92,7 +93,7 @@ const EventTeams = () => {
                         </Tooltip>
                     ) : null}
                     {params.row.demo_url ? (
-                        <Tooltip title="Video Telemetry">
+                        <Tooltip title="Demo Video">
                             <IconButton size="small" component="a" href={params.row.demo_url} target="_blank" sx={{ color: 'text.secondary', '&:hover': { color: 'text.primary', bgcolor: theme.palette.action.hover } }}>
                                 <VideoIcon fontSize="small" />
                             </IconButton>
@@ -123,12 +124,12 @@ const EventTeams = () => {
         }
     ];
 
-    if (teamsLoading || eventLoading) return <Box display="flex" justifyContent="center" alignItems="center" height="60vh"><CircularProgress /></Box>;
+    if (teamsLoading || eventLoading) return <LoadingDots label="Loading teams..." minHeight="60vh" />;
 
     return (
         <Box sx={{ maxWidth: 1400, margin: '0 auto', pb: 6 }}>
             <RolePageHeader
-                kicker="Coordinator Suite"
+                kicker="Coordinator Dashboard"
                 title="Event Teams"
                 subtitle="Review team submissions and member rosters."
             />

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../services/supabaseClient';
 import { useAuthStore } from '../../store/authStore';
 import {
@@ -9,7 +10,7 @@ import {
     // eslint-disable-next-line no-unused-vars
     Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
     // eslint-disable-next-line no-unused-vars
-    CircularProgress, Alert, Rating, IconButton, Tooltip, Avatar,
+    Alert, Rating, IconButton, Tooltip, Avatar,
     Select, MenuItem, FormControl, InputLabel
 } from '@mui/material';
 import {
@@ -21,10 +22,14 @@ import {
     Settings as SettingsIcon, People as PeopleIcon, Event as EventIcon
 } from '@mui/icons-material';
 import RolePageHeader from '../../components/RolePageHeader';
+import LoadingDots from '../../components/LoadingDots';
+import { useJoinClub } from '../../hooks/useMemberships';
 
 const ClubManagement = () => {
     const { profile } = useAuthStore();
     const queryClient = useQueryClient();
+    const navigate = useNavigate();
+    const joinClub = useJoinClub();
     const [openDialog, setOpenDialog] = useState(false);
     const [editingClub, setEditingClub] = useState(null);
     const [formData, setFormData] = useState({
@@ -35,10 +40,11 @@ const ClubManagement = () => {
     const { data: clubs, isLoading } = useQuery({
         queryKey: ['clubs'],
         queryFn: async () => {
-            const { data } = await supabase
+            const { data, error } = await supabase
                 .from('clubs')
                 .select('*')
                 .order('member_count', { ascending: false });
+            if (error) throw error;
             return data || [];
         }
     });
@@ -48,10 +54,11 @@ const ClubManagement = () => {
         queryKey: ['userMemberships', profile?.id],
         enabled: !!profile?.id,
         queryFn: async () => {
-            const { data } = await supabase
+            const { data, error } = await supabase
                 .from('club_memberships')
                 .select('*')
                 .eq('user_id', profile.id);
+            if (error) throw error;
             return data || [];
         }
     });
@@ -83,19 +90,6 @@ const ClubManagement = () => {
         }
     });
 
-    // Join club mutation
-    const joinClubMutation = useMutation({
-        mutationFn: async (clubId) => {
-            const { error } = await supabase
-                .from('club_memberships')
-                .insert([{ club_id: clubId, user_id: profile.id, status: 'pending' }]);
-            if (error) throw error;
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['userMemberships'] });
-        }
-    });
-
     const handleOpenDialog = (club = null) => {
         if (club) {
             setEditingClub(club);
@@ -111,7 +105,7 @@ const ClubManagement = () => {
         clubMutation.mutate(formData);
     };
 
-    if (isLoading) return <CircularProgress />;
+    if (isLoading) return <LoadingDots label="Loading clubs..." minHeight="40vh" />;
 
     return (
         <Box sx={{ pb: 6 }}>
@@ -122,10 +116,10 @@ const ClubManagement = () => {
             <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Box>
                     <Typography variant="h4" fontWeight="900" gutterBottom>
-                        Club Management
+                        Club Directory
                     </Typography>
                     <Typography color="text.secondary">
-                        Discover clubs or manage your own club.
+                        Browse clubs, view what they do, and request membership.
                     </Typography>
                 </Box>
                 {profile?.role === 'admin' && (
@@ -191,15 +185,15 @@ const ClubManagement = () => {
                                     </Box>
                                 </CardContent>
                                 <CardActions sx={{ justifyContent: 'space-between' }}>
-                                    <Button size="small" color="primary">
+                                    <Button size="small" color="primary" onClick={() => navigate(`/clubs/${club.id}`)}>
                                         View Details
                                     </Button>
                                     {!membership ? (
                                         <Button
                                             size="small"
                                             variant="contained"
-                                            onClick={() => joinClubMutation.mutate(club.id)}
-                                            disabled={joinClubMutation.isPending}
+                                            onClick={() => joinClub.mutate({ clubId: club.id, autoApprove: club.auto_approve_memberships })}
+                                            disabled={joinClub.isPending}
                                         >
                                             Join
                                         </Button>

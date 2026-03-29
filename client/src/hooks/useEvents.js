@@ -94,30 +94,37 @@ export const useUpdateEventStatus = () => {
     return useMutation({
         mutationFn: async ({ id, status, rejection_reason, resubmission_count }) => {
             const updates = {};
-            if (status) updates.status = status;
-
             const { data: { user } } = await supabase.auth.getUser();
 
             if (status === 'draft') {
+                updates.status = 'draft';
                 updates.approval_status = 'draft';
                 updates.submitted_at = null;
                 updates.approved_at = null;
-                updates.rejected_at = null;
+                updates.rejection_reason = null;
             } else if (status === 'approved') {
+                updates.status = 'registration_open';
                 updates.approval_status = 'approved';
                 updates.approved_at = new Date().toISOString();
-                updates.approved_by = user?.id;
-                updates.rejection_reason = null; // Clear any old rejections
+                updates.rejection_reason = null;
             } else if (status === 'rejected') {
+                // Keep rejected events editable for coordinators by returning them to draft
+                // while preserving the explicit rejected approval state and admin feedback.
+                updates.status = 'draft';
                 updates.approval_status = 'rejected';
-                updates.rejected_at = new Date().toISOString();
-                updates.rejected_by = user?.id;
                 updates.rejection_reason = rejection_reason;
+                updates.submitted_at = null;
+                updates.approved_at = null;
             } else if (status === 'pending') {
+                updates.status = 'pending';
                 updates.approval_status = 'pending';
                 updates.submitted_at = new Date().toISOString();
+                updates.approved_at = null;
             } else if (['registration_open', 'registration_closed', 'ongoing', 'completed', 'cancelled', 'archived'].includes(status)) {
+                updates.status = status;
                 updates.approval_status = 'approved';
+            } else if (status) {
+                updates.status = status;
             }
 
             if (resubmission_count !== undefined) {

@@ -1,10 +1,11 @@
 // eslint-disable-next-line no-unused-vars
 import React, { useMemo } from 'react';
 import {
-    Box, Typography, Grid, Card, CardContent, Button, Chip, CircularProgress,
+    Box, Typography, Grid, Card, CardContent, Button, Chip,
     // eslint-disable-next-line no-unused-vars
     Stack, Avatar, LinearProgress, Tooltip, Paper, Divider, Alert
 } from '@mui/material';
+import LoadingDots from '../../components/LoadingDots';
 import {
     CalendarMonth as DateIcon, LocationOn as VenueIcon, Cancel as CancelIcon,
     CheckCircle as ConfirmedIcon, HourglassBottom as WaitlistIcon,
@@ -221,7 +222,7 @@ const MyRegistrations = () => {
 
     if (isLoading) return (
         <Box display="flex" justifyContent="center" alignItems="center" height="50vh">
-            <CircularProgress />
+            <LoadingDots label="Loading registrations..." minHeight="40vh" />
         </Box>
     );
 

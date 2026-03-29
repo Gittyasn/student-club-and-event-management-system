@@ -15,6 +15,7 @@ export const useChat = (chatType, referenceId) => {
     const [realtimeNonce, setRealtimeNonce] = useState(0);
     const channelRef = useRef(null);
     const userId = user?.id;
+    const isModerator = ['admin', 'coordinator'].includes(profile?.role);
 
     // 1. Resolve or Create Chat Room ID based on type and refId
     const { data: chatRoom, isLoading: loadingRoom } = useQuery({
@@ -23,8 +24,27 @@ export const useChat = (chatType, referenceId) => {
         staleTime: 5 * 60 * 1000,
         queryFn: async () => {
             if (chatType === 'broadcast') {
-                const { data } = await supabase.from('chats').select('*').eq('type', 'broadcast').single();
-                return data;
+                const { data, error } = await supabase
+                    .from('chats')
+                    .select('*')
+                    .eq('type', 'broadcast')
+                    .maybeSingle();
+
+                if (error) throw error;
+                if (data) return data;
+
+                if (!['admin', 'coordinator'].includes(profile?.role)) {
+                    return null;
+                }
+
+                const { data: newRoom, error: createErr } = await supabase
+                    .from('chats')
+                    .insert({ type: 'broadcast', title: 'Campus Announcements' })
+                    .select()
+                    .single();
+
+                if (createErr) throw createErr;
+                return newRoom;
             }
 
             // Normal club or event chat
@@ -127,18 +147,28 @@ export const useChat = (chatType, referenceId) => {
     // 4. Mutations
     const sendMessage = useMutation({
         mutationFn: async ({ content, isAnnouncement = false, parentId = null, fileDetails = null }) => {
-            if (!chatId || !userId) throw new Error("Missing chat context");
+            if (!userId) throw new Error("Missing chat context");
 
-            // if broadcast, use RPC
+            // Broadcast messages use the same messages table as the rest of the chat system.
+            // This avoids a hard dependency on a separately cached RPC signature in live DB.
             if (chatType === 'broadcast') {
-                const { error } = await supabase.rpc('create_broadcast_message', {
+                if (!chatId) throw new Error('Broadcast chat is unavailable right now.');
+
+                const { error } = await supabase.from('messages').insert({
+                    chat_id: chatId,
+                    sender_id: userId,
                     content,
+                    is_announcement: true,
+                    parent_id: parentId,
                     file_url: fileDetails?.url,
+                    file_type: fileDetails?.type,
                     file_name: fileDetails?.name
                 });
                 if (error) throw error;
                 return;
             }
+
+            if (!chatId) throw new Error("Missing chat context");
 
             const { error } = await supabase.from('messages').insert({
                 chat_id: chatId,
@@ -157,6 +187,9 @@ export const useChat = (chatType, referenceId) => {
 
     const togglePin = useMutation({
         mutationFn: async ({ messageId, isPinned }) => {
+            if (!isModerator) {
+                throw new Error('Only coordinators and admins can pin messages.');
+            }
             const { error } = await supabase.from('messages').update({ is_pinned: isPinned }).eq('id', messageId);
             if (error) throw error;
         },
@@ -165,6 +198,18 @@ export const useChat = (chatType, referenceId) => {
 
     const deleteMessage = useMutation({
         mutationFn: async (messageId) => {
+            const { data: message, error: fetchError } = await supabase
+                .from('messages')
+                .select('sender_id')
+                .eq('id', messageId)
+                .single();
+
+            if (fetchError) throw fetchError;
+
+            if (!isModerator && message?.sender_id !== userId) {
+                throw new Error('You can only delete your own messages.');
+            }
+
             const { error } = await supabase.from('messages').update({ deleted: true, content: 'This message was deleted' }).eq('id', messageId);
             if (error) throw error;
         },

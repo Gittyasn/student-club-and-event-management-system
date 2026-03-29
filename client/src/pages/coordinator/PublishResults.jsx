@@ -3,7 +3,7 @@ import React, { useState, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
     Box, Typography, Button, Paper, Grid, TextField, MenuItem,
-    CircularProgress, Divider, IconButton, Card, CardContent,
+    Divider, IconButton, Card, CardContent,
     Stack, Chip, Avatar, Tabs, Tab, Alert, Select, FormControl,
     // eslint-disable-next-line no-unused-vars
     InputLabel, Tooltip, Dialog, DialogTitle, DialogContent,
@@ -21,6 +21,7 @@ import { DataGrid } from '@mui/x-data-grid';
 import { useEventById } from '../../hooks/useEventById';
 import { useEventRegistrations } from '../../hooks/useAttendance';
 import { useEventTeams } from '../../hooks/useTeams';
+import LoadingDots from '../../components/LoadingDots';
 import {
     useEventResults, useSaveResults, usePublishResults,
     useLockResults, useRecalculateRanks, parseResultsCSV, useResultLogs, useEventJudges
@@ -32,7 +33,7 @@ import {
 } from 'recharts';
 
 const RANK_COLORS = { 1: '#fbbf24', 2: '#94a3b8', 3: '#cd7c2f' };
-const PRIZE_PRESETS = ['🥇 Gold', '🥈 Silver', '🥉 Bronze', '🏆 Winner', '🎖 Runner-Up', '👑 Champion', '⭐ Best Project'];
+const PRIZE_PRESETS = ['1st Place', '2nd Place', '3rd Place', 'Winner', 'Runner-Up', 'Champion', 'Best Project'];
 const GRADES = ['A+', 'A', 'B+', 'B', 'C', 'D', 'F'];
 
 const RankBadge = ({ rank }) => (
@@ -151,7 +152,7 @@ const PublishResults = () => {
     const [tab, setTab] = useState(0);
     const [resultType, setResultType] = useState('rank');
     const [rankEntries, setRankEntries] = useState([
-        { rank: 1, user_id: '', prize_title: '🥇 Gold', remarks: '', cash_prize: '', is_winner: true, result_type: 'rank' }
+        { rank: 1, user_id: '', prize_title: '1st Place', remarks: '', cash_prize: '', is_winner: true, result_type: 'rank' }
     ]);
     const [scoreMap, setScoreMap] = useState({});
     const [csvFile, setCsvFile] = useState(null);
@@ -241,12 +242,12 @@ const PublishResults = () => {
         }
     };
 
-    if (isLoading) return <Box display="flex" justifyContent="center" p={8}><CircularProgress /></Box>;
+    if (isLoading) return <LoadingDots label="Loading results..." minHeight="50vh" />;
 
     return (
         <Box sx={{ pb: 6 }}>
             <RolePageHeader
-                kicker="Coordinator Suite"
+                kicker="Coordinator Dashboard"
                 title="Publish Results"
                 subtitle="Finalize scores and announce winners."
             />
@@ -262,18 +263,18 @@ const PublishResults = () => {
                         sx={{ color: 'rgba(255,255,255,0.6)', fontWeight: 700, mb: 1, pl: 0 }}>Back</Button>
                     <Box display="flex" justifyContent="space-between" alignItems="flex-start" flexWrap="wrap" gap={2}>
                         <Box>
-                            <Typography variant="h4" fontWeight={900} sx={{ letterSpacing: -1 }}>Results & Rankings</Typography>
+                            <Typography variant="h4" fontWeight={900} sx={{ letterSpacing: -1 }}>Results</Typography>
                             <Typography sx={{ opacity: 0.7 }}>{event?.title}</Typography>
                         </Box>
                         <Stack direction="row" spacing={1} flexWrap="wrap" gap={1}>
                             {!isLocked && !isPublished && (
                                 <>
-                                    <Button variant="outlined" startIcon={saving ? <CircularProgress size={16} color="inherit" /> : <AutoAwesome />}
+                                    <Button variant="outlined" startIcon={saving ? <LoadingDots inline size={5} color="currentColor" /> : <AutoAwesome />}
                                         onClick={() => saveDraft(buildPayload())} disabled={saving}
                                         sx={{ borderColor: 'rgba(255,255,255,0.3)', color: 'white', fontWeight: 700, borderRadius: '10px' }}>
                                         Save Draft
                                     </Button>
-                                    <Button variant="contained" startIcon={publishing ? <CircularProgress size={16} color="inherit" /> : <PublishIcon />}
+                                    <Button variant="contained" startIcon={publishing ? <LoadingDots inline size={5} color="currentColor" /> : <PublishIcon />}
                                         onClick={() => { if (window.confirm('Publish results? Students will be notified.')) publish(buildPayload()); }}
                                         disabled={publishing || candidates.length === 0}
                                         sx={{ bgcolor: '#10b981', fontWeight: 800, borderRadius: '10px', '&:hover': { bgcolor: '#059669' } }}>
@@ -282,7 +283,7 @@ const PublishResults = () => {
                                 </>
                             )}
                             {isPublished && !isLocked && (
-                                <Button variant="contained" startIcon={locking ? <CircularProgress size={16} color="inherit" /> : <LockIcon />}
+                                <Button variant="contained" startIcon={locking ? <LoadingDots inline size={5} color="currentColor" /> : <LockIcon />}
                                     onClick={() => { if (window.confirm('Lock results? Certificates will be finalized.')) lock(); }}
                                     disabled={locking}
                                     sx={{ bgcolor: '#ef4444', fontWeight: 800, borderRadius: '10px' }}>
@@ -323,9 +324,9 @@ const PublishResults = () => {
                         <Typography variant="subtitle1" fontWeight={800} mb={2}>Result Model</Typography>
                         <Stack direction="row" spacing={2}>
                             {[
-                                { value: 'rank', label: 'Rank-Based', desc: 'Hackathons, sports, competitions', icon: '🏆' },
-                                { value: 'score', label: 'Score-Based', desc: 'Quizzes, workshops, assessments', icon: '📊' },
-                                { value: 'participation', label: 'Participation Only', desc: 'Seminars, cultural events', icon: '🎫' },
+                                { value: 'rank', label: 'Ranking', desc: 'Use placements such as 1st, 2nd, and 3rd place.', icon: '1' },
+                                { value: 'score', label: 'Scores', desc: 'Record marks, grades, and percentages.', icon: '2' },
+                                { value: 'participation', label: 'Participation', desc: 'Issue attendance-based certificates without ranks.', icon: '3' },
                             ].map(type => (
                                 <Card key={type.value} onClick={() => !isLocked && setResultType(type.value)}
                                     sx={{
@@ -394,7 +395,7 @@ const PublishResults = () => {
                     {/* Participation Only */}
                     {resultType === 'participation' && (
                         <Paper sx={{ p: 4, borderRadius: '20px', textAlign: 'center', border: '1px solid', borderColor: 'divider' }}>
-                            <Typography fontSize="3rem" mb={2}>🎫</Typography>
+                            <Typography fontSize="3rem" mb={2}>3</Typography>
                             <Typography variant="h6" fontWeight={800} mb={1}>Participation Mode</Typography>
                             <Typography color="text.secondary" mb={3}>
                                 All <strong>{attendees.length}</strong> attendees will receive a participation certificate. No ranking is assigned.
@@ -478,7 +479,7 @@ const PublishResults = () => {
                     </Stack>
                     <Button variant="text" startIcon={<DownloadIcon />}
                         onClick={() => {
-                            const tmpl = 'email,score,max_score,grade,rank,prize_title,remarks,is_winner,result_type\nstudent@example.com,85,100,A,1,🥇 Gold,Great performance!,true,score';
+                            const tmpl = 'email,score,max_score,grade,rank,prize_title,remarks,is_winner,result_type\nstudent@example.com,85,100,A,1,1st Place,Great performance!,true,score';
                             const a = document.createElement('a'); a.href = 'data:text/csv;charset=utf-8,' + encodeURI(tmpl);
                             a.download = 'results_template.csv'; a.click();
                         }}

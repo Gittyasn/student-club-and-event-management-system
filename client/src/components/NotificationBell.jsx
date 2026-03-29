@@ -62,9 +62,11 @@ const NotificationBell = () => {
         markAsRead(notif.id);
         handleClose();
 
-        // Safe Routing Logic Output
         if (profile?.role === 'admin') {
-            // Admin doesn't have a dedicated notification center route setup in App.jsx currently
+            if (notif.related_type === 'event') navigate('/admin/approvals');
+            else if (notif.related_type === 'club') navigate('/admin/clubs');
+            else if (notif.related_type === 'certificate') navigate('/admin/certificates');
+            else navigate('/admin/broadcast-alerts');
             return;
         }
 
@@ -83,7 +85,7 @@ const NotificationBell = () => {
 
     return (
         <>
-            <Tooltip title="Alerts & Notifications">
+            <Tooltip title="Notifications">
                 <IconButton
                     onClick={handleClick}
                     sx={{
@@ -134,9 +136,9 @@ const NotificationBell = () => {
             >
                 <Box sx={{ p: 2.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid', borderColor: 'divider', bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)' }}>
                     <Box>
-                        <Typography variant="subtitle1" fontWeight={800} sx={{ letterSpacing: -0.5 }}>Inbox Center</Typography>
+                        <Typography variant="subtitle1" fontWeight={800} sx={{ letterSpacing: -0.5 }}>Inbox</Typography>
                         <Typography variant="caption" color="text.secondary" fontWeight={500}>
-                            {unreadCount} pending intel alerts
+                            {unreadCount} unread updates
                         </Typography>
                     </Box>
                     <Box sx={{ display: 'flex', gap: 0.5 }}>
@@ -147,7 +149,7 @@ const NotificationBell = () => {
                                 </IconButton>
                             </Tooltip>
                         )}
-                        <Tooltip title="Configure Alerts">
+                            <Tooltip title="Notification Settings">
                             <IconButton size="small" onClick={() => { handleClose(); navigate(profile?.role === 'student' ? '/student/settings' : `/${profile?.role}/settings`); }}>
                                 <SettingsIcon fontSize="small" />
                             </IconButton>
@@ -224,8 +226,8 @@ const NotificationBell = () => {
                             }}>
                                 <EmptyIcon sx={{ fontSize: 32, color: 'text.disabled' }} />
                             </Box>
-                            <Typography variant="subtitle2" fontWeight={700} color="text.primary">Zero Active Alerts</Typography>
-                            <Typography variant="caption" color="text.secondary">All system processes operating nominally.</Typography>
+                            <Typography variant="subtitle2" fontWeight={700} color="text.primary">No new notifications</Typography>
+                            <Typography variant="caption" color="text.secondary">You are all caught up for now.</Typography>
                         </Box>
                     )}
                 </Box>
@@ -239,7 +241,7 @@ const NotificationBell = () => {
                             onClick={() => { handleClose(); navigate('/student/notifications'); }}
                             sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 2 }}
                         >
-                            Open Intelligence Hub
+                            View All Notifications
                         </Button>
                     </Box>
                 )}

@@ -1,7 +1,7 @@
 // eslint-disable-next-line no-unused-vars
 import React, { useMemo } from 'react';
 // eslint-disable-next-line no-unused-vars
-import { Box, Typography, Paper, Grid, Card, CardContent, CircularProgress, Chip, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Stack } from '@mui/material';
+import { Box, Typography, Paper, Grid, Card, CardContent, Chip, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Stack } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../services/supabaseClient';
 import LoadingDots from '../../components/LoadingDots';
@@ -40,8 +40,8 @@ const ApprovalHistory = () => {
         queryFn: async () => {
             const { data, error } = await supabase
                 .from('events')
-                .select('id, title, submitted_at, approved_at, status, club:clubs(name)')
-                .in('status', ['approved', 'rejected', 'registration_open', 'registration_closed', 'ongoing', 'completed', 'archived']);
+                .select('id, title, submitted_at, approved_at, status, approval_status, club:clubs(name)')
+                .in('approval_status', ['approved', 'rejected']);
             if (error) throw error;
             return data;
         }
@@ -87,7 +87,7 @@ const ApprovalHistory = () => {
 
         // Find most rejected club
         const clubRejections = {};
-        events.filter(e => e.status === 'rejected').forEach(e => {
+        events.filter(e => e.approval_status === 'rejected').forEach(e => {
             const name = e.club?.name || 'Unknown';
             clubRejections[name] = (clubRejections[name] || 0) + 1;
         });

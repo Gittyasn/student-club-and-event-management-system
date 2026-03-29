@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
     Box, Typography, Button, Paper, Grid, Stepper, Step, StepLabel,
-    StepContent, CircularProgress, Alert, Avatar
+    StepContent, Alert, Avatar
 } from '@mui/material';
 import {
     CheckCircle as CheckIcon, QrCodeScanner as AttendanceIcon,
@@ -15,6 +15,7 @@ import { useUpdateEventStatus } from '../../hooks/useEvents';
 import { toast } from 'sonner';
 import AttendancePrediction from '../../components/ai/AttendancePrediction';
 import FeedbackSentiment from '../../components/ai/FeedbackSentiment';
+import LoadingDots from '../../components/LoadingDots';
 
 const EventCompletion = () => {
     const { id } = useParams();
@@ -34,7 +35,7 @@ const EventCompletion = () => {
         }
     };
 
-    if (isLoading) return <CircularProgress sx={{ display: 'block', m: '50px auto' }} />;
+    if (isLoading) return <LoadingDots label="Loading completion workflow..." minHeight="50vh" />;
     if (!event) return <Typography color="error" textAlign="center">Event not localized</Typography>;
 
     if (event.status === 'completed' || event.status === 'archived') {
@@ -86,7 +87,7 @@ const EventCompletion = () => {
 
     steps.push({
         label: 'Finalize & Archive',
-        description: 'Lock all modifications, generate final completion telemetry, and formally conclude the event lifecycle.',
+        description: 'Lock final changes, save the closing record, and formally complete the event.',
         icon: <ArchiveIcon />,
         action: handleComplete,
         btnText: 'Mark as Completed',
@@ -99,7 +100,7 @@ const EventCompletion = () => {
     return (
         <Box maxWidth="md" mx="auto" sx={{ pb: 8 }}>
             <RolePageHeader
-                kicker="Coordinator Suite"
+                kicker="Coordinator Dashboard"
                 title="Event Completion"
                 subtitle="Finalize attendance, results, and certificates."
             />
