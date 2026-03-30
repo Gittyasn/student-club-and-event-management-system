@@ -9,6 +9,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../services/supabaseClient';
 import LoadingDots from '../../components/LoadingDots';
 import { fetchAuditLogs } from '../../services/auditLogService';
+import RolePageHeader from '../../components/RolePageHeader';
 
 const AdminDashboardCharts = lazy(() => import('./components/AdminDashboardCharts'));
 
@@ -18,13 +19,14 @@ const StatCard = ({ title, value, icon, subtitle }) => {
         <Paper
             elevation={0}
             sx={{
-                p: { xs: 2.5, md: 2.5 },
+                p: { xs: 2.25, md: 2.5 },
                 height: '100%',
+                minHeight: 164,
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'center',
                 border: `1px solid ${theme.palette.divider}`,
-                borderRadius: 2.5,
+                borderRadius: 3,
                 background: theme.palette.mode === 'dark'
                     ? 'linear-gradient(180deg, rgba(15,23,42,0.9) 0%, rgba(2,6,23,0.7) 100%)'
                     : 'linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(248,250,252,0.85) 100%)',
@@ -77,12 +79,12 @@ const Panel = ({ title, subtitle, children, action }) => {
                 height: '100%',
                 flex: 1,
                 border: `1px solid ${theme.palette.divider}`,
-                borderRadius: 2.5,
+                borderRadius: 3,
                 overflow: 'hidden',
-                minHeight: 400
+                minHeight: 360
             }}
         >
-            <Box sx={{ px: 3, py: 2.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `1px solid ${theme.palette.divider}` }}>
+            <Box sx={{ px: 3, py: 2.25, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `1px solid ${theme.palette.divider}` }}>
                 <Box>
                     <Typography variant="h6" sx={{ fontWeight: 600, color: 'text.primary', fontSize: '1rem' }}>
                         {title}
@@ -95,7 +97,7 @@ const Panel = ({ title, subtitle, children, action }) => {
                 </Box>
                 {action}
             </Box>
-            <Box sx={{ p: 3, flex: 1, display: 'flex', flexDirection: 'column' }}>
+            <Box sx={{ p: 2.75, flex: 1, display: 'flex', flexDirection: 'column' }}>
                 {children}
             </Box>
         </Paper>
@@ -169,57 +171,45 @@ const AdminDashboard = () => {
     const currentDate = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
 
     return (
-        <Box sx={{ pb: 6, maxWidth: 1400, mx: 'auto' }}>
-            {/* Header Section */}
-            <Paper
-                elevation={0}
-                sx={{
-                    mb: 4,
-                    p: { xs: 2.5, md: 3 },
-                    borderRadius: 3,
-                    border: `1px solid ${theme.palette.divider}`,
-                    background: theme.palette.mode === 'dark'
-                        ? 'linear-gradient(135deg, rgba(15,23,42,0.9) 0%, rgba(2,6,23,0.7) 100%)'
-                        : 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(239,246,255,0.75) 100%)'
-                }}
-            >
-            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', md: 'center' }, gap: 3 }}>
-                <Box>
-                    <Typography variant="overline" sx={{ color: 'text.secondary', fontWeight: 700, letterSpacing: 1 }}>
-                        Admin Dashboard
-                    </Typography>
-                    <Typography variant="h4" sx={{ fontWeight: 800, color: 'text.primary', mb: 1 }}>
-                        System Administration
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 1 }}>
-                        Campus operations summary | {currentDate}
-                    </Typography>
-                </Box>
-                <Box sx={{ display: 'flex', gap: 2 }}>
-                    <Paper
-                        elevation={0}
-                        sx={{
-                            px: 3, py: 1.5, display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
-                            border: `1px solid ${theme.palette.divider}`, borderRadius: 2,
-                            bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)'
-                        }}
-                    >
-                        <Typography variant="overline" sx={{ color: 'text.secondary', fontWeight: 600, lineHeight: 1 }}>Avg. Attendance</Typography>
-                        <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary', mt: 0.5 }}>{data?.attendanceRate || 0}%</Typography>
-                    </Paper>
-                    <Button
-                        variant="contained"
-                        onClick={() => navigate('/admin/approvals')}
-                        sx={{ px: 3, py: 1.5, borderRadius: 2 }}
-                    >
-                        Review Approvals
-                    </Button>
-                </Box>
-            </Box>
-            </Paper>
+        <Box sx={{ pb: 8, maxWidth: 1280, mx: 'auto' }}>
+            <RolePageHeader
+                kicker="Admin Dashboard"
+                title="System Administration"
+                subtitle={`Campus operations summary | ${currentDate}`}
+                accent="#2563eb"
+                action={
+                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ width: { xs: '100%', md: 'auto' } }}>
+                        <Paper
+                            elevation={0}
+                            sx={{
+                                px: 3,
+                                py: 1.5,
+                                minWidth: 180,
+                                borderRadius: '18px',
+                                border: `1px solid ${theme.palette.divider}`,
+                                bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.65)'
+                            }}
+                        >
+                            <Typography variant="overline" sx={{ color: 'text.secondary', fontWeight: 700, lineHeight: 1.1 }}>
+                                Avg. Attendance
+                            </Typography>
+                            <Typography variant="h5" sx={{ fontWeight: 900, color: 'text.primary', mt: 0.5 }}>
+                                {data?.attendanceRate || 0}%
+                            </Typography>
+                        </Paper>
+                        <Button
+                            variant="contained"
+                            onClick={() => navigate('/admin/approvals')}
+                            sx={{ px: 3.25, py: 1.5, borderRadius: '18px', fontWeight: 800 }}
+                        >
+                            Review Approvals
+                        </Button>
+                    </Stack>
+                }
+            />
 
             {/* KPI Cards */}
-            <Grid container spacing={3} sx={{ mb: 4 }}>
+            <Grid container spacing={2.5} sx={{ mb: 3.5 }}>
                 {kpis.map((k, index) => (
                     <Grid item xs={12} sm={6} md={3} key={index}>
                         <StatCard {...k} />
@@ -232,7 +222,7 @@ const AdminDashboard = () => {
             </Suspense>
 
             {/* Bottom Row */}
-            <Grid container spacing={3} sx={{ display: 'flex' }} alignItems="stretch">
+            <Grid container spacing={2.5} sx={{ display: 'flex' }} alignItems="stretch">
                 <Grid item xs={12} md={6} sx={{ display: 'flex', flexDirection: 'column' }}>
                     <Panel title="Performance Leaderboard" subtitle="Top ranking clubs by score">
                         <Stack spacing={2} sx={{ mt: 1 }}>

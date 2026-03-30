@@ -217,9 +217,11 @@ function App() {
             </Route>
 
             <Route element={<ProtectedRoute allowedRoles={['student']} />}>
-              <Route path="/student" element={<StudentLayout />}>
+            <Route path="/student" element={<StudentLayout />}>
                 <Route index element={<StudentDashboard />} />
                 <Route path="events" element={<MyEvents />} />
+                <Route path="events/:id" element={<EventDetails publicOnly={false} />} />
+                <Route path="events/:id/chat" element={<EventChat />} />
                 <Route path="browse-events" element={<BrowseEvents />} />
                 <Route path="registrations" element={<MyRegistrations />} />
                 <Route path="clubs" element={<MyClubs />} />

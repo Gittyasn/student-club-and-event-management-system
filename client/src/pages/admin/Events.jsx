@@ -1,8 +1,9 @@
 import { Box, Chip, Stack, Typography } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
-import { Event as EventIcon, LocationOn as LocationIcon, Place as VenueIcon } from '@mui/icons-material';
+import { LocationOn as LocationIcon, Place as VenueIcon } from '@mui/icons-material';
 import { useEvents } from '../../hooks/useEvents';
 import LoadingDots from '../../components/LoadingDots';
+import RolePageHeader from '../../components/RolePageHeader';
 
 const statusColors = {
     draft: 'default',
@@ -113,44 +114,12 @@ const Events = () => {
 
     return (
         <Box sx={{ pb: 6 }}>
-            <Box
-                sx={{
-                    mb: 4,
-                    p: { xs: 3, md: 4 },
-                    borderRadius: '20px',
-                    background: (theme) =>
-                        theme.palette.mode === 'dark'
-                            ? 'linear-gradient(135deg, #0f172a 0%, #172554 100%)'
-                            : 'linear-gradient(135deg, #ffffff 0%, #eff6ff 100%)',
-                    border: '1px solid',
-                    borderColor: 'divider',
-                }}
-            >
-                <Stack direction="row" spacing={2} alignItems="center">
-                    <Box
-                        sx={{
-                            width: 52,
-                            height: 52,
-                            borderRadius: '16px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            bgcolor: 'rgba(37,99,235,0.12)',
-                            color: 'primary.main',
-                        }}
-                    >
-                        <EventIcon />
-                    </Box>
-                    <Box>
-                        <Typography variant="h4" fontWeight={900} color="text.primary">
-                            Events Overview
-                        </Typography>
-                        <Typography color="text.secondary" fontWeight={600}>
-                            Track event schedule, venue details, approval state, and delivery status in one place.
-                        </Typography>
-                    </Box>
-                </Stack>
-            </Box>
+            <RolePageHeader
+                kicker="Admin Dashboard"
+                title="Events Overview"
+                subtitle="Track event schedule, venue details, approval state, and delivery status in one place."
+                accent="#2563eb"
+            />
 
             <Box sx={{ height: 620, width: '100%' }}>
                 <DataGrid

@@ -8,7 +8,7 @@ import {
 } from '@mui/material';
 import {
     Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon,
-    CategoryRounded as CategoryIcon, Search as SearchIcon
+    Search as SearchIcon
 } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
@@ -20,6 +20,7 @@ import {
 } from '../../hooks/useClubCategories';
 import { motion, AnimatePresence } from 'framer-motion';
 import LoadingDots from '../../components/LoadingDots';
+import RolePageHeader from '../../components/RolePageHeader';
 
 const categorySchema = z.object({
     name: z.string().min(2, 'Name must be at least 2 characters').max(50, 'Name too long'),
@@ -94,44 +95,25 @@ const AdminClubCategories = () => {
 
     return (
         <Box sx={{ pb: 6 }}>
-            {/* Header */}
-            <Box sx={{
-                mb: 4,
-                p: { xs: 3, md: 4 },
-                borderRadius: '24px',
-                background: theme.palette.mode === 'dark'
-                    ? 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)'
-                    : 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
-                border: `1px solid ${theme.palette.divider}`,
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                flexWrap: 'wrap',
-                gap: 2,
-            }}>
-                <Stack direction="row" spacing={3} alignItems="center">
-                    <Box sx={{ p: 2, borderRadius: '20px', bgcolor: 'rgba(59,130,246,0.1)', color: '#2563eb', border: '1px solid rgba(59,130,246,0.18)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.6)' }}>
-                        <CategoryIcon sx={{ fontSize: 32 }} />
-                    </Box>
-                    <Box>
-                        <Typography variant="h4" fontWeight={900} sx={{ color: 'text.primary', letterSpacing: -1 }}>Club Categories</Typography>
-                        <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
-                            Define and manage structural classifications for clubs.
-                        </Typography>
-                    </Box>
-                </Stack>
-                <Button
-                    variant="contained"
-                    startIcon={<AddIcon />}
-                    onClick={() => handleOpenDialog()}
-                    sx={{
-                        bgcolor: '#2563eb', color: 'white', fontWeight: 800, px: 3, py: 1.5, borderRadius: '12px',
-                        '&:hover': { bgcolor: '#1d4ed8' }
-                    }}
-                >
-                    New Category
-                </Button>
-            </Box>
+            <RolePageHeader
+                kicker="Admin Dashboard"
+                title="Club Categories"
+                subtitle="Define and manage structural classifications for clubs."
+                accent="#2563eb"
+                action={
+                    <Button
+                        variant="contained"
+                        startIcon={<AddIcon />}
+                        onClick={() => handleOpenDialog()}
+                        sx={{
+                            bgcolor: '#2563eb', color: 'white', fontWeight: 800, px: 3, py: 1.5, borderRadius: '16px',
+                            '&:hover': { bgcolor: '#1d4ed8' }
+                        }}
+                    >
+                        New Category
+                    </Button>
+                }
+            />
 
             <Grid container spacing={2} sx={{ mb: 3 }}>
                 {[

@@ -39,6 +39,7 @@ import {
 } from 'recharts';
 import { useAdminAnalytics } from '../../hooks/useAnalytics';
 import LoadingDots from '../../components/LoadingDots';
+import RolePageHeader from '../../components/RolePageHeader';
 
 const CHART_COLORS = ['#2563eb', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4'];
 
@@ -103,36 +104,24 @@ const AdminAnalytics = () => {
         return <LoadingDots minHeight="50vh" label="Loading analytics..." />;
     }
 
-    if (!data) return null;
+    if (!data) {
+        return (
+            <Box sx={{ minHeight: '50vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Typography color="text.secondary" fontWeight={700}>
+                    Analytics will appear here once platform data is available.
+                </Typography>
+            </Box>
+        );
+    }
 
     return (
         <Box sx={{ pb: 8 }}>
-            <Box
-                component={motion.div}
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                sx={{
-                    mb: 4,
-                    p: { xs: 3, md: 4 },
-                    borderRadius: '24px',
-                    background: (theme) =>
-                        theme.palette.mode === 'dark'
-                            ? 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%)'
-                            : 'linear-gradient(135deg, #ffffff 0%, #eff6ff 100%)',
-                    border: '1px solid',
-                    borderColor: 'divider',
-                }}
-            >
-                <Typography variant="overline" sx={{ color: 'primary.main', fontWeight: 900, letterSpacing: 2.4 }}>
-                    ADMIN ANALYTICS
-                </Typography>
-                <Typography variant="h4" fontWeight={900} color="text.primary" sx={{ mt: 0.5 }}>
-                    Platform Analytics Dashboard
-                </Typography>
-                <Typography color="text.secondary" fontWeight={600}>
-                    High-priority growth, engagement, attendance, and feedback metrics arranged from most valuable to operational detail.
-                </Typography>
-            </Box>
+            <RolePageHeader
+                kicker="Admin Analytics"
+                title="Platform Analytics Dashboard"
+                subtitle="High-priority growth, engagement, attendance, and feedback metrics arranged from most valuable to operational detail."
+                accent="#2563eb"
+            />
 
             <Grid container spacing={2.5} sx={{ mb: 4 }}>
                 {[

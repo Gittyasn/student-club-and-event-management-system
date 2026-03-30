@@ -109,7 +109,7 @@ const ExcusedDialog = ({ open, student, onClose, onConfirm }) => {
             <DialogTitle sx={{ fontWeight: 900 }}>Mark as Excused</DialogTitle>
             <DialogContent>
                 <Typography variant="body2" color="text.secondary" mb={2}>
-                    Mark <strong>{student?.profiles?.full_name}</strong> as excused.
+                    Mark <strong>{student?.student?.full_name || 'this student'}</strong> as excused.
                 </Typography>
                 <TextField fullWidth label="Reason (optional)" value={reason} onChange={e => setReason(e.target.value)}
                     variant="filled" multiline rows={2} />
@@ -163,20 +163,20 @@ const Attendance = () => {
     const filtered = useMemo(() =>
         registrations.filter(r =>
             search === '' ||
-            r.profiles?.full_name?.toLowerCase().includes(search.toLowerCase()) ||
-            r.profiles?.email?.toLowerCase().includes(search.toLowerCase())
+            r.student?.full_name?.toLowerCase().includes(search.toLowerCase()) ||
+            r.student?.email?.toLowerCase().includes(search.toLowerCase())
         ), [registrations, search]);
 
     const columns = [
         {
             field: 'avatar', headerName: '', width: 56,
-            renderCell: (p) => <Avatar src={p.row.profiles?.avatar_url} sx={{ width: 32, height: 32, bgcolor: 'primary.main', fontSize: '0.85rem' }}>
-                {p.row.profiles?.full_name?.charAt(0)}
+            renderCell: (p) => <Avatar src={p.row.student?.avatar_url} sx={{ width: 32, height: 32, bgcolor: 'primary.main', fontSize: '0.85rem' }}>
+                {p.row.student?.full_name?.charAt(0)}
             </Avatar>
         },
-        { field: 'name', headerName: 'Name', flex: 1.2, valueGetter: (_, row) => row.profiles?.full_name || 'N/A' },
-        { field: 'email', headerName: 'Email', flex: 1.5, valueGetter: (_, row) => row.profiles?.email || 'N/A' },
-        { field: 'dept', headerName: 'Dept', width: 110, valueGetter: (_, row) => row.profiles?.department || 'N/A' },
+        { field: 'name', headerName: 'Name', flex: 1.2, valueGetter: (_, row) => row.student?.full_name || 'N/A' },
+        { field: 'email', headerName: 'Email', flex: 1.5, valueGetter: (_, row) => row.student?.email || 'N/A' },
+        { field: 'dept', headerName: 'Dept', width: 110, valueGetter: (_, row) => row.student?.department || 'N/A' },
         {
             field: 'status', headerName: 'Status', width: 130,
             renderCell: (p) => {
@@ -233,7 +233,7 @@ const Attendance = () => {
             const [email, statusRaw] = line.split(',').map(s => s.trim());
             const status = statusRaw?.toLowerCase();
             if (!email || !['present', 'absent', 'late', 'excused'].includes(status)) { fail++; continue; }
-            const reg = registrations.find(r => r.profiles?.email?.toLowerCase() === email.toLowerCase());
+            const reg = registrations.find(r => r.student?.email?.toLowerCase() === email.toLowerCase());
             if (!reg) { fail++; continue; }
             await markAttendance.mutateAsync({ userId: reg.user_id, registrationId: reg.id, status, method: 'bulk' }).catch(() => { fail++; });
             success++;

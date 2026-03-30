@@ -23,8 +23,8 @@ export const useEventRegistrations = (eventId) => {
             const { data, error } = await supabase
                 .from('registrations')
                 .select(`
-                    id, status, user_id,
-                    profiles:profiles!registrations_user_id_fkey(id, full_name, email, department, avatar_url)
+                    id, event_id, status, user_id, registered_at,
+                    student:profiles!registrations_user_id_fkey(id, full_name, email, department, avatar_url)
                 `)
                 .eq('event_id', eventId)
                 .in('status', ['registered', 'confirmed', 'attended', 'no_show']);
@@ -41,6 +41,8 @@ export const useEventRegistrations = (eventId) => {
 
             return data?.map(reg => ({
                 ...reg,
+                student: Array.isArray(reg.student) ? reg.student[0] : reg.student,
+                profiles: Array.isArray(reg.student) ? reg.student[0] : reg.student,
                 attendance: attMap[reg.user_id] || null
             }));
         }
@@ -353,9 +355,9 @@ export const useAttendanceMutations = (eventId) => {
     const exportCSV = (registrations, eventTitle) => {
         if (!registrations?.length) return toast.error('No data to export.');
         const rows = registrations.map(r => ({
-            Name: r.profiles?.full_name || 'N/A',
-            Email: r.profiles?.email || 'N/A',
-            Dept: r.profiles?.department || 'N/A',
+            Name: r.student?.full_name || r.profiles?.full_name || 'N/A',
+            Email: r.student?.email || r.profiles?.email || 'N/A',
+            Dept: r.student?.department || r.profiles?.department || 'N/A',
             Status: r.attendance?.status || 'pending',
             Late: r.attendance?.is_late ? `Yes (${r.attendance.late_minutes}m)` : 'No',
             Method: r.attendance?.method || '-',

@@ -1,4 +1,4 @@
-import { Box, Typography, Chip, Grid, Button, Divider } from '@mui/material';
+import { Box, Typography, Chip, Button, Divider } from '@mui/material';
 import LoadingDots from '../../components/LoadingDots';
 import {
     Cancel as CancelIcon,
@@ -24,9 +24,9 @@ const MyEvents = () => {
     const { registrations, isLoading, cancelRegistration } = useMyRegistrations();
     const navigate = useNavigate();
 
-    const handleCancel = (id) => {
+    const handleCancel = (registrationId, eventId) => {
         if (window.confirm('Are you sure you want to cancel this registration?')) {
-            cancelRegistration.mutate(id);
+            cancelRegistration.mutate({ registrationId, eventId });
         }
     };
 
@@ -41,25 +41,30 @@ const MyEvents = () => {
             <RolePageHeader
                 title="My Events"
                 subtitle="Track your registrations, attendance, and certificates."
+                kicker="Student Dashboard"
+                accent="#3b82f6"
             />
-            <Box
-                component={motion.div}
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                sx={{ mb: 5 }}
-            >
-                <Typography variant="h3" fontWeight="900" sx={{ letterSpacing: -1.5, mb: 1, color: 'primary.main' }}>
-                    My Events
-                </Typography>
+            <Box sx={{ mb: 4 }}>
                 <Typography color="text.secondary" variant="body1" fontWeight="500">
                     Track your upcoming clubs, events, and workshops.
                 </Typography>
             </Box>
 
-            <Grid container spacing={3}>
+            <Box
+                sx={{
+                    display: 'grid',
+                    gridTemplateColumns: {
+                        xs: '1fr',
+                        md: 'repeat(2, minmax(0, 1fr))',
+                        xl: 'repeat(3, minmax(0, 1fr))',
+                    },
+                    gap: 3,
+                    alignItems: 'stretch',
+                }}
+            >
                 <AnimatePresence>
                     {(!registrations || registrations.length === 0) ? (
-                        <Grid item xs={12}>
+                        <Box sx={{ gridColumn: '1 / -1' }}>
                             <Box
                                 component={motion.div}
                                 initial={{ opacity: 0 }}
@@ -71,14 +76,17 @@ const MyEvents = () => {
                                 <Typography variant="h6" color="text.secondary">No registrations found</Typography>
                                 <Typography variant="body2" color="text.secondary" sx={{ opacity: 0.7 }}>You haven&apos;t joined any events yet. Ready to explore?</Typography>
                             </Box>
-                        </Grid>
+                        </Box>
                     ) : (
                         registrations.map((reg, index) => {
                             const isCancelled = reg.status === 'cancelled';
                             const isCompleted = reg.event?.status === 'completed' || reg.event?.status === 'archived';
+                            const feedbackLabel = reg.attendance_status === 'present'
+                                ? (reg.has_feedback ? 'Feedback Submitted' : 'Pending Feedback')
+                                : 'Feedback Locked';
 
                             return (
-                                <Grid item xs={12} md={6} lg={4} key={reg.id}>
+                                <Box key={reg.id} sx={{ display: 'flex' }}>
                                     <Box
                                         component={motion.div}
                                         initial={{ opacity: 0, scale: 0.9 }}
@@ -86,7 +94,8 @@ const MyEvents = () => {
                                         transition={{ duration: 0.3, delay: index * 0.1 }}
                                         className="glass-card"
                                         sx={{
-                                            height: '100%',
+                                            height: 520,
+                                            width: '100%',
                                             borderRadius: 4,
                                             display: 'flex',
                                             flexDirection: 'column',
@@ -101,7 +110,7 @@ const MyEvents = () => {
                                             }
                                         }}
                                     >
-                                        <Box sx={{ p: 3, flexGrow: 1 }}>
+                                        <Box sx={{ p: 3, flexGrow: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
                                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
                                                 <Chip
                                                     label={reg.status.toUpperCase()}
@@ -112,84 +121,149 @@ const MyEvents = () => {
                                                 <TicketIcon sx={{ color: isCancelled ? 'text.disabled' : 'secondary.main', opacity: 0.8 }} />
                                             </Box>
 
-                                            <Typography variant="h5" fontWeight="900" gutterBottom sx={{ letterSpacing: -0.5, lineHeight: 1.2 }}>
+                                            <Typography
+                                                variant="h5"
+                                                fontWeight="900"
+                                                gutterBottom
+                                                sx={{
+                                                    letterSpacing: -0.5,
+                                                    lineHeight: 1.2,
+                                                    height: '4.8rem',
+                                                    display: '-webkit-box',
+                                                    WebkitLineClamp: 2,
+                                                    WebkitBoxOrient: 'vertical',
+                                                    overflow: 'hidden',
+                                                }}
+                                            >
                                                 {reg.event?.title || 'Untitled Event'}
                                             </Typography>
 
-                                            {reg.event?.club && (
-                                                <Chip
-                                                    icon={<ClubIcon fontSize="small" />}
-                                                    label={reg.event.club.name}
-                                                    size="small"
-                                                    variant="outlined"
-                                                    sx={{ mb: 2, fontWeight: 700, borderRadius: 1.5, borderColor: 'rgba(255,255,255,0.1)' }}
-                                                />
-                                            )}
+                                            <Box sx={{ height: 44, mb: 2 }}>
+                                                {reg.event?.club && (
+                                                    <Chip
+                                                        icon={<ClubIcon fontSize="small" />}
+                                                        label={reg.event.club.name}
+                                                        size="small"
+                                                        variant="outlined"
+                                                        sx={{
+                                                            fontWeight: 700,
+                                                            borderRadius: 1.5,
+                                                            borderColor: 'rgba(255,255,255,0.1)',
+                                                            maxWidth: '100%',
+                                                            '& .MuiChip-label': {
+                                                                overflow: 'hidden',
+                                                                textOverflow: 'ellipsis',
+                                                            },
+                                                        }}
+                                                    />
+                                                )}
+                                            </Box>
 
-                                            <Box sx={{ mt: 1, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                                            <Box sx={{ mt: 1, display: 'flex', flexDirection: 'column', gap: 1.5, height: 188, flexGrow: 0 }}>
                                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                                                     <DateIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
-                                                    <Typography variant="body2" color="text.secondary" fontWeight="500">
+                                                    <Typography
+                                                        variant="body2"
+                                                        color="text.secondary"
+                                                        fontWeight="500"
+                                                        sx={{
+                                                            display: '-webkit-box',
+                                                            WebkitLineClamp: 2,
+                                                            WebkitBoxOrient: 'vertical',
+                                                            overflow: 'hidden',
+                                                        }}
+                                                    >
                                                         {reg.event?.start_time ? new Date(reg.event.start_time).toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'No date set'}
                                                     </Typography>
                                                 </Box>
                                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                                                     {reg.event?.mode === 'online' ? <OnlineIcon sx={{ fontSize: 18, color: 'info.main' }} /> : <OfflineIcon sx={{ fontSize: 18, color: 'text.secondary' }} />}
-                                                    <Typography variant="body2" color="text.secondary" fontWeight="500">
+                                                    <Typography
+                                                        variant="body2"
+                                                        color="text.secondary"
+                                                        fontWeight="500"
+                                                        sx={{
+                                                            display: '-webkit-box',
+                                                            WebkitLineClamp: 2,
+                                                            WebkitBoxOrient: 'vertical',
+                                                            overflow: 'hidden',
+                                                        }}
+                                                    >
                                                         {reg.event?.mode === 'online' ? 'Online Event' : (reg.event?.location || 'Venue to be announced')}
                                                     </Typography>
                                                 </Box>
 
                                                 <Divider sx={{ my: 0.5, opacity: 0.05 }} />
 
-                                                <Grid container spacing={1} sx={{ mt: 0.5 }}>
-                                                    <Grid item xs={6}>
-                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                            {reg.attendance_status === 'present' ? <PresentIcon sx={{ fontSize: 16, color: 'success.main' }} /> : <AbsentIcon sx={{ fontSize: 16, color: 'text.disabled' }} />}
-                                                            <Typography variant="caption" fontWeight="bold" color={reg.attendance_status === 'present' ? 'success.main' : 'text.secondary'}>
-                                                                {reg.attendance_status === 'present' ? 'Attended' : 'No Status'}
-                                                            </Typography>
-                                                        </Box>
-                                                    </Grid>
-                                                    <Grid item xs={6}>
-                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                            <CertIcon sx={{ fontSize: 16, color: reg.event?.certificate_enabled ? 'warning.main' : 'text.disabled' }} />
-                                                            <Typography variant="caption" fontWeight="bold" color={reg.event?.certificate_enabled ? 'warning.main' : 'text.secondary'}>
-                                                                {reg.event?.certificate_enabled ? 'Cert Available' : 'No Certificate'}
-                                                            </Typography>
-                                                        </Box>
-                                                    </Grid>
-                                                    <Grid item xs={12}>
-                                                        {reg.attendance_status === 'present' && (
-                                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
-                                                                <FeedbackIcon sx={{ fontSize: 16, color: reg.has_feedback ? 'primary.main' : 'error.main' }} />
-                                                                <Typography variant="caption" fontWeight="bold" color={reg.has_feedback ? 'primary.main' : 'error.main'}>
-                                                                    {reg.has_feedback ? 'Feedback Submitted' : 'Pending Feedback'}
-                                                                </Typography>
-                                                            </Box>
-                                                        )}
-                                                    </Grid>
-                                                </Grid>
+                                                <Box
+                                                    sx={{
+                                                        display: 'grid',
+                                                        gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+                                                        gap: 1,
+                                                        mt: 0.5,
+                                                    }}
+                                                >
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
+                                                        {reg.attendance_status === 'present' ? <PresentIcon sx={{ fontSize: 16, color: 'success.main' }} /> : <AbsentIcon sx={{ fontSize: 16, color: 'text.disabled' }} />}
+                                                        <Typography variant="caption" fontWeight="bold" color={reg.attendance_status === 'present' ? 'success.main' : 'text.secondary'} noWrap>
+                                                            {reg.attendance_status === 'present' ? 'Attended' : 'No Status'}
+                                                        </Typography>
+                                                    </Box>
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
+                                                        <CertIcon sx={{ fontSize: 16, color: reg.event?.certificate_enabled ? 'warning.main' : 'text.disabled' }} />
+                                                        <Typography variant="caption" fontWeight="bold" color={reg.event?.certificate_enabled ? 'warning.main' : 'text.secondary'} noWrap>
+                                                            {reg.event?.certificate_enabled ? 'Cert Available' : 'No Certificate'}
+                                                        </Typography>
+                                                    </Box>
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0, gridColumn: '1 / -1', minHeight: 20 }}>
+                                                        <FeedbackIcon
+                                                            sx={{
+                                                                fontSize: 16,
+                                                                color: reg.attendance_status === 'present'
+                                                                    ? (reg.has_feedback ? 'primary.main' : 'error.main')
+                                                                    : 'text.disabled',
+                                                            }}
+                                                        />
+                                                        <Typography
+                                                            variant="caption"
+                                                            fontWeight="bold"
+                                                            color={reg.attendance_status === 'present'
+                                                                ? (reg.has_feedback ? 'primary.main' : 'error.main')
+                                                                : 'text.secondary'}
+                                                            noWrap
+                                                        >
+                                                            {feedbackLabel}
+                                                        </Typography>
+                                                    </Box>
+                                                </Box>
                                             </Box>
                                         </Box>
 
                                         <Divider sx={{ opacity: 0.05 }} />
 
-                                        <Box sx={{ p: 2, display: 'flex', gap: 1 }}>
-                                            {!isCancelled && !isCompleted && (
+                                        <Box
+                                            sx={{
+                                                p: 2,
+                                                display: 'grid',
+                                                gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+                                                gap: 1,
+                                                height: 76,
+                                                alignItems: 'stretch'
+                                            }}
+                                        >
+                                            {!isCancelled && !isCompleted ? (
                                                 <Button
                                                     fullWidth
                                                     variant="outlined"
                                                     color="error"
                                                     size="small"
                                                     startIcon={<CancelIcon />}
-                                                    onClick={() => handleCancel(reg.id)}
+                                                    onClick={() => handleCancel(reg.id, reg.event_id)}
                                                     sx={{ borderRadius: 2, fontWeight: 700 }}
                                                 >
                                                     Cancel
                                                 </Button>
-                                            )}
-                                            {isCompleted && reg.attendance_status === 'present' && reg.event?.certificate_enabled && (
+                                            ) : isCompleted && reg.attendance_status === 'present' && reg.event?.certificate_enabled ? (
                                                 <Button
                                                     fullWidth
                                                     variant="contained"
@@ -201,21 +275,22 @@ const MyEvents = () => {
                                                 >
                                                     Certificate
                                                 </Button>
-                                            )}
-                                            {isCompleted && reg.attendance_status === 'present' && !reg.has_feedback && (
+                                            ) : isCompleted && reg.attendance_status === 'present' && !reg.has_feedback ? (
                                                 <Button
                                                     fullWidth
                                                     variant="contained"
                                                     color="secondary"
                                                     size="small"
                                                     startIcon={<FeedbackIcon />}
-                                                    onClick={() => navigate(`/student/feedback/${reg.event_id}`)}
+                                                    onClick={() => navigate(`/student/events/${reg.event_id}/feedback`)}
                                                     sx={{ borderRadius: 2, fontWeight: 700 }}
                                                 >
                                                     Feedback
                                                 </Button>
+                                            ) : (
+                                                <Button disabled sx={{ visibility: 'hidden', minWidth: 0 }} />
                                             )}
-                                            {!isCancelled && (
+                                            {!isCancelled ? (
                                                 <Button
                                                     fullWidth
                                                     variant="contained"
@@ -227,6 +302,8 @@ const MyEvents = () => {
                                                 >
                                                     Chat
                                                 </Button>
+                                            ) : (
+                                                <Button disabled sx={{ visibility: 'hidden', minWidth: 0 }} />
                                             )}
                                             <Button
                                                 fullWidth
@@ -234,19 +311,19 @@ const MyEvents = () => {
                                                 color="primary"
                                                 size="small"
                                                 endIcon={<ChevronRight />}
-                                                onClick={() => navigate(`/events/${reg.event_id}`)}
+                                                onClick={() => navigate(`/student/events/${reg.event_id}`)}
                                                 sx={{ borderRadius: 2, fontWeight: 700 }}
                                             >
                                                 Details
                                             </Button>
                                         </Box>
                                     </Box>
-                                </Grid>
+                                </Box>
                             );
                         })
                     )}
                 </AnimatePresence>
-            </Grid>
+            </Box>
         </Box>
     );
 };

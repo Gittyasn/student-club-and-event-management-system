@@ -19,7 +19,7 @@ export const useMyRegistrations = () => {
             const { data, error } = await supabase
                 .from('registrations')
                 .select(`
-                    id, status, registered_at, cancelled_at, attended,
+                    id, event_id, user_id, status, registered_at, cancelled_at, attended, attendance_status,
                     waitlist_position, admin_note,
                     event:events(
                         id, title, start_time, end_time, location, mode, status,
@@ -212,9 +212,9 @@ export const useRegisterEvent = () => {
                 related_type: 'event'
             });
 
-            return assignedStatus;
+            return { assignedStatus, eventId: id };
         },
-        onSuccess: (assignedStatus) => {
+        onSuccess: ({ assignedStatus }) => {
             queryClient.invalidateQueries({ queryKey: ['myRegistrations'] });
             queryClient.invalidateQueries({ queryKey: ['events'] });
             queryClient.invalidateQueries({ queryKey: ['studentStats'] });

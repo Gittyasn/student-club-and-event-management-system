@@ -96,6 +96,13 @@ const Section = ({ title, description, children, defaultExpanded = false }) => (
     </Accordion>
 );
 
+const toLocalDateTimeInputValue = (value) => {
+    if (!value) return '';
+    const date = new Date(value);
+    const offset = date.getTimezoneOffset() * 60000;
+    return new Date(date.getTime() - offset).toISOString().slice(0, 16);
+};
+
 const EditEvent = () => {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -136,9 +143,9 @@ const EditEvent = () => {
         setValue('min_team_size', Number(event.min_team_size) || 1);
         setValue('max_team_size', Number(event.max_team_size) || 5);
         setValue('status', event.status || 'draft');
-        if (event.start_time) setValue('start_time', new Date(event.start_time).toISOString().slice(0, 16));
-        if (event.end_time) setValue('end_time', new Date(event.end_time).toISOString().slice(0, 16));
-        if (event.registration_deadline) setValue('registration_deadline', new Date(event.registration_deadline).toISOString().slice(0, 16));
+        if (event.start_time) setValue('start_time', toLocalDateTimeInputValue(event.start_time));
+        if (event.end_time) setValue('end_time', toLocalDateTimeInputValue(event.end_time));
+        if (event.registration_deadline) setValue('registration_deadline', toLocalDateTimeInputValue(event.registration_deadline));
     }, [event, setValue]);
 
     const handleFileChange = (targetEvent) => {
@@ -219,7 +226,7 @@ const EditEvent = () => {
             {event.status === 'approved' ? (
                 <Alert severity="success" sx={{ mb: 3, borderRadius: 3 }}>
                     <AlertTitle sx={{ fontWeight: 700 }}>Approved event</AlertTitle>
-                    The start time and registration deadline stay locked so students do not see unexpected changes.
+                    Save date or deadline changes carefully so students always see the latest schedule.
                 </Alert>
             ) : null}
 
@@ -312,13 +319,13 @@ const EditEvent = () => {
                     <Section title="Schedule" description="Set the event timing and how students will attend.">
                         <Grid container spacing={3}>
                             <Grid item xs={12} md={4}>
-                                <TextField fullWidth type="datetime-local" variant="filled" label="Start time" InputLabelProps={{ shrink: true }} {...register('start_time')} error={!!errors.start_time} helperText={errors.start_time?.message} disabled={event.status === 'approved'} InputProps={{ sx: { borderRadius: 2 } }} />
+                                <TextField fullWidth type="datetime-local" variant="filled" label="Start time" InputLabelProps={{ shrink: true }} {...register('start_time')} error={!!errors.start_time} helperText={errors.start_time?.message} InputProps={{ sx: { borderRadius: 2 } }} />
                             </Grid>
                             <Grid item xs={12} md={4}>
                                 <TextField fullWidth type="datetime-local" variant="filled" label="End time" InputLabelProps={{ shrink: true }} {...register('end_time')} error={!!errors.end_time} helperText={errors.end_time?.message} InputProps={{ sx: { borderRadius: 2 } }} />
                             </Grid>
                             <Grid item xs={12} md={4}>
-                                <TextField fullWidth type="datetime-local" variant="filled" label="Registration deadline" InputLabelProps={{ shrink: true }} {...register('registration_deadline')} error={!!errors.registration_deadline} helperText={errors.registration_deadline?.message} disabled={event.status === 'approved'} InputProps={{ sx: { borderRadius: 2 } }} />
+                                <TextField fullWidth type="datetime-local" variant="filled" label="Registration deadline" InputLabelProps={{ shrink: true }} {...register('registration_deadline')} error={!!errors.registration_deadline} helperText={errors.registration_deadline?.message} InputProps={{ sx: { borderRadius: 2 } }} />
                             </Grid>
                             {(currentMode === 'offline' || currentMode === 'hybrid') ? (
                                 <Grid item xs={12} md={6}>

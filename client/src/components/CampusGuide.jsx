@@ -16,7 +16,6 @@ import {
     HelpOutline,
     HowToReg,
     Send,
-    SmartToy,
 } from '@mui/icons-material';
 import { supabase } from '../services/supabaseClient';
 
@@ -125,6 +124,64 @@ const suggestedQuestions = [
     { text: 'General campus help', icon: <HelpOutline sx={{ fontSize: 16 }} /> },
 ];
 
+const CampusGuideLogo = ({ size = 22 }) => {
+    return (
+        <Box
+            component={motion.div}
+            animate={{
+                y: [0, -1, 0],
+                scale: [1, 1.015, 1],
+                boxShadow: [
+                    'inset 0 1px 1px rgba(255,255,255,0.3), 0 8px 18px rgba(37,99,235,0.18)',
+                    'inset 0 1px 1px rgba(255,255,255,0.4), 0 10px 22px rgba(124,58,237,0.22)',
+                    'inset 0 1px 1px rgba(255,255,255,0.3), 0 8px 18px rgba(37,99,235,0.18)',
+                ],
+            }}
+            transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
+            sx={{
+                position: 'relative',
+                width: size,
+                height: size,
+                borderRadius: `${Math.max(7, Math.round(size * 0.34))}px`,
+                background: 'linear-gradient(135deg, #dbeafe 0%, #e9d5ff 100%)',
+                border: '1px solid rgba(255,255,255,0.55)',
+                boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.3), 0 8px 18px rgba(37,99,235,0.18)',
+                overflow: 'hidden',
+                flexShrink: 0,
+            }}
+        >
+            <Box
+                component={motion.div}
+                animate={{ scale: [0.98, 1.04, 0.98], opacity: [0.28, 0.42, 0.28] }}
+                transition={{ duration: 2.8, repeat: Infinity, ease: 'easeInOut' }}
+                sx={{
+                    position: 'absolute',
+                    inset: 0,
+                    background: 'radial-gradient(circle at 28% 28%, rgba(255,255,255,0.75), transparent 42%)',
+                }}
+            />
+            <Box
+                component="svg"
+                viewBox="0 0 64 64"
+                sx={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
+            >
+                <rect x="10" y="10" width="44" height="44" rx="16" fill="url(#campus-guide-badge)" />
+                <g transform="translate(32 32)">
+                    <path d="M0 -12L3.2 -3.2L12 0L3.2 3.2L0 12L-3.2 3.2L-12 0L-3.2 -3.2Z" fill="rgba(255,255,255,0.96)" />
+                </g>
+                <circle cx="43" cy="21" r="4.5" fill="#fbbf24" fillOpacity="0.95" />
+                <defs>
+                    <linearGradient id="campus-guide-badge" x1="12" y1="12" x2="52" y2="52" gradientUnits="userSpaceOnUse">
+                        <stop stopColor="#60a5fa" />
+                        <stop offset="0.55" stopColor="#6366f1" />
+                        <stop offset="1" stopColor="#7c3aed" />
+                    </linearGradient>
+                </defs>
+            </Box>
+        </Box>
+    );
+};
+
 const CampusGuide = ({ triggerMode = 'floating' }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState([
@@ -222,14 +279,21 @@ const CampusGuide = ({ triggerMode = 'floating' }) => {
                         width: isTopbar ? 40 : 62,
                         height: isTopbar ? 40 : 62,
                         borderRadius: isTopbar ? 2.5 : '50%',
-                        bgcolor: 'primary.main',
-                        color: 'primary.contrastText',
-                        boxShadow: isTopbar ? 2 : 4,
-                        '&:hover': { bgcolor: 'primary.dark' },
+                        bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(15,23,42,0.92)' : 'rgba(255,255,255,0.96)',
+                        color: 'text.primary',
+                        border: '1px solid',
+                        borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.12)' : 'rgba(37,99,235,0.14)',
+                        boxShadow: isTopbar
+                            ? '0 6px 20px rgba(15,23,42,0.12)'
+                            : '0 18px 38px rgba(15,23,42,0.18)',
+                        '&:hover': {
+                            bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(30,41,59,0.96)' : 'rgba(255,255,255,1)',
+                            transform: 'translateY(-1px)',
+                        },
                     }}
                     aria-label="Open campus support"
                 >
-                    {isOpen ? <Close /> : <HelpOutline />}
+                    {isOpen ? <Close /> : <CampusGuideLogo size={isTopbar ? 22 : 30} />}
                 </IconButton>
             </Box>
 
@@ -269,8 +333,8 @@ const CampusGuide = ({ triggerMode = 'floating' }) => {
                             }}
                         >
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                                <Box sx={{ width: 42, height: 42, borderRadius: 2.5, bgcolor: 'rgba(255,255,255,0.16)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <SmartToy />
+                                <Box sx={{ width: 42, height: 42, borderRadius: 2.5, bgcolor: 'rgba(255,255,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(6px)' }}>
+                                    <CampusGuideLogo size={26} />
                                 </Box>
                                 <Box>
                                     <Typography fontWeight={900}>Campus Support</Typography>

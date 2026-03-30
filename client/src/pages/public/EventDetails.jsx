@@ -28,9 +28,9 @@ import HackathonAnalytics from '../../modules/hackathon/HackathonAnalytics';
 import { useUserTeam } from '../../hooks/useTeams';
 import { useHackathonRounds, useHackathonSubmissions, useHackathonJudges } from '../../hooks/useHackathon';
 
-const EventDetails = () => {
+const EventDetails = ({ publicOnly = true }) => {
     const { id } = useParams();
-    const { data: event, isLoading, error } = useEventById(id, { publicOnly: true });
+    const { data: event, isLoading, error } = useEventById(id, { publicOnly });
     const { user, profile } = useAuthStore();
     const navigate = useNavigate();
     const registerMutation = useRegisterEvent();

@@ -19,6 +19,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../services/supabaseClient';
 import { useGlobalAIGovernance } from '../../hooks/useGuideEngine';
 import LoadingDots from '../../components/LoadingDots';
+import RolePageHeader from '../../components/RolePageHeader';
 
 const PRESENT_STATUSES = ['present', 'late'];
 const ACTIVE_MEMBERSHIP_STATUSES = ['approved', 'active', 'core_member', 'sub_coordinator'];
@@ -272,30 +273,28 @@ const AIReports = () => {
 
     return (
         <Box sx={{ pb: 8 }}>
-            <Box
-                sx={{
-                    mb: 4,
-                    p: { xs: 3, md: 4 },
-                    borderRadius: '24px',
-                    background: (theme) =>
-                        theme.palette.mode === 'dark'
-                            ? 'linear-gradient(135deg, #111827 0%, #312e81 100%)'
-                            : 'linear-gradient(135deg, #ffffff 0%, #eef2ff 100%)',
-                    border: '1px solid',
-                    borderColor: 'divider',
-                }}
-            >
-                <Typography variant="overline" sx={{ color: '#7c3aed', fontWeight: 900, letterSpacing: 2.2 }}>
-                    AI REPORTING
-                </Typography>
-                <Typography variant="h4" fontWeight={900} sx={{ mt: 0.5, display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                    <AutoGraph color="secondary" fontSize="large" />
-                    Engagement Insights
-                </Typography>
-                <Typography color="text.secondary" fontWeight={600}>
-                    Reporting built from registrations, attendance, memberships, certificates, and feedback activity.
-                </Typography>
-            </Box>
+            <RolePageHeader
+                kicker="AI Reporting"
+                title="Engagement Insights"
+                subtitle="Reporting built from registrations, attendance, memberships, certificates, and feedback activity."
+                accent="#7c3aed"
+                action={
+                    <Box
+                        sx={{
+                            width: 56,
+                            height: 56,
+                            borderRadius: '18px',
+                            display: 'grid',
+                            placeItems: 'center',
+                            bgcolor: 'rgba(124,58,237,0.12)',
+                            color: '#7c3aed',
+                            border: '1px solid rgba(124,58,237,0.18)'
+                        }}
+                    >
+                        <AutoGraph fontSize="large" />
+                    </Box>
+                }
+            />
 
             {governanceState?.isFallback ? (
                 <Paper

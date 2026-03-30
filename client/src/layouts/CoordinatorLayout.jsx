@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react';
+import { Suspense, useState } from 'react';
 import { Outlet, Link as RouterLink, useNavigate, useLocation } from 'react-router-dom';
 import {
     Box, Drawer, List, Typography, IconButton,
     ListItem, ListItemButton, ListItemIcon, ListItemText,
     Avatar, Menu, MenuItem, Divider
 } from '@mui/material';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
     Menu as MenuIcon, Dashboard as DashboardIcon, Event as EventIcon,
     AddCircle as AddIcon, Logout as LogoutIcon, BarChart as BarChartIcon,
@@ -17,6 +17,7 @@ import NotificationBell from '../components/NotificationBell';
 import { ModeToggle } from '../components/mode-toggle';
 import CampusGuide from '../components/CampusGuide';
 import ProfileQuickViewDialog from '../components/ProfileQuickViewDialog';
+import LoadingDots from '../components/LoadingDots';
 
 const DRAWER_WIDTH = 260;
 const SIDEBAR_BG = 'linear-gradient(180deg, #0b1220 0%, #0f172a 45%, #0b1220 100%)'; // Executive gradient slate
@@ -32,7 +33,29 @@ const menuItems = [
     { text: 'Settings', icon: <ManageAccounts />, path: '/coordinator/settings', color: '#94a3b8' },
 ];
 
-const SidebarContent = ({ location, profile }) => (
+const coordinatorRoutePreloaders = {
+    '/coordinator/events': () => import('../pages/coordinator/MyEvents'),
+    '/coordinator/submissions': () => import('../pages/coordinator/MySubmissions'),
+    '/coordinator/events/create': () => import('../pages/coordinator/CreateEvent'),
+    '/coordinator/members': () => import('../pages/coordinator/MembershipManagement'),
+    '/coordinator/certificates': () => import('../pages/coordinator/CertificatesManager'),
+    '/coordinator/analytics': () => import('../pages/coordinator/Analytics'),
+    '/coordinator/settings': () => import('../pages/coordinator/Settings'),
+};
+
+const preloadedCoordinatorRoutes = new Set();
+
+const preloadCoordinatorRoute = (path) => {
+    const load = coordinatorRoutePreloaders[path];
+    if (!load || preloadedCoordinatorRoutes.has(path)) return;
+
+    preloadedCoordinatorRoutes.add(path);
+    load().catch(() => {
+        preloadedCoordinatorRoutes.delete(path);
+    });
+};
+
+const SidebarContent = ({ location, profile, onPreloadRoute }) => (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', background: SIDEBAR_BG }}>
         {/* Logo */}
         <Box
@@ -76,30 +99,56 @@ const SidebarContent = ({ location, profile }) => (
 
         {/* Profile mini */}
         <Box sx={{ px: 2.5, py: 2, mb: 1.2 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.4, p: 1.2, borderRadius: '12px', bgcolor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                <Box sx={{
-                    minWidth: 124,
-                    height: 38,
-                    px: 1.2,
-                    borderRadius: '10px',
-                    background: 'linear-gradient(135deg, #2563eb, #7c3aed)',
+            <Box
+                sx={{
+                    p: 1.6,
+                    borderRadius: '12px',
+                    bgcolor: 'rgba(255,255,255,0.04)',
+                    border: '1px solid rgba(255,255,255,0.08)',
                     display: 'flex',
+                    flexDirection: 'column',
                     alignItems: 'center',
-                    justifyContent: 'center',
-                    boxShadow: '0 8px 16px rgba(37,99,235,0.35)'
-                }}>
-                    <Typography sx={{ color: '#fff', fontSize: '0.82rem', fontWeight: 800, letterSpacing: 0.3 }}>
+                    textAlign: 'center',
+                }}
+            >
+                <Box
+                    sx={{
+                        px: 1.15,
+                        py: 0.8,
+                        borderRadius: '10px',
+                        background: 'linear-gradient(135deg, #2563eb, #7c3aed)',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        boxShadow: '0 8px 16px rgba(37,99,235,0.35)',
+                        mb: 1.15,
+                    }}
+                >
+                    <Typography sx={{ color: '#fff', fontSize: '0.78rem', fontWeight: 800, letterSpacing: 0.3 }}>
                         COORDINATOR
                     </Typography>
                 </Box>
-                <Box sx={{ minWidth: 0 }}>
-                    <Typography variant="body2" fontWeight={800} sx={{ color: 'rgba(255,255,255,0.95)', fontSize: '0.9rem', lineHeight: 1.2, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {profile?.full_name || 'Coordinator User'}
-                    </Typography>
-                    <Typography variant="caption" sx={{ color: 'rgba(224,231,255,0.78)', fontWeight: 600, fontSize: '0.72rem', letterSpacing: 0.2 }}>
-                        Portal Access
-                    </Typography>
-                </Box>
+                <Typography
+                    variant="body2"
+                    fontWeight={800}
+                    sx={{
+                        color: 'rgba(255,255,255,0.95)',
+                        fontSize: '0.92rem',
+                        lineHeight: 1.25,
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                        mb: 0.45,
+                        wordBreak: 'break-word',
+                        maxWidth: '100%',
+                    }}
+                >
+                    {profile?.full_name || 'Coordinator User'}
+                </Typography>
+                <Typography variant="caption" sx={{ color: 'rgba(224,231,255,0.78)', fontWeight: 600, fontSize: '0.72rem', letterSpacing: 0.2 }}>
+                    Portal Access
+                </Typography>
             </Box>
         </Box>
 
@@ -118,6 +167,9 @@ const SidebarContent = ({ location, profile }) => (
                         <Box component={motion.div} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
                             transition={{ duration: 0.35, delay: i * 0.05 }} style={{ width: '100%' }}>
                             <ListItemButton component={RouterLink} to={item.path}
+                                onMouseEnter={() => onPreloadRoute?.(item.path)}
+                                onFocus={() => onPreloadRoute?.(item.path)}
+                                onTouchStart={() => onPreloadRoute?.(item.path)}
                                 sx={{
                                     borderRadius: '6px', py: 1.3, px: 1.5, position: 'relative', overflow: 'hidden',
                                     background: isActive ? `${item.color}12` : 'transparent',
@@ -161,28 +213,6 @@ const CoordinatorLayout = () => {
     const handleProfileEdit = () => { setProfileDialogOpen(false); navigate('/coordinator/profile'); };
     const handleLogout = async () => { setAnchorEl(null); await logout(); navigate('/coordinator/login'); };
     const drawerSx = { '& .MuiDrawer-paper': { boxSizing: 'border-box', width: DRAWER_WIDTH, border: 'none', background: 'transparent' } };
-
-    useEffect(() => {
-        const preloadCoordinatorRoutes = () => {
-            [
-                () => import('../pages/coordinator/MyEvents'),
-                () => import('../pages/coordinator/MySubmissions'),
-                () => import('../pages/coordinator/CreateEvent'),
-                () => import('../pages/coordinator/Analytics'),
-                () => import('../pages/coordinator/MembershipManagement'),
-                () => import('../pages/coordinator/CertificatesManager'),
-                () => import('../pages/coordinator/Settings'),
-            ].forEach((load) => load().catch(() => undefined));
-        };
-
-        if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-            const idleId = window.requestIdleCallback(preloadCoordinatorRoutes, { timeout: 1500 });
-            return () => window.cancelIdleCallback(idleId);
-        }
-
-        const timeoutId = window.setTimeout(preloadCoordinatorRoutes, 350);
-        return () => window.clearTimeout(timeoutId);
-    }, []);
 
     return (
         <Box className="app-style" sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
@@ -241,22 +271,51 @@ const CoordinatorLayout = () => {
             <Box component="nav" sx={{ width: { sm: DRAWER_WIDTH }, flexShrink: { sm: 0 } }}>
                 <Drawer variant="temporary" open={mobileOpen} onClose={() => setMobileOpen(false)} ModalProps={{ keepMounted: true }}
                     sx={{ display: { xs: 'block', sm: 'none' }, ...drawerSx }}>
-                    <SidebarContent location={location} profile={profile} />
+                    <SidebarContent location={location} profile={profile} onPreloadRoute={preloadCoordinatorRoute} />
                 </Drawer>
                 <Drawer variant="permanent" sx={{ display: { xs: 'none', sm: 'block' }, ...drawerSx }} open>
-                    <SidebarContent location={location} profile={profile} />
+                    <SidebarContent location={location} profile={profile} onPreloadRoute={preloadCoordinatorRoute} />
                 </Drawer>
             </Box>
 
             {/* Main */}
-            <Box component="main" className="role-surface" sx={{ flexGrow: 1, paddingTop: '80px', paddingLeft: { xs: '16px', md: '24px' }, paddingRight: { xs: '16px', md: '24px' }, paddingBottom: '48px', width: { sm: `calc(100% - ${DRAWER_WIDTH}px)` }, minHeight: '100vh' }}>
-                <AnimatePresence mode="wait">
-                    <Box component={motion.div} key={location.pathname}
-                        initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }}
-                        transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}>
+            <Box component="main" className="role-surface" sx={{ flexGrow: 1, paddingTop: '80px', paddingLeft: { xs: '16px', md: '24px' }, paddingRight: { xs: '16px', md: '24px' }, paddingBottom: '48px', width: { sm: `calc(100% - ${DRAWER_WIDTH}px)` }, minHeight: '100vh', position: 'relative' }}>
+                <Box
+                    component={motion.div}
+                    key={`coordinator-transition-${location.pathname}`}
+                    initial={{ opacity: 0.92 }}
+                    animate={{ opacity: 0 }}
+                    transition={{ duration: 0.22, ease: 'easeOut' }}
+                    sx={{
+                        position: 'absolute',
+                        inset: 0,
+                        zIndex: 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        bgcolor: 'background.default',
+                        pointerEvents: 'none',
+                    }}
+                >
+                    <LoadingDots label="Opening section..." minHeight="auto" />
+                </Box>
+                <Suspense
+                    fallback={
+                        <Box sx={{ minHeight: '50vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <LoadingDots label="Loading section..." minHeight="auto" />
+                        </Box>
+                    }
+                >
+                    <Box
+                        component={motion.div}
+                        key={location.pathname}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
+                    >
                         <Outlet />
                     </Box>
-                </AnimatePresence>
+                </Suspense>
             </Box>
 
         </Box>

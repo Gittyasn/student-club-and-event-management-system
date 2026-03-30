@@ -8,8 +8,10 @@ const normalizeEventPayload = (eventPayload = {}) => {
         ...eventPayload,
     };
 
-    if (normalized.start_time && !normalized.date) {
-        normalized.date = new Date(normalized.start_time).toISOString().slice(0, 10);
+    if (normalized.start_time) {
+        normalized.date = String(normalized.start_time).includes('T')
+            ? String(normalized.start_time).slice(0, 10)
+            : new Date(normalized.start_time).toISOString().slice(0, 10);
     }
 
     delete normalized.min_team_size;
@@ -36,14 +38,23 @@ export const useEventMutations = () => {
 
             if (error) throw error;
 
-            // Auto-create chat room
+            // Auto-create live event chat channel used by the current chat UI.
             const { error: chatError } = await supabase
+                .from('chats')
+                .insert({ type: 'event', reference_id: data.id, title: `${data.title || 'Event'} Discussion` });
+
+            if (chatError) {
+                console.error('Error creating event chat:', chatError);
+                toast.error('Event created, but event chat setup failed.');
+            }
+
+            // Legacy room creation kept for older code paths that still read chat_rooms.
+            const { error: legacyChatError } = await supabase
                 .from('chat_rooms')
                 .insert({ event_id: data.id });
 
-            if (chatError) {
-                console.error('Error creating chat room:', chatError);
-                toast.error('Event created, but chat room failed.');
+            if (legacyChatError) {
+                console.error('Error creating legacy chat room:', legacyChatError);
             }
 
             return data;
@@ -65,14 +76,35 @@ export const useEventMutations = () => {
                 .from('events')
                 .update(normalizedUpdates)
                 .eq('id', id)
-                .select()
-                .single();
+                .select('*')
+                .maybeSingle();
 
             if (error) throw error;
+            if (!data) {
+                throw new Error('Database policy blocked this event update. Apply the latest events RLS migration, then try saving again.');
+            }
+
             return data;
         },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['events'] });
+        onSuccess: async (updatedEvent) => {
+            queryClient.setQueriesData({ queryKey: ['events'] }, (existingEvents) => {
+                if (!Array.isArray(existingEvents)) return existingEvents;
+
+                return existingEvents.map((event) => (
+                    event.id === updatedEvent.id
+                        ? { ...event, ...updatedEvent }
+                        : event
+                ));
+            });
+
+            queryClient.setQueriesData({ queryKey: ['event'] }, (existingEvent) => {
+                if (!existingEvent || Array.isArray(existingEvent)) return existingEvent;
+                if (existingEvent.id !== updatedEvent.id) return existingEvent;
+                return { ...existingEvent, ...updatedEvent };
+            });
+
+            await queryClient.invalidateQueries({ queryKey: ['events'], refetchType: 'all' });
+            await queryClient.invalidateQueries({ queryKey: ['event'], refetchType: 'all' });
             toast.success('Event updated successfully');
         },
         onError: (error) => {

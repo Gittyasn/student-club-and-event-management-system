@@ -68,16 +68,10 @@ const MyClubs = () => {
             <RolePageHeader
                 title="My Clubs"
                 subtitle="Manage memberships, requests, and community spaces."
+                kicker="Student Dashboard"
+                accent="#3b82f6"
             />
-            <Box
-                component={motion.div}
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                sx={{ mb: 5 }}
-            >
-                <Typography variant="h3" className="text-gradient" fontWeight="900" sx={{ letterSpacing: -1.5, mb: 1 }}>
-                    Clubs & Communities
-                </Typography>
+            <Box sx={{ mb: 5 }}>
                 <Typography color="text.secondary" variant="body1" fontWeight="500">
                     Connect, collaborate, and grow with campus organizations.
                 </Typography>

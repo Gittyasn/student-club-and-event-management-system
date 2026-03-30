@@ -41,7 +41,19 @@ const EngagementLeaderboard = () => {
                     background: 'linear-gradient(135deg, #0c0a1e 0%, #2d1a4f 50%, #0f1b3e 100%)', color: 'white', position: 'relative', overflow: 'hidden'
                 }}>
                 <Box sx={{ position: 'absolute', top: -120, right: -80, width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle, rgba(251,191,36,0.1) 0%, transparent 70%)', pointerEvents: 'none' }} />
-                <Box sx={{ position: 'relative', zIndex: 1 }}>
+                <Box
+                    sx={{
+                        position: 'relative',
+                        zIndex: 1,
+                        '& h3': {
+                            color: '#c4b5fd',
+                            textShadow: '0 8px 24px rgba(196,181,253,0.18)',
+                        },
+                        '& p': {
+                            color: 'rgba(255,255,255,0.82)',
+                        },
+                    }}
+                >
                     <Typography variant="overline" sx={{ color: '#fbbf24', fontWeight: 900, letterSpacing: 3 }}>PLATFORM</Typography>
                     <Typography variant="h3" fontWeight={900} sx={{ letterSpacing: -1.5, mb: 1 }}>🏆 Engagement Leaderboard</Typography>
                     <Typography sx={{ opacity: 0.65, fontWeight: 500 }}>

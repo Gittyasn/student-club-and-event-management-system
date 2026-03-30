@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { Suspense, useState } from 'react';
 import { Outlet, Link as RouterLink, useNavigate, useLocation } from 'react-router-dom';
 import {
     // eslint-disable-next-line no-unused-vars
@@ -7,7 +7,7 @@ import {
     // eslint-disable-next-line no-unused-vars
     Avatar, Menu, MenuItem, Tooltip, Divider
 } from '@mui/material';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
     Menu as MenuIcon, Dashboard as DashboardIcon, People as PeopleIcon,
     Groups as GroupsIcon, Event as EventIcon, Logout as LogoutIcon,
@@ -28,6 +28,7 @@ import NotificationBell from '../components/NotificationBell';
 import { ModeToggle } from '../components/mode-toggle';
 import CampusGuide from '../components/CampusGuide';
 import ProfileQuickViewDialog from '../components/ProfileQuickViewDialog';
+import LoadingDots from '../components/LoadingDots';
 
 const DRAWER_WIDTH = 260;
 
@@ -60,7 +61,45 @@ const menuItems = [
     { text: 'Settings', icon: <SettingsIcon />, path: '/admin/settings', color: '#94a3b8' },
 ];
 
-const SidebarContent = ({ location, profile }) => (
+const adminRoutePreloaders = {
+    '/admin/clubs': () => import('../pages/admin/Clubs'),
+    '/admin/club-categories': () => import('../pages/admin/ClubCategories'),
+    '/admin/event-categories': () => import('../pages/admin/EventCategories'),
+    '/admin/club-leaderboard': () => import('../pages/admin/ClubLeaderboard'),
+    '/admin/users': () => import('../pages/admin/Users'),
+    '/admin/events': () => import('../pages/admin/Events'),
+    '/admin/analytics': () => import('../pages/admin/Analytics'),
+    '/admin/feedback': () => import('../pages/admin/Feedback'),
+    '/admin/announcements': () => import('../pages/admin/Announcements'),
+    '/admin/memberships': () => import('../pages/admin/Memberships'),
+    '/admin/approvals': () => import('../pages/admin/EventApprovals'),
+    '/admin/registrations': () => import('../pages/admin/RegistrationOverview'),
+    '/admin/attendance': () => import('../pages/admin/AttendanceOverview'),
+    '/admin/budgets': () => import('../pages/admin/Budgets'),
+    '/admin/results': () => import('../pages/admin/Results'),
+    '/admin/results-overview': () => import('../pages/admin/ResultsOverview'),
+    '/admin/certificates': () => import('../pages/admin/CertificateManagement'),
+    '/admin/broadcast': () => import('../pages/admin/BroadcastChannel'),
+    '/admin/broadcast-alerts': () => import('../pages/admin/BroadcastNotification'),
+    '/admin/ai-governance': () => import('../pages/admin/AIGovernance'),
+    '/admin/ai-reports': () => import('../pages/admin/AIReports'),
+    '/admin/security': () => import('../pages/admin/Security'),
+    '/admin/settings': () => import('../pages/admin/Settings'),
+};
+
+const preloadedAdminRoutes = new Set();
+
+const preloadAdminRoute = (path) => {
+    const load = adminRoutePreloaders[path];
+    if (!load || preloadedAdminRoutes.has(path)) return;
+
+    preloadedAdminRoutes.add(path);
+    load().catch(() => {
+        preloadedAdminRoutes.delete(path);
+    });
+};
+
+const SidebarContent = ({ location, profile, onPreloadRoute }) => (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', background: SIDEBAR_BG, overflow: 'hidden' }}>
         {/* Logo */}
         <Box
@@ -155,6 +194,9 @@ const SidebarContent = ({ location, profile }) => (
                             <ListItemButton
                                 component={RouterLink}
                                 to={item.path}
+                                onMouseEnter={() => onPreloadRoute?.(item.path)}
+                                onFocus={() => onPreloadRoute?.(item.path)}
+                                onTouchStart={() => onPreloadRoute?.(item.path)}
                                 sx={{
                                     borderRadius: '6px', py: 1.2, px: 1.5, position: 'relative', overflow: 'hidden',
                                     background: isActive ? `${item.color}12` : 'transparent',
@@ -211,33 +253,6 @@ const AdminLayout = () => {
     const handleLogout = async () => { setAnchorEl(null); await logout(); navigate('/admin/login'); };
 
     const drawerSx = { '& .MuiDrawer-paper': { boxSizing: 'border-box', width: DRAWER_WIDTH, border: 'none', background: 'transparent' } };
-
-    useEffect(() => {
-        const preloadAdminRoutes = () => {
-            [
-                () => import('../pages/admin/Clubs'),
-                () => import('../pages/admin/Users'),
-                () => import('../pages/admin/Events'),
-                () => import('../pages/admin/Analytics'),
-                () => import('../pages/admin/EventApprovals'),
-                () => import('../pages/admin/RegistrationOverview'),
-                () => import('../pages/admin/AttendanceOverview'),
-                () => import('../pages/admin/ResultsOverview'),
-                () => import('../pages/admin/CertificateManagement'),
-                () => import('../pages/admin/Security'),
-                () => import('../pages/admin/AIGovernance'),
-                () => import('../pages/admin/AIReports'),
-            ].forEach((load) => load().catch(() => undefined));
-        };
-
-        if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-            const idleId = window.requestIdleCallback(preloadAdminRoutes, { timeout: 1500 });
-            return () => window.cancelIdleCallback(idleId);
-        }
-
-        const timeoutId = window.setTimeout(preloadAdminRoutes, 350);
-        return () => window.clearTimeout(timeoutId);
-    }, []);
 
     return (
         <Box className="app-style" sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
@@ -304,22 +319,51 @@ const AdminLayout = () => {
                 <Drawer variant="temporary" open={mobileOpen} onClose={() => setMobileOpen(false)}
                     ModalProps={{ keepMounted: true }}
                     sx={{ display: { xs: 'block', sm: 'none' }, ...drawerSx }}>
-                    <SidebarContent location={location} profile={profile} />
+                    <SidebarContent location={location} profile={profile} onPreloadRoute={preloadAdminRoute} />
                 </Drawer>
                 <Drawer variant="permanent" sx={{ display: { xs: 'none', sm: 'block' }, ...drawerSx }} open>
-                    <SidebarContent location={location} profile={profile} />
+                    <SidebarContent location={location} profile={profile} onPreloadRoute={preloadAdminRoute} />
                 </Drawer>
             </Box>
 
             {/* Main */}
-            <Box component="main" className="role-surface" sx={{ flexGrow: 1, paddingTop: '80px', paddingLeft: { xs: '16px', md: '24px' }, paddingRight: { xs: '16px', md: '24px' }, paddingBottom: '48px', width: { sm: `calc(100% - ${DRAWER_WIDTH}px)` }, minHeight: '100vh' }}>
-                <AnimatePresence mode="wait">
-                    <Box component={motion.div} key={location.pathname}
-                        initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }}
-                        transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}>
+            <Box component="main" className="role-surface" sx={{ flexGrow: 1, paddingTop: '80px', paddingLeft: { xs: '16px', md: '24px' }, paddingRight: { xs: '16px', md: '24px' }, paddingBottom: '48px', width: { sm: `calc(100% - ${DRAWER_WIDTH}px)` }, minHeight: '100vh', position: 'relative' }}>
+                <Box
+                    component={motion.div}
+                    key={`admin-transition-${location.pathname}`}
+                    initial={{ opacity: 0.92 }}
+                    animate={{ opacity: 0 }}
+                    transition={{ duration: 0.22, ease: 'easeOut' }}
+                    sx={{
+                        position: 'absolute',
+                        inset: 0,
+                        zIndex: 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        bgcolor: 'background.default',
+                        pointerEvents: 'none',
+                    }}
+                >
+                    <LoadingDots label="Opening section..." minHeight="auto" />
+                </Box>
+                <Suspense
+                    fallback={
+                        <Box sx={{ minHeight: '50vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <LoadingDots label="Loading section..." minHeight="auto" />
+                        </Box>
+                    }
+                >
+                    <Box
+                        component={motion.div}
+                        key={location.pathname}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
+                    >
                         <Outlet />
                     </Box>
-                </AnimatePresence>
+                </Suspense>
             </Box>
 
 

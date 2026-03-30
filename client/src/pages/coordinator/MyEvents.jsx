@@ -178,7 +178,7 @@ const EventCard = ({ event, onDelete, onSubmit, navigate, index }) => {
 
 const MyEvents = () => {
     const navigate = useNavigate();
-    const { data: events, isLoading } = useCoordinatorEvents();
+    const { data: events, isLoading, isCoordinatorClubMissing } = useCoordinatorEvents();
     const { deleteEvent } = useEventMutations();
     const updateEventStatus = useUpdateEventStatus();
     const [search, setSearch] = useState('');
@@ -214,6 +214,7 @@ const MyEvents = () => {
                 kicker="Coordinator Dashboard"
                 title="My Events"
                 subtitle="Manage submissions, approvals, and participant activity."
+                accent="#10b981"
             />
             <Box
                 component={motion.div}
@@ -248,10 +249,10 @@ const MyEvents = () => {
 
             <Grid container spacing={2} sx={{ mb: 3 }}>
                 {[
-                    { label: 'Total Events', value: stats.total, color: '#3b82f6' },
-                    { label: 'Active Pipeline', value: stats.active, color: '#10b981' },
-                    { label: 'Pending Auth', value: stats.pending, color: '#f59e0b' },
-                    { label: 'Draft Stage', value: stats.draft, color: '#94a3b8' },
+                    { label: 'Total Events', value: isLoading ? '—' : stats.total, color: '#3b82f6' },
+                    { label: 'Active Pipeline', value: isLoading ? '—' : stats.active, color: '#10b981' },
+                    { label: 'Pending Auth', value: isLoading ? '—' : stats.pending, color: '#f59e0b' },
+                    { label: 'Draft Stage', value: isLoading ? '—' : stats.draft, color: '#94a3b8' },
                 ].map((s, i) => (
                     <Grid item xs={6} sm={3} key={s.label}>
                         <Box component={motion.div} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
@@ -267,27 +268,35 @@ const MyEvents = () => {
             <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap', alignItems: 'center' }}>
                 <TextField size="small" placeholder="Scan by event signature..." value={search} onChange={e => setSearch(e.target.value)}
                     InputProps={{ startAdornment: <InputAdornment position="start"><Search sx={{ fontSize: 18, color: 'text.disabled' }} /></InputAdornment> }}
+                    disabled={isLoading}
                     sx={{ flex: 1, minWidth: 200 }} />
                 <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                     {['all', 'draft', 'pending', 'approved', 'rejected', 'registration_open', 'completed'].map(f => (
                         <Chip key={f} label={statusConfig[f]?.label || 'All Nodes'} onClick={() => setFilterStatus(f)} size="small"
-                            sx={{ fontWeight: 700, cursor: 'pointer', bgcolor: filterStatus === f ? '#3b82f6' : 'transparent', color: filterStatus === f ? 'white' : 'text.secondary', border: `1px solid ${filterStatus === f ? '#3b82f6' : 'rgba(255,255,255,0.1)'}` }} />
+                            disabled={isLoading}
+                            sx={{ fontWeight: 700, cursor: isLoading ? 'default' : 'pointer', bgcolor: filterStatus === f ? '#3b82f6' : 'transparent', color: filterStatus === f ? 'white' : 'text.secondary', border: `1px solid ${filterStatus === f ? '#3b82f6' : 'rgba(255,255,255,0.1)'}`, opacity: isLoading ? 0.7 : 1 }} />
                     ))}
                 </Box>
-                <ToggleButtonGroup size="small" value={viewMode} exclusive onChange={(_, v) => v && setViewMode(v)}
+                <ToggleButtonGroup size="small" value={viewMode} exclusive onChange={(_, v) => v && setViewMode(v)} disabled={isLoading}
                     sx={{ '& .MuiToggleButton-root': { border: '1px solid rgba(255,255,255,0.1)', color: 'text.secondary', '&.Mui-selected': { bgcolor: '#3b82f620', color: '#60a5fa', borderColor: '#3b82f640' } } }}>
                     <ToggleButton value="cards"><ViewModule sx={{ fontSize: 18 }} /></ToggleButton>
                     <ToggleButton value="table"><TableRows sx={{ fontSize: 18 }} /></ToggleButton>
                 </ToggleButtonGroup>
             </Box>
 
-            <AnimatePresence mode="wait">
+            <AnimatePresence>
                 {isLoading ? (
                     <Box key="loading" sx={{ py: 8, textAlign: 'center' }}>
                         <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1.2, ease: 'linear' }}>
                             <EventIcon sx={{ fontSize: 48, color: '#10b981' }} />
                         </motion.div>
                         <Typography color="text.secondary" fontWeight={700} sx={{ mt: 2 }}>Loading your events...</Typography>
+                    </Box>
+                ) : isCoordinatorClubMissing ? (
+                    <Box key="no-club" sx={{ py: 10, textAlign: 'center', opacity: 0.7 }}>
+                        <EventIcon sx={{ fontSize: 64, mb: 2 }} />
+                        <Typography variant="h6" fontWeight={700}>No coordinator club found</Typography>
+                        <Typography color="text.secondary">This account is not linked to a club yet, so events cannot be loaded.</Typography>
                     </Box>
                 ) : viewMode === 'cards' ? (
                     <Box key="cards">

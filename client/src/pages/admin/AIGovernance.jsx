@@ -14,9 +14,9 @@ import {
     Policy,
     Psychology,
 } from '@mui/icons-material';
-import { motion } from 'framer-motion';
 import { useGlobalAIGovernance, useToggleAIFeature } from '../../hooks/useGuideEngine';
 import LoadingDots from '../../components/LoadingDots';
+import RolePageHeader from '../../components/RolePageHeader';
 
 const FEATURE_ICONS = {
     event_recommendations: <AutoAwesome />,
@@ -45,33 +45,28 @@ const AIGovernance = () => {
 
     return (
         <Box sx={{ pb: 8 }}>
-            <Box
-                component={motion.div}
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                sx={{
-                    mb: 4,
-                    p: { xs: 3, md: 4 },
-                    borderRadius: '24px',
-                    background: (theme) =>
-                        theme.palette.mode === 'dark'
-                            ? 'linear-gradient(135deg, #0f172a 0%, #1d4ed8 100%)'
-                            : 'linear-gradient(135deg, #ffffff 0%, #eff6ff 100%)',
-                    border: '1px solid',
-                    borderColor: 'divider',
-                }}
-            >
-                <Typography variant="overline" sx={{ color: '#2563eb', fontWeight: 900, letterSpacing: 2.2 }}>
-                    AI SETTINGS
-                </Typography>
-                <Typography variant="h4" fontWeight={900} sx={{ mt: 0.5, display: 'flex', alignItems: 'center', gap: 1.25 }}>
-                    <HealthAndSafety color="primary" fontSize="large" />
-                    AI Feature Controls
-                </Typography>
-                <Typography color="text.secondary" fontWeight={600}>
-                    Manage which recommendation and reporting features are active across dashboards and student guidance.
-                </Typography>
-            </Box>
+            <RolePageHeader
+                kicker="AI Settings"
+                title="AI Feature Controls"
+                subtitle="Manage which recommendation and reporting features are active across dashboards and student guidance."
+                accent="#2563eb"
+                action={
+                    <Box
+                        sx={{
+                            width: 56,
+                            height: 56,
+                            borderRadius: '18px',
+                            display: 'grid',
+                            placeItems: 'center',
+                            bgcolor: 'rgba(37,99,235,0.12)',
+                            color: 'primary.main',
+                            border: '1px solid rgba(37,99,235,0.18)'
+                        }}
+                    >
+                        <HealthAndSafety fontSize="large" />
+                    </Box>
+                }
+            />
 
             {governanceState?.isFallback ? (
                 <Alert severity="warning" sx={{ mb: 3, borderRadius: '18px', '& .MuiAlert-message': { fontWeight: 600 } }}>

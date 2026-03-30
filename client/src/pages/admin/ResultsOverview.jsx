@@ -13,7 +13,6 @@ import {
     Assessment, EmojiEvents as TrophyIcon, Lock, LockOpen,
     Edit, Search as SearchIcon, People, TrendingUp
 } from '@mui/icons-material';
-import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../services/supabaseClient';
 import { useResultsAnalytics, useAdminResultOverride } from '../../hooks/useResults';
@@ -22,6 +21,7 @@ import {
     CartesianGrid, PieChart, Pie, Cell, Legend, AreaChart, Area
 } from 'recharts';
 import LoadingDots from '../../components/LoadingDots';
+import RolePageHeader from '../../components/RolePageHeader';
 
 // eslint-disable-next-line no-unused-vars
 const STAT_COLORS = { good: '#10b981', warn: '#f59e0b', danger: '#ef4444', blue: '#3b82f6', purple: '#8b5cf6' };
@@ -140,21 +140,12 @@ const ResultsOverview = () => {
 
     return (
         <Box sx={{ pb: 8 }}>
-            {/* Hero */}
-            <Box component={motion.div} initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
-                sx={{
-                    mb: 5, p: { xs: 3, md: 5 }, borderRadius: '28px',
-                    background: 'linear-gradient(135deg, #0a0014 0%, #1a0535 50%, #0d1b3e 100%)', color: 'white', position: 'relative', overflow: 'hidden'
-                }}>
-                <Box sx={{ position: 'absolute', width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle, rgba(251,191,36,0.08) 0%, transparent 70%)', top: -120, right: -120, pointerEvents: 'none' }} />
-                <Box sx={{ position: 'relative', zIndex: 1 }}>
-                    <Typography variant="overline" sx={{ color: '#fbbf24', fontWeight: 900, letterSpacing: 3 }}>ADMIN</Typography>
-                    <Typography variant="h3" fontWeight={900} sx={{ letterSpacing: -1.5, mb: 1 }}>Results Overview</Typography>
-                    <Typography sx={{ opacity: 0.65, fontWeight: 500 }}>
-                        Campus-wide performance analytics, winner intelligence, and result governance controls.
-                    </Typography>
-                </Box>
-            </Box>
+            <RolePageHeader
+                kicker="Admin"
+                title="Results Overview"
+                subtitle="Campus-wide performance analytics, winner intelligence, and result governance controls."
+                accent="#fbbf24"
+            />
 
             {/* Platform Stats */}
             <Grid container spacing={2.5} sx={{ mb: 5 }}>

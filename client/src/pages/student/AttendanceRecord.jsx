@@ -94,8 +94,8 @@ const AttendanceRecord = () => {
                 }}>
                 <Box sx={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 80% 50%, rgba(99,102,241,0.2) 0%, transparent 70%)' }} />
                 <Box sx={{ position: 'relative', zIndex: 1 }}>
-                    <Typography variant="h3" fontWeight={900} sx={{ letterSpacing: -1.5, mb: 1 }}>My Attendance</Typography>
-                    <Typography sx={{ opacity: 0.75, fontWeight: 500, mb: 3 }}>
+                    <Typography variant="h3" fontWeight={900} sx={{ letterSpacing: -1.5, mb: 1, color: '#93c5fd', textShadow: '0 8px 24px rgba(147,197,253,0.18)' }}>My Attendance</Typography>
+                    <Typography sx={{ color: 'rgba(255,255,255,0.82)', fontWeight: 500, mb: 3 }}>
                         Track your participation, engagement score, and event attendance history.
                     </Typography>
                     <EngagementBadge rate={stats.rate || 0} />

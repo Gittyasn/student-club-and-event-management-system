@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react';
+import { Suspense, useState } from 'react';
 import { Outlet, Link as RouterLink, useNavigate, useLocation } from 'react-router-dom';
 import {
     Box, Drawer, List, Typography, IconButton,
     ListItem, ListItemButton, ListItemIcon, ListItemText,
     Avatar, Menu, MenuItem, Divider
 } from '@mui/material';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
     Menu as MenuIcon, Dashboard as DashboardIcon, Event as EventIcon,
     AssignmentTurnedIn as RegistrationIcon, Logout as LogoutIcon,
@@ -20,6 +20,7 @@ import NotificationBell from '../components/NotificationBell';
 import { ModeToggle } from '../components/mode-toggle';
 import CampusGuide from '../components/CampusGuide';
 import ProfileQuickViewDialog from '../components/ProfileQuickViewDialog';
+import LoadingDots from '../components/LoadingDots';
 
 const DRAWER_WIDTH = 260;
 const SIDEBAR_BG = 'linear-gradient(180deg, #0b1220 0%, #0f172a 45%, #0b1220 100%)'; // Executive gradient slate
@@ -38,7 +39,32 @@ const menuItems = [
     { text: 'Notifications', icon: <NotifyIcon />, path: '/student/notifications', color: '#ef4444' },
 ];
 
-const SidebarContent = ({ location, profile }) => (
+const studentRoutePreloaders = {
+    '/student/browse-events': () => import('../pages/student/BrowseEvents'),
+    '/student/events': () => import('../pages/student/MyEvents'),
+    '/student/registrations': () => import('../pages/student/MyRegistrations'),
+    '/student/clubs': () => import('../pages/student/MyClubs'),
+    '/student/attendance': () => import('../pages/student/AttendanceRecord'),
+    '/student/results': () => import('../pages/student/MyResults'),
+    '/student/certificates': () => import('../pages/student/Certificates'),
+    '/student/leaderboard': () => import('../pages/student/Leaderboard'),
+    '/student/analytics': () => import('../pages/student/Analytics'),
+    '/student/notifications': () => import('../pages/student/Notifications'),
+};
+
+const preloadedStudentRoutes = new Set();
+
+const preloadStudentRoute = (path) => {
+    const load = studentRoutePreloaders[path];
+    if (!load || preloadedStudentRoutes.has(path)) return;
+
+    preloadedStudentRoutes.add(path);
+    load().catch(() => {
+        preloadedStudentRoutes.delete(path);
+    });
+};
+
+const SidebarContent = ({ location, profile, onPreloadRoute }) => (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', background: SIDEBAR_BG }}>
         {/* Logo */}
         <Box
@@ -124,6 +150,9 @@ const SidebarContent = ({ location, profile }) => (
                         <Box component={motion.div} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
                             transition={{ duration: 0.35, delay: i * 0.05 }} style={{ width: '100%' }}>
                             <ListItemButton component={RouterLink} to={item.path}
+                                onMouseEnter={() => onPreloadRoute?.(item.path)}
+                                onFocus={() => onPreloadRoute?.(item.path)}
+                                onTouchStart={() => onPreloadRoute?.(item.path)}
                                 sx={{
                                     borderRadius: '6px', py: 1.3, px: 1.5, position: 'relative', overflow: 'hidden',
                                     background: isActive ? `${item.color}12` : 'transparent',
@@ -168,31 +197,6 @@ const StudentLayout = () => {
     const handleSettingsOpen = () => { setAnchorEl(null); navigate('/student/settings'); };
     const handleLogout = async () => { setAnchorEl(null); await logout(); navigate('/login'); };
     const drawerSx = { '& .MuiDrawer-paper': { boxSizing: 'border-box', width: DRAWER_WIDTH, border: 'none', background: 'transparent' } };
-
-    useEffect(() => {
-        const preloadStudentRoutes = () => {
-            [
-                () => import('../pages/student/BrowseEvents'),
-                () => import('../pages/student/MyEvents'),
-                () => import('../pages/student/MyRegistrations'),
-                () => import('../pages/student/MyClubs'),
-                () => import('../pages/student/AttendanceRecord'),
-                () => import('../pages/student/MyResults'),
-                () => import('../pages/student/Certificates'),
-                () => import('../pages/student/Leaderboard'),
-                () => import('../pages/student/Analytics'),
-                () => import('../pages/student/Notifications'),
-            ].forEach((load) => load().catch(() => undefined));
-        };
-
-        if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-            const idleId = window.requestIdleCallback(preloadStudentRoutes, { timeout: 1500 });
-            return () => window.cancelIdleCallback(idleId);
-        }
-
-        const timeoutId = window.setTimeout(preloadStudentRoutes, 350);
-        return () => window.clearTimeout(timeoutId);
-    }, []);
 
     return (
         <Box className="app-style" sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
@@ -254,22 +258,51 @@ const StudentLayout = () => {
             <Box component="nav" sx={{ width: { sm: DRAWER_WIDTH }, flexShrink: { sm: 0 } }}>
                 <Drawer variant="temporary" open={mobileOpen} onClose={() => setMobileOpen(false)} ModalProps={{ keepMounted: true }}
                     sx={{ display: { xs: 'block', sm: 'none' }, ...drawerSx }}>
-                    <SidebarContent location={location} profile={profile} />
+                    <SidebarContent location={location} profile={profile} onPreloadRoute={preloadStudentRoute} />
                 </Drawer>
                 <Drawer variant="permanent" sx={{ display: { xs: 'none', sm: 'block' }, ...drawerSx }} open>
-                    <SidebarContent location={location} profile={profile} />
+                    <SidebarContent location={location} profile={profile} onPreloadRoute={preloadStudentRoute} />
                 </Drawer>
             </Box>
 
             {/* Main */}
-            <Box component="main" className="role-surface" sx={{ flexGrow: 1, paddingTop: '80px', paddingLeft: { xs: '16px', md: '24px' }, paddingRight: { xs: '16px', md: '24px' }, paddingBottom: '48px', width: { sm: `calc(100% - ${DRAWER_WIDTH}px)` }, minHeight: '100vh' }}>
-                <AnimatePresence mode="wait">
-                    <Box component={motion.div} key={location.pathname}
-                        initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }}
-                        transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}>
+            <Box component="main" className="role-surface" sx={{ flexGrow: 1, paddingTop: '80px', paddingLeft: { xs: '16px', md: '24px' }, paddingRight: { xs: '16px', md: '24px' }, paddingBottom: '48px', width: { sm: `calc(100% - ${DRAWER_WIDTH}px)` }, minHeight: '100vh', position: 'relative' }}>
+                <Box
+                    component={motion.div}
+                    key={`student-transition-${location.pathname}`}
+                    initial={{ opacity: 0.92 }}
+                    animate={{ opacity: 0 }}
+                    transition={{ duration: 0.22, ease: 'easeOut' }}
+                    sx={{
+                        position: 'absolute',
+                        inset: 0,
+                        zIndex: 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        bgcolor: 'background.default',
+                        pointerEvents: 'none',
+                    }}
+                >
+                    <LoadingDots label="Opening section..." minHeight="auto" />
+                </Box>
+                <Suspense
+                    fallback={
+                        <Box sx={{ minHeight: '50vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <LoadingDots label="Loading section..." minHeight="auto" />
+                        </Box>
+                    }
+                >
+                    <Box
+                        component={motion.div}
+                        key={location.pathname}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
+                    >
                         <Outlet />
                     </Box>
-                </AnimatePresence>
+                </Suspense>
             </Box>
 
         </Box>

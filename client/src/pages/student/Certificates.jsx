@@ -18,6 +18,7 @@ import {
     AssignmentTurnedIn,
     ErrorOutline,
 } from '@mui/icons-material';
+import { useTheme } from '@mui/material/styles';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as ReTip, Legend } from 'recharts';
 import { useMyCertificates, useDownloadCertificate } from '../../hooks/useCertificates';
@@ -165,6 +166,7 @@ const CertCard = ({ cert, index, onDownload }) => {
 };
 
 const MyCertificates = () => {
+    const theme = useTheme();
     const { data: certs = [], isLoading } = useMyCertificates();
     const { mutate: download } = useDownloadCertificate();
 
@@ -211,10 +213,14 @@ const MyCertificates = () => {
                     }}
                 />
                 <Box sx={{ position: 'relative', zIndex: 1 }}>
-                    <Typography variant="h3" fontWeight={900} sx={{ letterSpacing: -1.5, mb: 1 }}>
+                    <Typography
+                        variant="h3"
+                        fontWeight={900}
+                        sx={{ letterSpacing: -1.5, mb: 1, color: '#fbbf24', textShadow: '0 6px 20px rgba(251,191,36,0.2)' }}
+                    >
                         My Certificates
                     </Typography>
-                    <Typography sx={{ opacity: 0.7, fontWeight: 500 }}>
+                    <Typography sx={{ color: 'rgba(255,255,255,0.8)', fontWeight: 500 }}>
                         Your verified achievements - downloadable, shareable, and QR-verifiable.
                     </Typography>
                 </Box>
@@ -264,7 +270,17 @@ const MyCertificates = () => {
                                         <Pie data={pieData} cx="50%" cy="50%" innerRadius={55} outerRadius={90} paddingAngle={4} dataKey="value">
                                             {pieData.map((entry, index) => <Cell key={index} fill={entry.color} />)}
                                         </Pie>
-                                        <ReTip contentStyle={{ borderRadius: '12px', border: 'none' }} />
+                                        <ReTip
+                                            contentStyle={{
+                                                borderRadius: '12px',
+                                                border: 'none',
+                                                background: theme.palette.background.paper,
+                                                color: theme.palette.text.primary,
+                                                boxShadow: theme.palette.mode === 'dark'
+                                                    ? '0 12px 32px rgba(0,0,0,0.35)'
+                                                    : '0 12px 32px rgba(15,23,42,0.12)',
+                                            }}
+                                        />
                                         <Legend iconSize={10} />
                                     </PieChart>
                                 </ResponsiveContainer>

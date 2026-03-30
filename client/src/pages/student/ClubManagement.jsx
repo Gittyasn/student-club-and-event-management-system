@@ -112,12 +112,11 @@ const ClubManagement = () => {
             <RolePageHeader
                 title="Discover Clubs"
                 subtitle="Explore new communities and request membership."
+                kicker="Student Dashboard"
+                accent="#3b82f6"
             />
             <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Box>
-                    <Typography variant="h4" fontWeight="900" gutterBottom>
-                        Club Directory
-                    </Typography>
                     <Typography color="text.secondary">
                         Browse clubs, view what they do, and request membership.
                     </Typography>

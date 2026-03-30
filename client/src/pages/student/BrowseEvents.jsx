@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import {
-    Box, Typography, Grid, Card, CardContent, CardMedia,
+    Box, Typography, Card, CardContent, CardMedia,
     // eslint-disable-next-line no-unused-vars
     Button, Chip, TextField, IconButton, InputAdornment,
     FormControl, InputLabel, Select, MenuItem, Stack,
@@ -30,9 +30,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useEvents, useEventCategories } from '../../hooks/useEvents';
 import { useClubs } from '../../hooks/useClubs';
-import { useRegisterEvent } from '../../hooks/useMyRegistrations';
+import { useMyRegistrations, useRegisterEvent } from '../../hooks/useMyRegistrations';
 import RolePageHeader from '../../components/RolePageHeader';
 import LoadingDots from '../../components/LoadingDots';
+
+const ACTIVE_BROWSE_REGISTRATION_STATUSES = ['registered', 'confirmed', 'attended', 'waitlisted'];
 
 const BrowseEvents = () => {
     const navigate = useNavigate();
@@ -41,31 +43,44 @@ const BrowseEvents = () => {
     const [categoryFilter, setCategoryFilter] = useState('all');
     const [modeFilter, setModeFilter] = useState('all');
     const [sortBy, setSortBy] = useState('date');
+    const [registeringEventId, setRegisteringEventId] = useState(null);
+    const [optimisticRegisteredEventIds, setOptimisticRegisteredEventIds] = useState([]);
 
-    // We only want students to see events that are strictly open for registration
     const { data: events, isLoading: eventsLoading } = useEvents({
-        approval_status: 'approved',
-        status: ['registration_open', 'approved'] // 'approved' as fallback if coordinators don't advance the state manually
+        publicOnly: true,
     });
 
     const { data: clubs } = useClubs();
     const { data: categories } = useEventCategories();
+    const { registrations, isLoading: registrationsLoading } = useMyRegistrations();
     const registerMutation = useRegisterEvent();
+
+    const registeredEventIds = useMemo(() => {
+        const activeRegisteredIds = (registrations || [])
+            .filter((registration) => ACTIVE_BROWSE_REGISTRATION_STATUSES.includes(registration.status))
+            .map((registration) => registration.event_id)
+            .filter(Boolean);
+
+        return new Set([...activeRegisteredIds, ...optimisticRegisteredEventIds]);
+    }, [optimisticRegisteredEventIds, registrations]);
 
     const filteredEvents = useMemo(() => {
         if (!events) return [];
 
         let result = events.filter(event => {
-            const matchesSearch = event.title.toLowerCase().includes(search.toLowerCase()) ||
-                event.club?.name?.toLowerCase().includes(search.toLowerCase());
+            const normalizedSearch = search.toLowerCase();
+            const matchesSearch = event.title?.toLowerCase().includes(normalizedSearch) ||
+                event.club?.name?.toLowerCase()?.includes(normalizedSearch) ||
+                event.short_description?.toLowerCase()?.includes(normalizedSearch);
             const matchesClub = clubFilter === 'all' || event.club_id === clubFilter;
             const matchesMode = modeFilter === 'all' || event.mode === modeFilter;
             const matchesCategory = categoryFilter === 'all' || event.category_id === categoryFilter;
+            const now = new Date();
+            const eventEnd = event.end_time ? new Date(event.end_time) : (event.start_time ? new Date(event.start_time) : null);
+            const isDiscoverable = !eventEnd || eventEnd >= now;
+            const isAlreadyRegistered = registeredEventIds.has(event.id);
 
-            // Strict deadline enforcement
-            const isActive = event.registration_deadline ? new Date(event.registration_deadline) >= new Date() : true;
-
-            return matchesSearch && matchesClub && matchesMode && matchesCategory && isActive;
+            return matchesSearch && matchesClub && matchesMode && matchesCategory && isDiscoverable && !isAlreadyRegistered;
         });
 
         // Client-side sorting
@@ -81,30 +96,33 @@ const BrowseEvents = () => {
         });
 
         return result;
-    }, [events, search, clubFilter, modeFilter, categoryFilter, sortBy]);
+    }, [events, search, clubFilter, modeFilter, categoryFilter, sortBy, registeredEventIds]);
 
     const handleRegister = (event) => {
-        // If event is private, registration is blocked. If waitlist required, UI shows "Join Waitlist", mutation hooks handle logic.
-        registerMutation.mutate(event.id);
+        setRegisteringEventId(event.id);
+        registerMutation.mutate(event.id, {
+            onSuccess: ({ eventId }) => {
+                setOptimisticRegisteredEventIds((currentIds) => (
+                    currentIds.includes(eventId) ? currentIds : [...currentIds, eventId]
+                ));
+            },
+            onSettled: () => {
+                setRegisteringEventId((currentId) => (currentId === event.id ? null : currentId));
+            }
+        });
     };
 
-    if (eventsLoading) return <LoadingDots label="Loading events..." minHeight="60vh" />;
+    if (eventsLoading || registrationsLoading) return <LoadingDots label="Loading events..." minHeight="60vh" />;
 
     return (
         <Box sx={{ pb: 8 }}>
             <RolePageHeader
                 title="Browse Events"
                 subtitle="Discover approved events and register in seconds."
+                kicker="Student Dashboard"
+                accent="#3b82f6"
             />
-            <Box
-                component={motion.div}
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                sx={{ mb: 6 }}
-            >
-                <Typography variant="h3" fontWeight="900" sx={{ letterSpacing: -1.5, mb: 1, background: 'linear-gradient(90deg, #3b82f6, #8b5cf6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                    Discover Experiences
-                </Typography>
+            <Box sx={{ mb: 6 }}>
                 <Typography color="text.secondary" variant="body1" fontWeight="500">
                     Register for active technical, cultural, and campus events.
                 </Typography>
@@ -171,24 +189,36 @@ const BrowseEvents = () => {
             </Stack>
 
             {/* Results Section */}
-            <Grid container spacing={3}>
+            <Box
+                sx={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 360px))',
+                    gap: 3,
+                    justifyContent: { xs: 'stretch', sm: 'start' },
+                    alignItems: 'stretch',
+                }}
+            >
                 <AnimatePresence>
                     {filteredEvents.length === 0 ? (
-                        <Grid item xs={12}>
-                            <Box sx={{ py: 10, textAlign: 'center', bgcolor: 'action.hover', borderRadius: 4, border: '1px dashed', borderColor: 'divider' }}>
-                                <SearchIcon sx={{ fontSize: 60, color: 'text.disabled', mb: 2 }} />
-                                <Typography variant="h6" color="text.secondary">No matching events</Typography>
-                                <Typography variant="body2" color="text.secondary">Try adjusting your search or filters to see more events.</Typography>
-                                <Button variant="outlined" sx={{ mt: 3, fontWeight: 700 }} onClick={() => { setSearch(''); setClubFilter('all'); setModeFilter('all'); setCategoryFilter('all'); }}>Reset Filters</Button>
-                            </Box>
-                        </Grid>
+                        <Box sx={{ py: 10, px: 3, textAlign: 'center', bgcolor: 'action.hover', borderRadius: 4, border: '1px dashed', borderColor: 'divider', gridColumn: '1 / -1' }}>
+                            <SearchIcon sx={{ fontSize: 60, color: 'text.disabled', mb: 2 }} />
+                            <Typography variant="h6" color="text.secondary">No matching events</Typography>
+                            <Typography variant="body2" color="text.secondary">Try adjusting your search or filters to see more events.</Typography>
+                            <Button variant="outlined" sx={{ mt: 3, fontWeight: 700 }} onClick={() => { setSearch(''); setClubFilter('all'); setModeFilter('all'); setCategoryFilter('all'); }}>Reset Filters</Button>
+                        </Box>
                     ) : (
                         filteredEvents.map((event, index) => {
                             const isFull = event.max_participants && (event.registrationsCount || 0) >= event.max_participants;
                             const seatsLeft = event.max_participants ? (event.max_participants - (event.registrationsCount || 0)) : null;
+                            const isRegisteringThisEvent = registeringEventId === event.id;
+                            const registrationOpen =
+                                ['approved', 'open', 'registration_open'].includes(event.status) &&
+                                (!event.registration_deadline || new Date(event.registration_deadline) >= new Date());
+                            const canJoinWaitlist = registrationOpen && isFull && event.allow_waitlist;
+                            const registrationLocked = !registrationOpen;
 
                             return (
-                                <Grid item xs={12} sm={6} md={4} key={event.id}>
+                                <Box key={event.id} sx={{ width: '100%', maxWidth: 360 }}>
                                     <Card
                                         component={motion.div}
                                         layout
@@ -198,6 +228,7 @@ const BrowseEvents = () => {
                                         whileHover={{ y: -8 }}
                                         sx={{
                                             height: '100%',
+                                            width: '100%',
                                             display: 'flex',
                                             flexDirection: 'column',
                                             borderRadius: 4,
@@ -214,6 +245,7 @@ const BrowseEvents = () => {
                                             <CardMedia
                                                 component="img"
                                                 height="200"
+                                                loading="lazy"
                                                 image={event.poster_url || 'https://images.unsplash.com/photo-1540575861501-7cf05a4b125a?q=80&w=600&auto=format&fit=crop&q=75'} onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1540575861501-7cf05a4b125a?q=80&w=600&auto=format&fit=crop&q=75'; }}
                                                 alt={event.title}
                                                 sx={{ objectFit: 'cover', filter: isFull && !event.allow_waitlist ? 'grayscale(100%)' : 'none' }}
@@ -271,7 +303,14 @@ const BrowseEvents = () => {
                                                     </Box>
 
                                                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 1 }}>
-                                                        {seatsLeft !== null && seatsLeft > 0 ? (
+                                                        {registrationLocked ? (
+                                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'warning.main' }}>
+                                                                <SeatsIcon fontSize="small" />
+                                                                <Typography variant="caption" fontWeight="800">
+                                                                    Registration Closed
+                                                                </Typography>
+                                                            </Box>
+                                                        ) : seatsLeft !== null && seatsLeft > 0 ? (
                                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: seatsLeft <= 5 ? 'error.main' : 'success.main' }}>
                                                                 <SeatsIcon fontSize="small" />
                                                                 <Typography variant="caption" fontWeight="800">
@@ -303,29 +342,35 @@ const BrowseEvents = () => {
                                                 View Details
                                             </Button>
                                             <Button
-                                                variant={isFull ? "outlined" : "contained"}
+                                                variant={isFull || registrationLocked ? "outlined" : "contained"}
                                                 fullWidth
-                                                color={isFull ? (event.allow_waitlist ? "warning" : "inherit") : "primary"}
-                                                disabled={(isFull && !event.allow_waitlist) || registerMutation.isPending}
+                                                color={registrationLocked ? "inherit" : (isFull ? (event.allow_waitlist ? "warning" : "inherit") : "primary")}
+                                                disabled={registrationLocked || (isFull && !event.allow_waitlist) || registerMutation.isPending}
                                                 onClick={() => handleRegister(event)}
-                                                startIcon={isFull && event.allow_waitlist ? <WaitlistIcon /> : null}
+                                                startIcon={canJoinWaitlist ? <WaitlistIcon /> : null}
                                                 sx={{
                                                     borderRadius: 3,
                                                     fontWeight: 800,
                                                     textTransform: 'none',
-                                                    boxShadow: !isFull ? '0 8px 16px -4px rgba(59, 130, 246, 0.3)' : 'none'
+                                                    boxShadow: !isFull && !registrationLocked ? '0 8px 16px -4px rgba(59, 130, 246, 0.3)' : 'none'
                                                 }}
                                             >
-                                                {isFull ? (event.allow_waitlist ? 'Join Waitlist' : 'Full') : (registerMutation.isPending ? 'Submitting...' : 'Register')}
+                                                {isRegisteringThisEvent
+                                                    ? 'Submitting...'
+                                                    : registrationLocked
+                                                    ? 'Registration Closed'
+                                                    : isFull
+                                                        ? (event.allow_waitlist ? 'Join Waitlist' : 'Full')
+                                                        : 'Register'}
                                             </Button>
                                         </Box>
                                     </Card>
-                                </Grid>
+                                </Box>
                             );
                         })
                     )}
                 </AnimatePresence>
-            </Grid>
+            </Box>
         </Box>
     );
 };

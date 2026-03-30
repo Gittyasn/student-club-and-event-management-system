@@ -42,6 +42,7 @@ const MySubmissions = () => {
                 kicker="Coordinator Dashboard"
                 title="My Submissions"
                 subtitle="Track approval status and admin feedback."
+                accent="#f59e0b"
             />
             <Box sx={{
                 mb: 4, p: 4, borderRadius: '20px',

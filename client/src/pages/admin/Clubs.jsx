@@ -1,5 +1,4 @@
 import { useState, useMemo } from 'react';
-import { motion } from 'framer-motion';
 import {
     Box,
     Typography,
@@ -38,6 +37,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../services/supabaseClient';
 import { toast } from 'sonner';
 import LoadingDots from '../../components/LoadingDots';
+import RolePageHeader from '../../components/RolePageHeader';
 
 // Validation Schema
 const clubSchema = z.object({
@@ -359,32 +359,22 @@ const Clubs = () => {
 
     return (
         <Box sx={{ height: 650, width: '100%', display: 'flex', flexDirection: 'column' }}>
-            {/* Header */}
-            <Box component={motion.div} initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-                sx={{
-                    mb: 4, p: { xs: 3, md: 4 }, borderRadius: '16px',
-                    background: theme => theme.palette.mode === 'dark'
-                        ? 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%)'
-                        : 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
-                    border: theme => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)'}`,
-                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
-                    display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2
-                }}>
-                <Box>
-                    <Typography variant="h4" fontWeight={900} sx={{ color: 'text.primary', letterSpacing: -1.5 }}>Club Governance</Typography>
-                    <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 500, mt: 0.5 }}>
-                        Oversee club activity, moderate categories, and manage organizational status.
-                    </Typography>
-                </Box>
-                <Button
-                    variant="contained"
-                    startIcon={<AddIcon />}
-                    onClick={() => handleOpen()}
-                    sx={{ px: 4, py: 1.5, fontWeight: 800, borderRadius: '12px' }}
-                >
-                    Initialize New Club
-                </Button>
-            </Box>
+            <RolePageHeader
+                kicker="Admin Dashboard"
+                title="Club Governance"
+                subtitle="Oversee club activity, moderate categories, and manage organizational status."
+                accent="#10b981"
+                action={
+                    <Button
+                        variant="contained"
+                        startIcon={<AddIcon />}
+                        onClick={() => handleOpen()}
+                        sx={{ px: 4, py: 1.5, fontWeight: 800, borderRadius: '16px' }}
+                    >
+                        Initialize New Club
+                    </Button>
+                }
+            />
 
             <DataGrid
                 rows={clubs || []}

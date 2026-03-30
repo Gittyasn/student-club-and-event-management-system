@@ -10,6 +10,8 @@ const fetchEvents = async (options = {}) => {
         .select(`
             id,
             created_by,
+            club_id,
+            category_id,
             title,
             description,
             start_time,

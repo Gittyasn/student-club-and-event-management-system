@@ -57,7 +57,15 @@ const StudentAnalytics = () => {
     const { data, isLoading } = useStudentAnalytics();
 
     if (isLoading) return <LoadingDots label="Loading analytics..." minHeight="50vh" />;
-    if (!data) return null;
+    if (!data) {
+        return (
+            <Box sx={{ minHeight: '50vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Typography color="text.secondary" fontWeight={700}>
+                    Analytics will appear here once your activity data is ready.
+                </Typography>
+            </Box>
+        );
+    }
 
     const d = data;
     const lvl = LEVEL_CONFIG[d.engLevel] || LEVEL_CONFIG.Beginner;

@@ -3,11 +3,13 @@ import { supabase } from '../services/supabaseClient';
 import { useCoordinatorClub } from './useCoordinatorClub';
 
 export const useCoordinatorEvents = () => {
-    const { data: coordinatorClub } = useCoordinatorClub();
+    const coordinatorClubQuery = useCoordinatorClub();
+    const coordinatorClub = coordinatorClubQuery.data;
 
-    return useQuery({
+    const eventsQuery = useQuery({
         queryKey: ['events', 'coordinator', coordinatorClub?.id],
         enabled: !!coordinatorClub?.id,
+        staleTime: 60 * 1000,
         queryFn: async () => {
             const { data, error } = await supabase
                 .from('events')
@@ -23,11 +25,21 @@ export const useCoordinatorEvents = () => {
 
             const typedData = (data || []).map((event) => ({
                 ...event,
-                club: Array.isArray(event.club) ? event.club[0] : event.club
+                club: Array.isArray(event.club) ? event.club[0] : event.club,
+                registrationsCount: event.registrations?.[0]?.count || 0
             }));
             return typedData;
         }
     });
+
+    return {
+        ...eventsQuery,
+        coordinatorClub,
+        isLoading:
+            coordinatorClubQuery.isLoading ||
+            (!!coordinatorClub?.id && (eventsQuery.isLoading || eventsQuery.isPending)),
+        isCoordinatorClubMissing: !coordinatorClubQuery.isLoading && !coordinatorClub,
+    };
 };
 
 export const useEvent = (id) => {

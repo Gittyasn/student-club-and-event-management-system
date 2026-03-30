@@ -2,13 +2,14 @@ import { lazy, Suspense } from 'react';
 import { Box, Typography, Grid, Chip, Button, Paper, useTheme } from '@mui/material';
 import {
     Event as EventIcon, HowToReg as RegIcon, HourglassEmpty as PendingIcon,
-    Star, FactCheck, DateRange, Campaign, Category
+    FactCheck, DateRange, Campaign, Category
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../services/supabaseClient';
 import { useAuthStore } from '../../store/authStore';
 import LoadingDots from '../../components/LoadingDots';
+import RolePageHeader from '../../components/RolePageHeader';
 
 const CoordinatorDashboardCharts = lazy(() => import('./components/CoordinatorDashboardCharts'));
 
@@ -18,13 +19,14 @@ const StatCard = ({ title, value, icon, subtitle }) => {
         <Paper
             elevation={0}
             sx={{
-                p: { xs: 2.5, md: 2.5 },
+                p: { xs: 2.25, md: 2.5 },
                 height: '100%',
+                minHeight: 164,
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'center',
                 border: `1px solid ${theme.palette.divider}`,
-                borderRadius: 2.5,
+                borderRadius: 3,
                 background: theme.palette.mode === 'dark'
                     ? 'linear-gradient(180deg, rgba(15,23,42,0.9) 0%, rgba(2,6,23,0.7) 100%)'
                     : 'linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(248,250,252,0.85) 100%)',
@@ -77,12 +79,12 @@ const Panel = ({ title, subtitle, children, action }) => {
                 height: '100%', // Ensuring it fills the Grid item height
                 flex: 1,
                 border: `1px solid ${theme.palette.divider}`,
-                borderRadius: 2.5,
+                borderRadius: 3,
                 overflow: 'hidden',
-                minHeight: 400
+                minHeight: 340
             }}
         >
-            <Box sx={{ px: 3, py: 2.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `1px solid ${theme.palette.divider}` }}>
+            <Box sx={{ px: 3, py: 2.25, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `1px solid ${theme.palette.divider}` }}>
                 <Box>
                     <Typography variant="h6" sx={{ fontWeight: 600, color: 'text.primary', fontSize: '1rem' }}>
                         {title}
@@ -95,7 +97,7 @@ const Panel = ({ title, subtitle, children, action }) => {
                 </Box>
                 {action}
             </Box>
-            <Box sx={{ p: 3, flex: 1, display: 'flex', flexDirection: 'column' }}>
+            <Box sx={{ p: 2.75, flex: 1, display: 'flex', flexDirection: 'column' }}>
                 {children}
             </Box>
         </Paper>
@@ -226,38 +228,19 @@ const CoordinatorDashboard = () => {
     const currentDate = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
 
     return (
-        <Box sx={{ pb: 6, maxWidth: 1200, mx: 'auto' }}>
-            {/* Header Section */}
-            <Paper
-                elevation={0}
-                sx={{
-                    mb: 4,
-                    p: { xs: 2.5, md: 3 },
-                    borderRadius: 3,
-                    border: `1px solid ${theme.palette.divider}`,
-                    background: theme.palette.mode === 'dark'
-                        ? 'linear-gradient(135deg, rgba(15,23,42,0.9) 0%, rgba(2,6,23,0.7) 100%)'
-                        : 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(240,253,250,0.7) 100%)'
-                }}
-            >
-                <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', md: 'center' }, gap: 2 }}>
-                    <Box>
-                        <Typography variant="overline" sx={{ color: 'text.secondary', fontWeight: 700, letterSpacing: 1 }}>
-                            Coordinator Dashboard
-                        </Typography>
-                        <Typography variant="h4" sx={{ fontWeight: 800, color: 'text.primary', mb: 1 }}>
-                            {stats?.clubName || 'Coordinator Dashboard'}
-                        </Typography>
-                        <Typography variant="body2" sx={{ color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 1 }}>
-                            {currentDate} | <Star sx={{ fontSize: 16, color: '#f59e0b' }} /> {stats?.rating || 0}/5 Rating
-                        </Typography>
-                    </Box>
-                    <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+        <Box sx={{ pb: 8, maxWidth: 1280, mx: 'auto' }}>
+            <RolePageHeader
+                kicker="Coordinator Dashboard"
+                title={stats?.clubName || 'Coordinator Dashboard'}
+                subtitle={`${currentDate} | ${stats?.rating || 0}/5 Rating`}
+                accent="#10b981"
+                action={
+                    <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', width: { xs: '100%', md: 'auto' } }}>
                         <Button
                             variant="contained"
                             startIcon={<Campaign />}
                             onClick={() => navigate('/coordinator/events/create')}
-                            sx={{ px: 3, py: 1.25, borderRadius: 2 }}
+                            sx={{ px: 3, py: 1.35, borderRadius: '18px', fontWeight: 800 }}
                         >
                             Create New Event
                         </Button>
@@ -265,17 +248,17 @@ const CoordinatorDashboard = () => {
                             <Button
                                 variant="outlined"
                                 onClick={() => navigate(`/coordinator/clubs/${stats.clubId}/chat`)}
-                                sx={{ px: 3, py: 1.25, borderRadius: 2 }}
+                                sx={{ px: 3, py: 1.35, borderRadius: '18px', fontWeight: 700 }}
                             >
                                 Club Chat
                             </Button>
                         )}
                     </Box>
-                </Box>
-            </Paper>
+                }
+            />
 
             {/* KPI Cards */}
-            <Grid container spacing={3} sx={{ mb: 4 }}>
+            <Grid container spacing={2.5} sx={{ mb: 3.5 }}>
                 {kpis.map((k, index) => (
                     <Grid item xs={12} sm={6} md={3} key={index}>
                         <StatCard {...k} />
@@ -288,7 +271,7 @@ const CoordinatorDashboard = () => {
             </Suspense>
 
             {/* Bottom Row */}
-            <Grid container spacing={3}>
+            <Grid container spacing={2.5}>
                 <Grid item xs={12}>
                     <Panel
                         title="Upcoming Approved Events"

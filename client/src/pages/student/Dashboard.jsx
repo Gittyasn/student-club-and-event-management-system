@@ -11,6 +11,7 @@ import { supabase } from '../../services/supabaseClient';
 import { useAuthStore } from '../../store/authStore';
 import { useNotificationStore } from '../../store/notificationStore';
 import LoadingDots from '../../components/LoadingDots';
+import RolePageHeader from '../../components/RolePageHeader';
 
 const StudentDashboardActivityChart = lazy(() => import('./components/StudentDashboardActivityChart'));
 
@@ -20,13 +21,14 @@ const StatCard = ({ title, value, icon, subtitle }) => {
         <Paper
             elevation={0}
             sx={{
-                p: { xs: 2.5, md: 2.5 },
+                p: { xs: 2.25, md: 2.5 },
                 height: '100%',
+                minHeight: 164,
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'center',
                 border: `1px solid ${theme.palette.divider}`,
-                borderRadius: 2.5,
+                borderRadius: 3,
                 background: theme.palette.mode === 'dark'
                     ? 'linear-gradient(180deg, rgba(15,23,42,0.9) 0%, rgba(2,6,23,0.7) 100%)'
                     : 'linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(248,250,252,0.85) 100%)',
@@ -79,12 +81,12 @@ const Panel = ({ title, subtitle, children, action }) => {
                 height: '100%',
                 flex: 1,
                 border: `1px solid ${theme.palette.divider}`,
-                borderRadius: 2.5,
+                borderRadius: 3,
                 overflow: 'hidden',
-                minHeight: 400
+                minHeight: 360
             }}
         >
-            <Box sx={{ px: 3, py: 2.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `1px solid ${theme.palette.divider}` }}>
+            <Box sx={{ px: 3, py: 2.25, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `1px solid ${theme.palette.divider}` }}>
                 <Box>
                     <Typography variant="h6" sx={{ fontWeight: 600, color: 'text.primary', fontSize: '1rem' }}>
                         {title}
@@ -97,7 +99,7 @@ const Panel = ({ title, subtitle, children, action }) => {
                 </Box>
                 {action}
             </Box>
-            <Box sx={{ p: 3, flex: 1, display: 'flex', flexDirection: 'column' }}>
+            <Box sx={{ p: 2.75, flex: 1, display: 'flex', flexDirection: 'column' }}>
                 {children}
             </Box>
         </Paper>
@@ -209,51 +211,43 @@ const StudentDashboard = () => {
     const currentDate = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
 
     return (
-        <Box sx={{ pb: 6, maxWidth: 1200, mx: 'auto' }}>
-            {/* Header Section */}
-            <Paper
-                elevation={0}
-                sx={{
-                    mb: 4,
-                    p: { xs: 2.5, md: 3 },
-                    borderRadius: 3,
-                    border: `1px solid ${theme.palette.divider}`,
-                    background: theme.palette.mode === 'dark'
-                        ? 'linear-gradient(135deg, rgba(15,23,42,0.9) 0%, rgba(2,6,23,0.7) 100%)'
-                        : 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(240,249,255,0.7) 100%)'
-                }}
-            >
-                <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', md: 'center' }, gap: 3 }}>
-                    <Box>
-                        <Typography variant="overline" sx={{ color: 'text.secondary', fontWeight: 700, letterSpacing: 1 }}>
-                            Student Dashboard
-                        </Typography>
-                        <Typography variant="h4" sx={{ fontWeight: 800, color: 'text.primary', mb: 1 }}>
-                            Welcome back, {profile?.full_name?.split(' ')[0] || 'Student'}
-                        </Typography>
-                        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                            {currentDate}
-                        </Typography>
-                    </Box>
+        <Box sx={{ pb: 8, maxWidth: 1280, mx: 'auto' }}>
+            <RolePageHeader
+                title={`Welcome back, ${profile?.full_name?.split(' ')[0] || 'Student'}`}
+                subtitle={currentDate}
+                kicker="Student Dashboard"
+                accent="#3b82f6"
+                action={(
                     <Paper
                         elevation={0}
                         sx={{
-                            px: 3, py: 1.5, display: 'flex', alignItems: 'center', gap: 2,
-                            border: `1px solid ${theme.palette.divider}`, borderRadius: 2,
+                            px: 3,
+                            py: 1.5,
+                            minWidth: { xs: '100%', md: 260 },
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            gap: 2,
+                            border: `1px solid ${theme.palette.divider}`,
+                            borderRadius: 2.5,
                             bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.04)' : 'rgba(15,23,42,0.04)'
                         }}
                     >
                         <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                            <Typography variant="overline" sx={{ color: 'text.secondary', fontWeight: 700, lineHeight: 1 }}>Engagement Score</Typography>
-                            <Typography variant="h5" sx={{ fontWeight: 800, color: theme.palette.primary.main, mt: 0.5 }}>{data?.score || 0}</Typography>
+                            <Typography variant="overline" sx={{ color: 'text.secondary', fontWeight: 700, lineHeight: 1 }}>
+                                Engagement Score
+                            </Typography>
+                            <Typography variant="h4" sx={{ fontWeight: 800, color: theme.palette.primary.main, mt: 0.5 }}>
+                                {data?.score || 0}
+                            </Typography>
                         </Box>
-                        <Star sx={{ color: theme.palette.primary.main, fontSize: 28, opacity: 0.85 }} />
+                        <Star sx={{ color: theme.palette.primary.main, fontSize: 34, opacity: 0.9 }} />
                     </Paper>
-                </Box>
-            </Paper>
+                )}
+            />
 
             {/* KPI Cards */}
-            <Grid container spacing={3} sx={{ mb: 4 }}>
+            <Grid container spacing={2.5} sx={{ mb: 3.5 }}>
                 {kpis.map((k, index) => (
                     <Grid item xs={12} sm={6} md={3} key={index}>
                         <StatCard {...k} />
@@ -262,7 +256,7 @@ const StudentDashboard = () => {
             </Grid>
 
             {/* Quick Actions & Notifications Row */}
-            <Grid container spacing={3} sx={{ display: 'flex' }} alignItems="stretch">
+            <Grid container spacing={2.5} sx={{ display: 'flex', mb: 3.5 }} alignItems="stretch">
                 <Grid item xs={12} md={7} sx={{ display: 'flex', flexDirection: 'column' }}>
                     <Panel title="Quick Actions" subtitle="Jump straight into the sections you use most">
                         <Grid container spacing={2} sx={{ mt: 1 }}>
@@ -274,7 +268,7 @@ const StudentDashboard = () => {
                                         sx={{
                                             p: 2, borderRadius: 2, border: `1px solid ${theme.palette.divider}`, bgcolor: theme.palette.background.default,
                                             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                                            gap: 1.5, cursor: 'pointer', height: '100%', minHeight: 110,
+                                            gap: 1.5, cursor: 'pointer', height: '100%', minHeight: 124,
                                             transition: 'all 0.2s',
                                             '&:hover': { borderColor: theme.palette.primary.main, bgcolor: theme.palette.action.hover }
                                         }}
@@ -397,7 +391,7 @@ const StudentDashboard = () => {
             </Grid>
 
             {/* Main Content Rows */}
-            <Grid container spacing={3} sx={{ mt: 1, mb: 4, display: 'flex' }} alignItems="stretch">
+            <Grid container spacing={2.5} sx={{ mb: 1, display: 'flex' }} alignItems="stretch">
                 <Grid item xs={12} md={6} sx={{ display: 'flex', flexDirection: 'column' }}>
                     <Panel title="Recent Registrations" subtitle="Your latest event signups"
                         action={<Button variant="text" size="small" endIcon={<ChevronRight />} onClick={() => navigate('/student/registrations')} sx={{ fontWeight: 600 }}>View All</Button>}>

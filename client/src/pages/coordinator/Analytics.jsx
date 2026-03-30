@@ -72,7 +72,15 @@ const CoordinatorAnalytics = () => {
     const { data, isLoading } = useCoordinatorAnalytics();
 
     if (isLoading) return <LoadingDots label="Loading analytics..." minHeight="50vh" />;
-    if (!data) return null;
+    if (!data) {
+        return (
+            <Box sx={{ minHeight: '50vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Typography color="text.secondary" fontWeight={700}>
+                    Analytics will appear here once club metrics are available.
+                </Typography>
+            </Box>
+        );
+    }
 
     const d = data;
     const certPieData = [
@@ -87,6 +95,7 @@ const CoordinatorAnalytics = () => {
                 kicker="Coordinator Dashboard"
                 title="Analytics"
                 subtitle="Track participation, attendance, and outcomes."
+                accent="#10b981"
             />
 
             <Box

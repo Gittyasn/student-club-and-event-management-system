@@ -13,7 +13,6 @@ import {
     CheckCircle, Cancel, AccessTime, AssignmentTurnedIn,
     LockOpen, Edit, BarChart as BarChartIcon, Groups
 } from '@mui/icons-material';
-import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../services/supabaseClient';
 import { useAttendanceAnalytics, useAdminAttendanceOverrides } from '../../hooks/useAttendance';
@@ -22,6 +21,7 @@ import {
     ResponsiveContainer, Legend, PieChart as RePie, Pie, Cell, BarChart, Bar
 } from 'recharts';
 import LoadingDots from '../../components/LoadingDots';
+import RolePageHeader from '../../components/RolePageHeader';
 
 const STATUS_MAP = {
     present: { label: 'Present', color: 'success', icon: <CheckCircle fontSize="small" /> },
@@ -131,21 +131,12 @@ const AttendanceOverview = () => {
 
     return (
         <Box sx={{ pb: 8 }}>
-            {/* Header */}
-            <Box component={motion.div} initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
-                sx={{
-                    mb: 5, p: { xs: 3, md: 5 }, borderRadius: '28px',
-                    background: 'linear-gradient(135deg, #0a0a1a 0%, #1a0533 50%, #0d1b3e 100%)', color: 'white', position: 'relative', overflow: 'hidden'
-                }}>
-                <Box sx={{ position: 'absolute', width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle, rgba(139,92,246,0.12) 0%, transparent 70%)', top: -100, right: -100, pointerEvents: 'none' }} />
-                <Box sx={{ position: 'relative', zIndex: 1 }}>
-                    <Typography variant="overline" sx={{ color: '#a78bfa', fontWeight: 900, letterSpacing: 3 }}>ADMIN</Typography>
-                    <Typography variant="h3" fontWeight={900} sx={{ letterSpacing: -1.5, mb: 1 }}>Attendance Overview</Typography>
-                    <Typography sx={{ opacity: 0.65, fontWeight: 500 }}>
-                        Campus-wide attendance intelligence, integrity controls, and override capabilities.
-                    </Typography>
-                </Box>
-            </Box>
+            <RolePageHeader
+                kicker="Admin"
+                title="Attendance Overview"
+                subtitle="Campus-wide attendance intelligence, integrity controls, and override capabilities."
+                accent="#8b5cf6"
+            />
 
             {/* Platform Stats */}
             <Grid container spacing={2.5} sx={{ mb: 5 }}>

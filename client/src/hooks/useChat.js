@@ -17,6 +17,40 @@ export const useChat = (chatType, referenceId) => {
     const userId = user?.id;
     const isModerator = ['admin', 'coordinator'].includes(profile?.role);
 
+    const resolveEventOrClubChat = async () => {
+        let { data, error } = await supabase
+            .from('chats')
+            .select('*')
+            .eq('type', chatType)
+            .eq('reference_id', referenceId)
+            .maybeSingle();
+
+        if (error) throw error;
+        if (data) return data;
+
+        // Some events were created before the app switched from legacy chat_rooms to chats.
+        // When the chat row is missing, try to create it so registered students can enter immediately.
+        const fallbackTitle = chatType === 'event' ? 'Event Discussion' : 'Club Discussion';
+        const { data: insertedRoom, error: insertError } = await supabase
+            .from('chats')
+            .insert({ type: chatType, reference_id: referenceId, title: fallbackTitle })
+            .select()
+            .maybeSingle();
+
+        if (!insertError && insertedRoom) return insertedRoom;
+
+        // If insert is blocked by RLS, re-read once in case another client or trigger created it.
+        const { data: rereadRoom, error: rereadError } = await supabase
+            .from('chats')
+            .select('*')
+            .eq('type', chatType)
+            .eq('reference_id', referenceId)
+            .maybeSingle();
+
+        if (rereadError) throw rereadError;
+        return rereadRoom || null;
+    };
+
     // 1. Resolve or Create Chat Room ID based on type and refId
     const { data: chatRoom, isLoading: loadingRoom } = useQuery({
         queryKey: ['chatRoom', chatType, referenceId],
@@ -47,31 +81,7 @@ export const useChat = (chatType, referenceId) => {
                 return newRoom;
             }
 
-            // Normal club or event chat
-            let { data, error } = await supabase
-                .from('chats')
-                .select('*')
-                .eq('type', chatType)
-                .eq('reference_id', referenceId)
-                .single();
-
-            // Auto-create room if it doesn't exist and user has coordinator rights
-            if (error && error.code === 'PGRST116' && profile?.role === 'coordinator') {
-                const { data: newRoom, error: createErr } = await supabase
-                    .from('chats')
-                    .insert({ type: chatType, reference_id: referenceId })
-                    .select()
-                    .single();
-                if (createErr) throw createErr;
-                return newRoom;
-            } else if (error && error.code === 'PGRST116') {
-                // Student view hitting empty room
-                return null;
-            } else if (error) {
-                throw error;
-            }
-
-            return data;
+            return resolveEventOrClubChat();
         }
     });
 
