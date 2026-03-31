@@ -35,9 +35,9 @@ export const useHackathonTeams = (eventId) => {
                 .from('hackathon_teams')
                 .select(`
                     id, name, status, created_at, leader_id,
-                    leader:users!hackathon_teams_leader_id_fkey(full_name, email, avatar_url),
+                    leader:profiles!hackathon_teams_leader_id_fkey(full_name, email, avatar_url),
                     members:hackathon_team_members(
-                        user:users(id, full_name, email, avatar_url),
+                        user:profiles(id, full_name, email, avatar_url),
                         role, joined_at
                     ),
                     submission:hackathon_submissions(id, title, is_final, total_score:hackathon_evaluations(total_score))
@@ -59,10 +59,10 @@ export const useTeamDetails = (teamId) => {
                 .from('hackathon_teams')
                 .select(`
                     *,
-                    leader:users!hackathon_teams_leader_id_fkey(full_name, email),
+                    leader:profiles!hackathon_teams_leader_id_fkey(full_name, email),
                     members:hackathon_team_members(
                         id, role, joined_at,
-                        user:users(id, full_name, email, avatar_url)
+                        user:profiles(id, full_name, email, avatar_url)
                     ),
                     submission:hackathon_submissions(*)
                 `)
@@ -140,7 +140,7 @@ export const useHackathonSubmissions = (eventId) => {
                 .from('hackathon_submissions')
                 .select(`
                     *,
-                    team:hackathon_teams(name, leader_id, members:hackathon_team_members(user:users(full_name))),
+                    team:hackathon_teams(name, leader_id, members:hackathon_team_members(user:profiles(full_name))),
                     evaluations:hackathon_evaluations(total_score, judge_id, feedback)
                 `)
                 .eq('event_id', eventId);

@@ -6,7 +6,7 @@ const PUBLIC_EVENT_STATUSES = ['approved', 'open', 'registration_open', 'ongoing
 const fetchEventById = async (id, options = {}) => {
     let query = supabase
         .from('events')
-        .select('*, club:clubs(name, status, logo_url)')
+        .select('*, club:clubs(name, status, logo_url), registrations:registrations(count)')
         .eq('id', id);
 
     if (options.publicOnly) {
