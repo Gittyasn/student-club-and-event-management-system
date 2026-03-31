@@ -54,7 +54,7 @@ For example: go to **My Events** → click on an event → the ID appears in the
 
 | Feature | Link |
 |---------|------|
-| 📊 Admin Dashboard | http://localhost:3000/admin |
+| 📊 Admin Dashboard | http://localhost:3000/admin (alias: http://localhost:3000/admin/dashboard) |
 | 🏛️ Manage Clubs | http://localhost:3000/admin/clubs |
 | 🗂️ Club Categories | http://localhost:3000/admin/club-categories |
 | 🏷️ Event Categories | http://localhost:3000/admin/event-categories |
@@ -87,7 +87,7 @@ For example: go to **My Events** → click on an event → the ID appears in the
 
 | Feature | Link |
 |---------|------|
-| 📊 Coordinator Dashboard | http://localhost:3000/coordinator |
+| 📊 Coordinator Dashboard | http://localhost:3000/coordinator (alias: http://localhost:3000/coordinator/dashboard) |
 | 📅 My Events | http://localhost:3000/coordinator/events |
 | 📤 My Submissions | http://localhost:3000/coordinator/submissions |
 | ➕ Create Event | http://localhost:3000/coordinator/events/create |
@@ -112,7 +112,7 @@ For example: go to **My Events** → click on an event → the ID appears in the
 
 | Feature | Link |
 |---------|------|
-| 📊 Student Dashboard | http://localhost:3000/student |
+| 📊 Student Dashboard | http://localhost:3000/student (alias: http://localhost:3000/student/dashboard) |
 | 📅 My Events | http://localhost:3000/student/events |
 | 🔍 Browse Events | http://localhost:3000/student/browse-events |
 | 📋 My Registrations | http://localhost:3000/student/registrations |

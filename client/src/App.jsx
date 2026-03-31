@@ -162,6 +162,7 @@ function App() {
             <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
               <Route path="/admin" element={<AdminLayout />}>
                 <Route index element={<AdminDashboard />} />
+                <Route path="dashboard" element={<Navigate to="/admin" replace />} />
                 <Route path="clubs" element={<AdminClubs />} />
                 <Route path="club-categories" element={<AdminClubCategories />} />
                 <Route path="event-categories" element={<AdminEventCategories />} />
@@ -195,6 +196,7 @@ function App() {
             <Route element={<ProtectedRoute allowedRoles={['coordinator']} />}>
               <Route path="/coordinator" element={<CoordinatorLayout />}>
                 <Route index element={<CoordinatorDashboard />} />
+                <Route path="dashboard" element={<Navigate to="/coordinator" replace />} />
                 <Route path="events" element={<CoordinatorEvents />} />
                 <Route path="submissions" element={<MySubmissions />} />
                 <Route path="events/create" element={<CreateEvent />} />
@@ -219,6 +221,7 @@ function App() {
             <Route element={<ProtectedRoute allowedRoles={['student']} />}>
             <Route path="/student" element={<StudentLayout />}>
                 <Route index element={<StudentDashboard />} />
+                <Route path="dashboard" element={<Navigate to="/student" replace />} />
                 <Route path="events" element={<MyEvents />} />
                 <Route path="events/:id" element={<EventDetails publicOnly={false} />} />
                 <Route path="events/:id/chat" element={<EventChat />} />

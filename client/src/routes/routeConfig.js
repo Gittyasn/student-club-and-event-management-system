@@ -36,6 +36,7 @@ export const ROUTES = [
         color: "green",
         pages: [
             { label: "Dashboard", path: "/student" },
+            { label: "Dashboard Alias", path: "/student/dashboard" },
             { label: "Club Management", path: "/student/clubs" },
             { label: "My Registrations", path: "/student/registrations" },
             { label: "Scan Attendance", path: "/student/scan" },
@@ -53,6 +54,7 @@ export const ROUTES = [
         color: "amber",
         pages: [
             { label: "Dashboard", path: "/coordinator" },
+            { label: "Dashboard Alias", path: "/coordinator/dashboard" },
             { label: "My Events", path: "/coordinator/events" },
             { label: "Create Event", path: "/coordinator/events/create" },
             { label: "Edit Event", path: "/coordinator/events/:id/edit", demo: "/coordinator/events/1/edit" },
@@ -75,6 +77,7 @@ export const ROUTES = [
         color: "red",
         pages: [
             { label: "Dashboard", path: "/admin" },
+            { label: "Dashboard Alias", path: "/admin/dashboard" },
             { label: "Clubs", path: "/admin/clubs" },
             { label: "Users", path: "/admin/users" },
             { label: "Events", path: "/admin/events" },
