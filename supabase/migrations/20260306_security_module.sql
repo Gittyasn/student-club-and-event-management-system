@@ -13,8 +13,30 @@
 -- and add richer forensic fields.
 -- ==============================================================================
 
+CREATE TABLE IF NOT EXISTS public.audit_logs (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    actor_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
+    user_id UUID REFERENCES auth.users(id),
+    action TEXT NOT NULL,
+    module TEXT,
+    target_table TEXT,
+    target_id UUID,
+    old_value JSONB,
+    new_value JSONB,
+    meta JSONB,
+    ip_address TEXT,
+    details JSONB,
+    timestamp TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 ALTER TABLE public.audit_logs
     ADD COLUMN IF NOT EXISTS actor_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
+    ADD COLUMN IF NOT EXISTS module TEXT,
+    ADD COLUMN IF NOT EXISTS entity_type TEXT,
+    ADD COLUMN IF NOT EXISTS entity_id UUID,
+    ADD COLUMN IF NOT EXISTS old_values JSONB,
+    ADD COLUMN IF NOT EXISTS new_values JSONB,
     ADD COLUMN IF NOT EXISTS target_table TEXT,
     ADD COLUMN IF NOT EXISTS target_id UUID,
     ADD COLUMN IF NOT EXISTS old_value JSONB,
@@ -22,6 +44,13 @@ ALTER TABLE public.audit_logs
     ADD COLUMN IF NOT EXISTS meta JSONB,
     ADD COLUMN IF NOT EXISTS ip_address TEXT,
     ADD COLUMN IF NOT EXISTS created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
+
+UPDATE public.audit_logs
+SET entity_type = COALESCE(entity_type, target_table, module, 'system')
+WHERE entity_type IS NULL;
+
+ALTER TABLE public.audit_logs
+    ALTER COLUMN entity_type DROP NOT NULL;
 
 -- Create indexes for fast query patterns
 CREATE INDEX IF NOT EXISTS idx_audit_logs_actor_id ON public.audit_logs(actor_id);
@@ -480,6 +509,15 @@ CREATE POLICY "Students can browse approved events only" ON public.events
     );
 
 -- 7c. AI GOVERNANCE TABLE — Admin only
+CREATE TABLE IF NOT EXISTS public.ai_governance (
+    feature_key TEXT PRIMARY KEY,
+    is_enabled BOOLEAN DEFAULT true,
+    threshold NUMERIC DEFAULT NULL,
+    description TEXT,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
+    updated_by UUID REFERENCES public.profiles(id)
+);
+
 ALTER TABLE public.ai_governance ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Admins can manage AI governance" ON public.ai_governance;
@@ -493,6 +531,17 @@ CREATE POLICY "Authenticated users can read AI governance" ON public.ai_governan
     FOR SELECT USING (auth.uid() IS NOT NULL);
 
 -- 7d. AI INSIGHTS CACHE — Role-based access
+CREATE TABLE IF NOT EXISTS public.ai_insights_cache (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    cache_type TEXT NOT NULL,
+    reference_id UUID,
+    payload JSONB NOT NULL,
+    generated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
+    expires_at TIMESTAMP WITH TIME ZONE
+);
+
+CREATE INDEX IF NOT EXISTS idx_ai_cache_ref ON public.ai_insights_cache(cache_type, reference_id);
+
 ALTER TABLE public.ai_insights_cache ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Admins manage AI insights cache" ON public.ai_insights_cache;
@@ -514,6 +563,20 @@ CREATE POLICY "Students can only register themselves" ON public.registrations
     );
 
 -- 7f. SYSTEM_SETTINGS — Prevent non-admin writes
+CREATE TABLE IF NOT EXISTS public.system_settings (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL,
+    description TEXT,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_by UUID REFERENCES public.profiles(id)
+);
+
+ALTER TABLE public.system_settings ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Anyone can read system settings" ON public.system_settings;
+CREATE POLICY "Anyone can read system settings" ON public.system_settings
+    FOR SELECT USING (true);
+
 DROP POLICY IF EXISTS "Only admins can modify system settings" ON public.system_settings;
 CREATE POLICY "Only admins can modify system settings" ON public.system_settings
     FOR ALL USING (

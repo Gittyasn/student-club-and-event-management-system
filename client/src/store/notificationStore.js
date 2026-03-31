@@ -164,12 +164,19 @@ export const useNotificationStore = create((set, get) => ({
             }
         };
 
+        const startRefreshFallback = () => {
+            if (refreshInterval) return;
+            refreshInterval = setInterval(() => {
+                if (!active) return;
+                get().fetchNotifications(userId);
+            }, 15000);
+        };
+
         const scheduleReconnect = () => {
             if (!active || retryTimeout) return;
             retryTimeout = setTimeout(async () => {
                 retryTimeout = null;
                 if (!active) return;
-                clearRefresh();
                 if (channel) {
                     try { await supabase.removeChannel(channel); } catch { /* ignore */ }
                     channel = null;
@@ -227,19 +234,13 @@ export const useNotificationStore = create((set, get) => ({
             channel.subscribe((status) => {
                 if (status === 'SUBSCRIBED') {
                     clearRetry();
+                    clearRefresh();
                     get().fetchNotifications(userId);
-                    if (!refreshInterval) {
-                        // Realtime insert events can occasionally be missed in live environments.
-                        // Keep a lightweight sync loop so the notification center stays accurate.
-                        refreshInterval = setInterval(() => {
-                            if (!active) return;
-                            get().fetchNotifications(userId);
-                        }, 15000);
-                    }
                     return;
                 }
 
                 if (status === 'TIMED_OUT' || status === 'CHANNEL_ERROR' || status === 'CLOSED') {
+                    startRefreshFallback();
                     scheduleReconnect();
                 }
             });

@@ -43,7 +43,7 @@ import {
     useSecurityKPIs, useAuditLogs, useLoginLogs,
     // eslint-disable-next-line no-unused-vars
     useSecurityEvents, useBlockUser, useActiveIncidents,
-    useResolveSecurityEvent, useRateLimitStatus
+    useResolveSecurityEvent, useRateLimitStatus, getSecurityBackendErrorMessage
 } from '../../hooks/useSecurityAudit';
 // eslint-disable-next-line no-unused-vars
 import { toast } from 'sonner';
@@ -171,13 +171,20 @@ const AdminSecurity = () => {
     const [activeTab, setActiveTab] = useState('incidents');
 
     // Data hooks
-    const { data: kpis, isLoading: kpiLoading } = useSecurityKPIs();
-    const { data: logs, isLoading: logsLoading } = useAuditLogs(200);
-    const { data: loginLogs, isLoading: loginLoading } = useLoginLogs(100);
-    const { data: securityEvents, isLoading: eventsLoading } = useSecurityEvents(false);
-    const { data: rateLimitData } = useRateLimitStatus();
+    const { data: kpis, isLoading: kpiLoading, error: kpiError } = useSecurityKPIs();
+    const { data: logs, isLoading: logsLoading, error: logsError } = useAuditLogs(200);
+    const { data: loginLogs, isLoading: loginLoading, error: loginError } = useLoginLogs(100);
+    const { data: securityEvents, isLoading: eventsLoading, error: eventsError } = useSecurityEvents(false);
+    const { data: rateLimitData, error: rateLimitError } = useRateLimitStatus();
     const { mutate: blockUser, isPending: blocking } = useBlockUser();
     const { mutate: resolveEvent } = useResolveSecurityEvent();
+    const backendMessages = useMemo(
+        () => [kpiError, logsError, loginError, eventsError, rateLimitError]
+            .map(getSecurityBackendErrorMessage)
+            .filter(Boolean),
+        [eventsError, kpiError, loginError, logsError, rateLimitError]
+    );
+    const backendMessage = backendMessages[0] || null;
 
     // Filter audit logs
     const filteredLogs = useMemo(() => {
@@ -304,6 +311,13 @@ const AdminSecurity = () => {
                 </Box>
             </Box>
 
+            {backendMessage ? (
+                <Alert severity="error" sx={{ mb: 3, borderRadius: '16px' }}>
+                    <Typography fontWeight={800}>Security backend is unavailable</Typography>
+                    <Typography variant="body2">{backendMessage}</Typography>
+                </Alert>
+            ) : null}
+
             {/* KPI Row */}
             <Grid container spacing={2.5} sx={{ mb: 4 }}>
                 {[
@@ -414,13 +428,18 @@ const AdminSecurity = () => {
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2.5 }}>
                                 <Box>
                                     <Typography variant="h6" fontWeight={900}>Active Security Incidents</Typography>
-                                    <Typography variant="body2">Security insights are updated in real-time. No issues detected in this account&apos;s recent activity.</Typography>
+                                    <Typography variant="body2">Security insights are updated in real-time when the backend monitoring tables are available.</Typography>
                                     <Typography variant="caption" color="text.secondary" fontWeight={600}>Unresolved platform-wide security events</Typography>
                                 </Box>
                                 <Chip label={`${securityEvents?.length || 0} unresolved`} size="small" color="error" sx={{ fontWeight: 700 }} />
                             </Box>
                             {eventsLoading ? <LoadingDots inline size={5} /> : (
-                                (!securityEvents || securityEvents.length === 0) ? (
+                                eventsError ? (
+                                    <Alert severity="error" sx={{ borderRadius: '12px' }}>
+                                        <Typography fontWeight={700}>Incident feed unavailable</Typography>
+                                        {getSecurityBackendErrorMessage(eventsError)}
+                                    </Alert>
+                                ) : (!securityEvents || securityEvents.length === 0) ? (
                                     <Alert severity="success" icon={<CheckCircle />} sx={{ borderRadius: '12px' }}>
                                         <Typography fontWeight={700}>No active incidents</Typography>
                                         All security events have been resolved.
@@ -442,7 +461,13 @@ const AdminSecurity = () => {
                             <Typography variant="h6" fontWeight={900} mb={0.5}>Login Attempt Log</Typography>
                             <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" mb={2.5}>Last 100 authentication events</Typography>
                             {loginLoading ? <LoadingDots inline size={5} /> : (
-                                <Stack spacing={1}>
+                                loginError ? (
+                                    <Alert severity="error" sx={{ borderRadius: '12px' }}>
+                                        <Typography fontWeight={700}>Login monitoring unavailable</Typography>
+                                        {getSecurityBackendErrorMessage(loginError)}
+                                    </Alert>
+                                ) : (
+                                    <Stack spacing={1}>
                                     {(loginLogs || []).map(log => (
                                         <Box key={log.id} sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 1.5, borderRadius: '10px', '&:hover': { bgcolor: 'action.hover' } }}>
                                             <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: ACTION_COLORS[log.status] || '#6b7280', flexShrink: 0 }} />
@@ -460,7 +485,8 @@ const AdminSecurity = () => {
                                             </Typography>
                                         </Box>
                                     ))}
-                                </Stack>
+                                    </Stack>
+                                )
                             )}
                         </Paper>
                     </Box>
@@ -496,7 +522,13 @@ const AdminSecurity = () => {
                                 </Stack>
                             </Box>
                             {logsLoading ? <LoadingDots inline size={5} /> : (
-                                <Stack spacing={0.5}>
+                                logsError ? (
+                                    <Alert severity="error" sx={{ borderRadius: '12px' }}>
+                                        <Typography fontWeight={700}>Audit log unavailable</Typography>
+                                        {getSecurityBackendErrorMessage(logsError)}
+                                    </Alert>
+                                ) : (
+                                    <Stack spacing={0.5}>
                                     {filteredLogs.slice(0, 100).map((log) => (
                                         <Box key={log.id} sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 1.5, borderRadius: '10px', '&:hover': { bgcolor: 'action.hover' } }}>
                                             <Avatar sx={{ width: 28, height: 28, bgcolor: '#a855f715', color: '#a855f7', fontSize: '0.7rem', fontWeight: 900 }}>
@@ -519,7 +551,8 @@ const AdminSecurity = () => {
                                     <Typography variant="caption" color="text.disabled" textAlign="center" display="block" mt={1}>
                                         Showing {Math.min(filteredLogs.length, 100)} of {filteredLogs.length} entries
                                     </Typography>
-                                </Stack>
+                                    </Stack>
+                                )
                             )}
                         </Paper>
                     </Box>
@@ -534,7 +567,12 @@ const AdminSecurity = () => {
                             <Alert severity="info" sx={{ mb: 2.5, borderRadius: '12px' }}>
                                 Rate limits reset hourly per user. Actions exceeding their threshold are automatically logged as security events.
                             </Alert>
-                            {(rateLimitData || []).length === 0 ? (
+                            {rateLimitError ? (
+                                <Alert severity="error" sx={{ borderRadius: '12px' }}>
+                                    <Typography fontWeight={700}>Rate-limit monitoring unavailable</Typography>
+                                    {getSecurityBackendErrorMessage(rateLimitError)}
+                                </Alert>
+                            ) : (rateLimitData || []).length === 0 ? (
                                 <Alert severity="success" icon={<CheckCircle />} sx={{ borderRadius: '12px' }}>
                                     <Typography fontWeight={700}>No rate limit violations detected</Typography>
                                     All user actions are within normal thresholds.

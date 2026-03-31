@@ -74,193 +74,240 @@ const ensureNoError = (label, response) => {
 
 const safeName = (value, fallback = 'Unknown') => (value && String(value).trim() ? value : fallback);
 
+const normalizeAdminAnalyticsPayload = (payload = {}) => ({
+    totalClubs: Number(payload.totalClubs || 0),
+    totalUsers: Number(payload.totalUsers || 0),
+    totalEvents: Number(payload.totalEvents || 0),
+    totalRegistrations: Number(payload.totalRegistrations || 0),
+    totalCertificates: Number(payload.totalCertificates || 0),
+    totalMemberships: Number(payload.totalMemberships || 0),
+    totalNotifications: Number(payload.totalNotifications || 0),
+    readRate: Number(payload.readRate || 0),
+    deliverySuccess: Number(payload.deliverySuccess || 0),
+    attendanceRate: Number(payload.attendanceRate || 0),
+    avgRating: payload.avgRating ?? 'N/A',
+    monthlyTrend: Array.isArray(payload.monthlyTrend) ? payload.monthlyTrend : [],
+    attendanceTrend: Array.isArray(payload.attendanceTrend) ? payload.attendanceTrend : [],
+    clubPerf: Array.isArray(payload.clubPerf) ? payload.clubPerf : [],
+    deptRanking: Array.isArray(payload.deptRanking) ? payload.deptRanking : [],
+    categoryDist: Array.isArray(payload.categoryDist) ? payload.categoryDist : [],
+    ratingDist: Array.isArray(payload.ratingDist) ? payload.ratingDist : [],
+});
+
+const isMissingAdminAnalyticsRpcError = (error) => {
+    const code = error?.code;
+    const message = `${error?.message || ''} ${error?.details || ''}`.toLowerCase();
+
+    return (
+        ['42883', 'PGRST202', 'PGRST205'].includes(code) ||
+        message.includes('get_admin_analytics_snapshot') ||
+        message.includes('could not find the function')
+    );
+};
+
+const fetchAdminAnalyticsViaRpc = async () => {
+    const { data, error } = await supabase.rpc('get_admin_analytics_snapshot');
+    if (error) throw error;
+    return normalizeAdminAnalyticsPayload(data);
+};
+
+const fetchAdminAnalyticsLegacy = async () => {
+    const [
+        clubsRes,
+        profilesRes,
+        eventsRes,
+        registrationsRes,
+        certificatesRes,
+        membershipsRes,
+        attendanceRes,
+        feedbackRes,
+        notificationsRes,
+    ] = await Promise.all([
+        supabase.from('clubs').select('id, name, status, created_at'),
+        supabase.from('profiles').select('id, department, role'),
+        supabase.from('events').select(`
+            id, club_id, created_at,
+            category:event_categories(name)
+        `),
+        supabase.from('registrations').select('id, user_id, event_id, created_at, registered_at, status'),
+        supabase.from('certificates').select('id, user_id, event_id, cert_type, status, generated_at'),
+        supabase.from('club_memberships').select('id, user_id, club_id, status, joined_at'),
+        supabase.from('attendance_records').select('user_id, event_id, status, marked_at'),
+        supabase.from('feedback').select('user_id, event_id, rating, created_at'),
+        supabase.from('notifications').select('id, is_read, delivered, created_at'),
+    ]);
+
+    const clubs = ensureNoError('clubs', clubsRes) || [];
+    const profiles = ensureNoError('profiles', profilesRes) || [];
+    const events = ensureNoError('events', eventsRes) || [];
+    const registrations = ensureNoError('registrations', registrationsRes) || [];
+    const certificates = ensureNoError('certificates', certificatesRes) || [];
+    const memberships = ensureNoError('club_memberships', membershipsRes) || [];
+    const attendance = ensureNoError('attendance_records', attendanceRes) || [];
+    const feedback = ensureNoError('feedback', feedbackRes) || [];
+    const notifications = ensureNoError('notifications', notificationsRes) || [];
+
+    const activeMemberships = memberships.filter((membership) =>
+        APPROVED_MEMBERSHIP_STATUSES.includes(membership.status)
+    );
+    const validCertificates = certificates.filter((certificate) => certificate.status === 'valid');
+    const presentAttendance = attendance.filter((record) => PRESENT_STATUSES.includes(record.status));
+    const attendanceRate = attendance.length
+        ? Number(((presentAttendance.length / attendance.length) * 100).toFixed(1))
+        : 0;
+
+    const avgRating = feedback.length
+        ? Number((feedback.reduce((sum, item) => sum + (item.rating || 0), 0) / feedback.length).toFixed(1))
+        : 'N/A';
+
+    const readRate = notifications.length
+        ? Number(((notifications.filter((item) => item.is_read).length / notifications.length) * 100).toFixed(1))
+        : 0;
+
+    const hasDeliveryTelemetry = notifications.some((item) => item.delivered === true);
+    const deliverySuccess = notifications.length
+        ? (hasDeliveryTelemetry
+            ? Math.round((notifications.filter((item) => item.delivered !== false).length / notifications.length) * 100)
+            : 100)
+        : 0;
+
+    const categoryCounts = events.reduce((acc, event) => {
+        const categoryName = safeName(event.category?.name, 'Uncategorized');
+        acc[categoryName] = (acc[categoryName] || 0) + 1;
+        return acc;
+    }, {});
+
+    const categoryDist = Object.entries(categoryCounts)
+        .map(([name, value]) => ({ name, value }))
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 8);
+
+    const departmentByUserId = profiles.reduce((acc, profile) => {
+        acc[profile.id] = safeName(profile.department, 'Unknown');
+        return acc;
+    }, {});
+
+    const departmentCounts = registrations.reduce((acc, registration) => {
+        const department = departmentByUserId[registration.user_id] || 'Unknown';
+        acc[department] = (acc[department] || 0) + 1;
+        return acc;
+    }, {});
+
+    const deptRanking = Object.entries(departmentCounts)
+        .map(([name, count]) => ({ name, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 8);
+
+    const eventIdsByClubId = events.reduce((acc, event) => {
+        if (!acc[event.club_id]) acc[event.club_id] = [];
+        acc[event.club_id].push(event.id);
+        return acc;
+    }, {});
+
+    const registrationsByEventId = registrations.reduce((acc, registration) => {
+        if (!acc[registration.event_id]) acc[registration.event_id] = [];
+        acc[registration.event_id].push(registration);
+        return acc;
+    }, {});
+
+    const attendanceByEventId = attendance.reduce((acc, record) => {
+        if (!acc[record.event_id]) acc[record.event_id] = [];
+        acc[record.event_id].push(record);
+        return acc;
+    }, {});
+
+    const clubPerf = clubs
+        .map((club) => {
+            const clubEventIds = eventIdsByClubId[club.id] || [];
+            const clubRegistrations = clubEventIds.flatMap((eventId) => registrationsByEventId[eventId] || []);
+            const clubAttendance = clubEventIds.flatMap((eventId) => attendanceByEventId[eventId] || []);
+            const presentCount = clubAttendance.filter((record) => PRESENT_STATUSES.includes(record.status)).length;
+
+            return {
+                name: safeName(club.name).slice(0, 18),
+                Events: clubEventIds.length,
+                Registrations: clubRegistrations.length,
+                AttendanceRate: clubAttendance.length ? Math.round((presentCount / clubAttendance.length) * 100) : 0,
+            };
+        })
+        .sort((a, b) => b.Registrations - a.Registrations)
+        .slice(0, 8);
+
+    const monthlySeries = buildMonthSeries(6);
+    const monthlyTrendMap = monthlySeries.reduce((acc, item) => {
+        acc[item.key] = { name: item.label, Events: 0, Registrations: 0, Members: 0 };
+        return acc;
+    }, {});
+
+    events.forEach((event) => {
+        const key = toMonthKey(event.created_at);
+        if (key && monthlyTrendMap[key]) monthlyTrendMap[key].Events++;
+    });
+
+    registrations.forEach((registration) => {
+        const key = toMonthKey(registration.registered_at || registration.created_at);
+        if (key && monthlyTrendMap[key]) monthlyTrendMap[key].Registrations++;
+    });
+
+    activeMemberships.forEach((membership) => {
+        const key = toMonthKey(membership.joined_at);
+        if (key && monthlyTrendMap[key]) monthlyTrendMap[key].Members++;
+    });
+
+    const attendanceTrendMap = monthlySeries.reduce((acc, item) => {
+        acc[item.key] = { name: item.label, Present: 0, Absent: 0 };
+        return acc;
+    }, {});
+
+    attendance.forEach((record) => {
+        const key = toMonthKey(record.marked_at);
+        if (!key || !attendanceTrendMap[key]) return;
+        if (PRESENT_STATUSES.includes(record.status)) attendanceTrendMap[key].Present++;
+        else attendanceTrendMap[key].Absent++;
+    });
+
+    const activeClubCount = clubs.some((club) => club.status === 'active')
+        ? clubs.filter((club) => club.status === 'active').length
+        : clubs.length;
+
+    return normalizeAdminAnalyticsPayload({
+        totalClubs: activeClubCount,
+        totalUsers: profiles.length,
+        totalEvents: events.length,
+        totalRegistrations: registrations.length,
+        totalCertificates: validCertificates.length,
+        totalMemberships: activeMemberships.length,
+        totalNotifications: notifications.length,
+        readRate,
+        deliverySuccess,
+        attendanceRate,
+        avgRating,
+        monthlyTrend: Object.values(monthlyTrendMap),
+        attendanceTrend: Object.values(attendanceTrendMap),
+        clubPerf,
+        deptRanking,
+        categoryDist,
+        ratingDist: [1, 2, 3, 4, 5].map((rating) => ({
+            name: `${rating}*`,
+            value: feedback.filter((item) => Math.round(item.rating || 0) === rating).length,
+        })),
+    });
+};
+
 export const useAdminAnalytics = () => {
     return useQuery({
         queryKey: ['adminAnalytics'],
         staleTime: 3 * 60 * 1000,
         queryFn: async () => {
-            const [
-                clubsRes,
-                profilesRes,
-                eventsRes,
-                registrationsRes,
-                certificatesRes,
-                membershipsRes,
-                attendanceRes,
-                feedbackRes,
-                notificationsRes,
-            ] = await Promise.all([
-                supabase.from('clubs').select('id, name, status, created_at'),
-                supabase.from('profiles').select('id, department, role'),
-                supabase.from('events').select(`
-                    id, club_id, created_at,
-                    category:event_categories(name)
-                `),
-                supabase.from('registrations').select('id, user_id, event_id, created_at, registered_at, status'),
-                supabase.from('certificates').select('id, user_id, event_id, cert_type, status, generated_at'),
-                supabase.from('club_memberships').select('id, user_id, club_id, status, joined_at'),
-                supabase.from('attendance_records').select('user_id, event_id, status, marked_at'),
-                supabase.from('feedback').select('user_id, event_id, rating, created_at'),
-                supabase.from('notifications').select('id, is_read, delivered, created_at'),
-            ]);
-
-            const clubs = ensureNoError('clubs', clubsRes) || [];
-            const profiles = ensureNoError('profiles', profilesRes) || [];
-            const events = ensureNoError('events', eventsRes) || [];
-            const registrations = ensureNoError('registrations', registrationsRes) || [];
-            const certificates = ensureNoError('certificates', certificatesRes) || [];
-            const memberships = ensureNoError('club_memberships', membershipsRes) || [];
-            const attendance = ensureNoError('attendance_records', attendanceRes) || [];
-            const feedback = ensureNoError('feedback', feedbackRes) || [];
-            const notifications = ensureNoError('notifications', notificationsRes) || [];
-
-            const activeMemberships = memberships.filter((membership) =>
-                APPROVED_MEMBERSHIP_STATUSES.includes(membership.status)
-            );
-            const validCertificates = certificates.filter((certificate) => certificate.status === 'valid');
-            const presentAttendance = attendance.filter((record) => PRESENT_STATUSES.includes(record.status));
-            const attendanceRate = attendance.length
-                ? Number(((presentAttendance.length / attendance.length) * 100).toFixed(1))
-                : 0;
-
-            const avgRating = feedback.length
-                ? Number((feedback.reduce((sum, item) => sum + (item.rating || 0), 0) / feedback.length).toFixed(1))
-                : 'N/A';
-
-            const readRate = notifications.length
-                ? Number(((notifications.filter((item) => item.is_read).length / notifications.length) * 100).toFixed(1))
-                : 0;
-
-            const hasDeliveryTelemetry = notifications.some((item) => item.delivered === true);
-            const deliverySuccess = notifications.length
-                ? (hasDeliveryTelemetry
-                    ? Math.round((notifications.filter((item) => item.delivered !== false).length / notifications.length) * 100)
-                    : 100)
-                : 0;
-
-            const categoryCounts = events.reduce((acc, event) => {
-                const categoryName = safeName(event.category?.name, 'Uncategorized');
-                acc[categoryName] = (acc[categoryName] || 0) + 1;
-                return acc;
-            }, {});
-
-            const categoryDist = Object.entries(categoryCounts)
-                .map(([name, value]) => ({ name, value }))
-                .sort((a, b) => b.value - a.value)
-                .slice(0, 8);
-
-            const departmentByUserId = profiles.reduce((acc, profile) => {
-                acc[profile.id] = safeName(profile.department, 'Unknown');
-                return acc;
-            }, {});
-
-            const departmentCounts = registrations.reduce((acc, registration) => {
-                const department = departmentByUserId[registration.user_id] || 'Unknown';
-                acc[department] = (acc[department] || 0) + 1;
-                return acc;
-            }, {});
-
-            const deptRanking = Object.entries(departmentCounts)
-                .map(([name, count]) => ({ name, count }))
-                .sort((a, b) => b.count - a.count)
-                .slice(0, 8);
-
-
-
-            const eventIdsByClubId = events.reduce((acc, event) => {
-                if (!acc[event.club_id]) acc[event.club_id] = [];
-                acc[event.club_id].push(event.id);
-                return acc;
-            }, {});
-
-            const registrationsByEventId = registrations.reduce((acc, registration) => {
-                if (!acc[registration.event_id]) acc[registration.event_id] = [];
-                acc[registration.event_id].push(registration);
-                return acc;
-            }, {});
-
-            const attendanceByEventId = attendance.reduce((acc, record) => {
-                if (!acc[record.event_id]) acc[record.event_id] = [];
-                acc[record.event_id].push(record);
-                return acc;
-            }, {});
-
-            const clubPerf = clubs
-                .map((club) => {
-                    const clubEventIds = eventIdsByClubId[club.id] || [];
-                    const clubRegistrations = clubEventIds.flatMap((eventId) => registrationsByEventId[eventId] || []);
-                    const clubAttendance = clubEventIds.flatMap((eventId) => attendanceByEventId[eventId] || []);
-                    const presentCount = clubAttendance.filter((record) => PRESENT_STATUSES.includes(record.status)).length;
-
-                    return {
-                        name: safeName(club.name).slice(0, 18),
-                        Events: clubEventIds.length,
-                        Registrations: clubRegistrations.length,
-                        AttendanceRate: clubAttendance.length ? Math.round((presentCount / clubAttendance.length) * 100) : 0,
-                    };
-                })
-                .sort((a, b) => b.Registrations - a.Registrations)
-                .slice(0, 8);
-
-            const monthlySeries = buildMonthSeries(6);
-            const monthlyTrendMap = monthlySeries.reduce((acc, item) => {
-                acc[item.key] = { name: item.label, Events: 0, Registrations: 0, Members: 0 };
-                return acc;
-            }, {});
-
-            events.forEach((event) => {
-                const key = toMonthKey(event.created_at);
-                if (key && monthlyTrendMap[key]) monthlyTrendMap[key].Events++;
-            });
-
-            registrations.forEach((registration) => {
-                const key = toMonthKey(registration.registered_at || registration.created_at);
-                if (key && monthlyTrendMap[key]) monthlyTrendMap[key].Registrations++;
-            });
-
-            activeMemberships.forEach((membership) => {
-                const key = toMonthKey(membership.joined_at);
-                if (key && monthlyTrendMap[key]) monthlyTrendMap[key].Members++;
-            });
-
-            const attendanceTrendMap = monthlySeries.reduce((acc, item) => {
-                acc[item.key] = { name: item.label, Present: 0, Absent: 0 };
-                return acc;
-            }, {});
-
-            attendance.forEach((record) => {
-                const key = toMonthKey(record.marked_at);
-                if (!key || !attendanceTrendMap[key]) return;
-                if (PRESENT_STATUSES.includes(record.status)) attendanceTrendMap[key].Present++;
-                else attendanceTrendMap[key].Absent++;
-            });
-
-            const activeClubCount = clubs.some((club) => club.status === 'active')
-                ? clubs.filter((club) => club.status === 'active').length
-                : clubs.length;
-
-            return {
-                totalClubs: activeClubCount,
-                totalUsers: profiles.length,
-                totalEvents: events.length,
-                totalRegistrations: registrations.length,
-                totalCertificates: validCertificates.length,
-                totalMemberships: activeMemberships.length,
-                totalNotifications: notifications.length,
-                readRate,
-                deliverySuccess,
-                attendanceRate,
-                avgRating,
-                monthlyTrend: Object.values(monthlyTrendMap),
-                attendanceTrend: Object.values(attendanceTrendMap),
-                clubPerf,
-                deptRanking,
-                categoryDist,
-                ratingDist: [1, 2, 3, 4, 5].map((rating) => ({
-                    name: `${rating}*`,
-                    value: feedback.filter((item) => Math.round(item.rating || 0) === rating).length,
-                })),
-            };
+            try {
+                return await fetchAdminAnalyticsViaRpc();
+            } catch (error) {
+                if (!isMissingAdminAnalyticsRpcError(error)) {
+                    throw error;
+                }
+                console.warn('Admin analytics RPC unavailable, falling back to legacy client aggregation:', error.message);
+                return fetchAdminAnalyticsLegacy();
+            }
         },
     });
 };

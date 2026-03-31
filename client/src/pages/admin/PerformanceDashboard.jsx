@@ -35,6 +35,30 @@ import { toast } from 'sonner';
 // eslint-disable-next-line no-unused-vars
 import { formatBytes } from '../../utils/performance';
 
+const PERFORMANCE_MIGRATION_HINT = 'Apply Supabase migration 20260307_performance_indexes.sql.';
+
+const isMissingPerformanceBackendObjectError = (error) => {
+    const code = error?.code;
+    const message = `${error?.message || ''} ${error?.details || ''}`.toLowerCase();
+
+    return (
+        ['42P01', '42883', 'PGRST202', 'PGRST205'].includes(code) ||
+        message.includes('does not exist') ||
+        message.includes('could not find the table') ||
+        message.includes('could not find the function') ||
+        message.includes('relation') ||
+        message.includes('function public.')
+    );
+};
+
+const getPerformanceBackendErrorMessage = (error) => {
+    if (!error) return null;
+    if (isMissingPerformanceBackendObjectError(error)) {
+        return `Performance backend objects are missing. ${PERFORMANCE_MIGRATION_HINT}`;
+    }
+    return error.message || 'Performance data could not be loaded.';
+};
+
 // ── Data hooks ───────────────────────────────────────────────────────────────
 
 const useEventStats = () =>
@@ -50,6 +74,8 @@ const useEventStats = () =>
             return data || [];
         },
         staleTime: 5 * 60 * 1000,
+        retry: (failureCount, error) =>
+            !isMissingPerformanceBackendObjectError(error) && failureCount < 2,
     });
 
 const useTableSizes = () =>
@@ -68,13 +94,18 @@ const useTableSizes = () =>
             ];
             const results = await Promise.all(
                 tables.map(async (t) => {
-                    const { count } = await supabase.from(t.name).select('*', { count: 'exact', head: true });
+                    const { count, error } = await supabase.from(t.name).select('*', { count: 'exact', head: true });
+                    if (error) {
+                        throw new Error(`Failed to query ${t.name}: ${error.message}`);
+                    }
                     return { ...t, count: count || 0 };
                 })
             );
             return results;
         },
         staleTime: 10 * 60 * 1000,
+        retry: (failureCount, error) =>
+            !isMissingPerformanceBackendObjectError(error) && failureCount < 2,
     });
 
 // ── Performance metric card ──────────────────────────────────────────────────
@@ -173,8 +204,9 @@ const PerformanceDashboard = () => {
     const queryClient = useQueryClient();
     const [refreshing, setRefreshing] = useState(false);
 
-    const { data: eventStats, isLoading: statsLoading } = useEventStats();
-    const { data: tableData, isLoading: tableLoading } = useTableSizes();
+    const { data: eventStats, isLoading: statsLoading, error: statsError } = useEventStats();
+    const { data: tableData, isLoading: tableLoading, error: tableError } = useTableSizes();
+    const backendErrorMessage = getPerformanceBackendErrorMessage(statsError || tableError);
 
     const completedItems = CHECKLIST_ITEMS.filter(i => i.status === 'done').length;
     const completionPct = Math.round((completedItems / CHECKLIST_ITEMS.length) * 100);
@@ -189,7 +221,7 @@ const PerformanceDashboard = () => {
             queryClient.invalidateQueries({ queryKey: ['mv-event-stats-sample'] });
             toast.success(`Materialized view refreshed: ${data}`);
         } catch (err) {
-            toast.error(`Refresh failed: ${err.message}`);
+            toast.error(`Refresh failed: ${getPerformanceBackendErrorMessage(err)}`);
         } finally {
             setRefreshing(false);
         }
@@ -199,6 +231,13 @@ const PerformanceDashboard = () => {
 
     return (
         <Box sx={{ pb: 8 }}>
+            {backendErrorMessage ? (
+                <Alert severity="error" sx={{ mb: 3, borderRadius: '16px' }}>
+                    <Typography fontWeight={800}>Performance backend is unavailable</Typography>
+                    <Typography variant="body2">{backendErrorMessage}</Typography>
+                </Alert>
+            ) : null}
+
             {/* Header */}
             <Box
                 component={motion.div}
@@ -289,7 +328,12 @@ const PerformanceDashboard = () => {
                         <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" mb={2}>
                             Live row counts across key tables
                         </Typography>
-                        {tableLoading ? <LoadingDots inline size={5} /> : (
+                        {tableLoading ? <LoadingDots inline size={5} /> : tableError ? (
+                            <Alert severity="error" sx={{ borderRadius: '12px' }}>
+                                <Typography fontWeight={700}>Table metrics unavailable</Typography>
+                                {getPerformanceBackendErrorMessage(tableError)}
+                            </Alert>
+                        ) : (
                             <Stack spacing={1}>
                                 {(tableData || []).map((t, i) => {
                                     const max = Math.max(...(tableData || []).map(x => x.count), 1);
@@ -385,7 +429,12 @@ const PerformanceDashboard = () => {
                             <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" mb={1.5}>
                                 mv_event_stats materialized view
                             </Typography>
-                            {statsLoading ? <LoadingDots inline size={5} /> : (
+                            {statsLoading ? <LoadingDots inline size={5} /> : statsError ? (
+                                <Alert severity="error" sx={{ borderRadius: '12px' }}>
+                                    <Typography fontWeight={700}>Analytics cache unavailable</Typography>
+                                    {getPerformanceBackendErrorMessage(statsError)}
+                                </Alert>
+                            ) : (
                                 <>
                                     <Typography variant="caption" color="text.disabled" display="block" mb={1.5}>
                                         Last refreshed: {eventStats?.[0]?.last_refreshed
@@ -409,7 +458,7 @@ const PerformanceDashboard = () => {
                                         variant="outlined"
                                         startIcon={refreshing ? <LoadingDots inline size={5} color="currentColor" /> : <Refresh />}
                                         onClick={handleRefreshMV}
-                                        disabled={refreshing}
+                                        disabled={refreshing || Boolean(statsError)}
                                         sx={{ mt: 2, fontWeight: 700, borderRadius: '10px', textTransform: 'none', borderColor: '#3b82f640', color: '#3b82f6', '&:hover': { bgcolor: '#3b82f610', borderColor: '#3b82f6' } }}
                                     >
                                         {refreshing ? 'Refreshing...' : 'Refresh View'}

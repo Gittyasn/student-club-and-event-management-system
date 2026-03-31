@@ -39,13 +39,17 @@ ALTER TABLE public.ai_governance ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.ai_insights_cache ENABLE ROW LEVEL SECURITY;
 
 -- Admins manage governance, everyone reads
+DROP POLICY IF EXISTS "Governance globally readable" ON public.ai_governance;
 CREATE POLICY "Governance globally readable" ON public.ai_governance FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Admins manage governance" ON public.ai_governance;
 CREATE POLICY "Admins manage governance" ON public.ai_governance FOR ALL USING (
     (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin'
 );
 
 -- Cache is globally readable, coordinators/admins update
+DROP POLICY IF EXISTS "Cache readable" ON public.ai_insights_cache;
 CREATE POLICY "Cache readable" ON public.ai_insights_cache FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Cache writable" ON public.ai_insights_cache;
 CREATE POLICY "Cache writable" ON public.ai_insights_cache FOR ALL USING (
     (SELECT role FROM public.profiles WHERE id = auth.uid()) IN ('admin', 'coordinator')
 );
@@ -107,46 +111,69 @@ RETURNS TABLE (
     start_time TIMESTAMP WITH TIME ZONE,
     match_score INT,
     recommendation_reason TEXT
-) AS $$
+) 
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
 BEGIN
     RETURN QUERY
-    WITH UserClubs AS (
-        SELECT club_id FROM public.club_memberships 
-        WHERE user_id = p_user_id AND status = 'approved'
+    WITH user_clubs AS (
+        SELECT club_id
+        FROM public.club_memberships
+        WHERE user_id = p_user_id
+          AND status IN ('approved', 'active', 'core_member', 'sub_coordinator')
     ),
-    UserCategories AS (
-        SELECT e.category_id, COUNT(*) as cat_weight
+    user_categories AS (
+        SELECT e.category_id, COUNT(*)::INT AS cat_weight
         FROM public.attendance_records a
         JOIN public.events e ON a.event_id = e.id
         WHERE a.user_id = p_user_id
+          AND a.status IN ('present', 'late')
+          AND e.category_id IS NOT NULL
         GROUP BY e.category_id
     )
-    SELECT 
-        e.id,
+    SELECT
+        e.id AS event_id,
         e.title,
-        COALESCE(e.poster_url, c.banner_url),
+        COALESCE(e.poster_url, c.banner_url) AS banner_url,
         e.start_time,
-        -- Calculate Match Score
-        COALESCE(uc.cat_weight, 0) * 10 + 
-        (CASE WHEN cl.club_id IS NOT NULL THEN 20 ELSE 0 END) +
-        (CASE WHEN COALESCE(e.max_participants, 0) > 0 AND (SELECT count(*) FROM public.registrations r WHERE r.event_id = e.id) >= (COALESCE(e.max_participants, 0) * 0.8) THEN 5 ELSE 0 END) AS match_score,
-        -- Reason
-        CASE 
-            WHEN cl.club_id IS NOT NULL THEN 'From your clubs'
-            WHEN uc.cat_weight > 0 THEN 'Based on past categories'
-            ELSE 'Trending'
-        END AS recommendation_reason
+        (
+            COALESCE(uc.cat_weight, 0) * 10
+            + CASE WHEN cl.club_id IS NOT NULL THEN 20 ELSE 0 END
+            + CASE
+                WHEN COALESCE(e.max_participants, 0) > 0
+                AND (
+                    SELECT COUNT(*)
+                    FROM public.registrations r
+                    WHERE r.event_id = e.id
+                      AND r.status = 'registered'
+                ) >= (COALESCE(e.max_participants, 0) * 0.8)
+                THEN 5
+                ELSE 0
+              END
+        )::INT AS match_score,
+        CASE
+            WHEN cl.club_id IS NOT NULL THEN 'From your club activity'
+            WHEN COALESCE(uc.cat_weight, 0) > 0 THEN 'Matches categories you attended before'
+            ELSE 'Popular upcoming event'
+        END::TEXT AS recommendation_reason
     FROM public.events e
     LEFT JOIN public.clubs c ON c.id = e.club_id
-    LEFT JOIN UserCategories uc ON e.category_id = uc.category_id
-    LEFT JOIN UserClubs cl ON e.club_id = cl.club_id
-    WHERE e.status = 'approved' 
+    LEFT JOIN user_categories uc ON e.category_id = uc.category_id
+    LEFT JOIN user_clubs cl ON e.club_id = cl.club_id
+    WHERE e.approval_status = 'approved'
+      AND COALESCE(e.visibility, 'public') <> 'hidden'
       AND e.start_time > NOW()
-      AND e.id NOT IN (SELECT event_id FROM public.registrations WHERE user_id = p_user_id) -- Not already registered
+      AND NOT EXISTS (
+          SELECT 1
+          FROM public.registrations r
+          WHERE r.event_id = e.id
+            AND r.user_id = p_user_id
+      )
     ORDER BY match_score DESC, e.start_time ASC
     LIMIT p_limit;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
 
 
 -- RPC: Club Recommendations
@@ -157,40 +184,54 @@ RETURNS TABLE (
     logo_url TEXT,
     match_score INT,
     recommendation_reason TEXT
-) AS $$
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
 DECLARE
     user_dept TEXT;
 BEGIN
-    SELECT department INTO user_dept FROM public.profiles WHERE id = p_user_id;
+    SELECT department INTO user_dept
+    FROM public.profiles
+    WHERE id = p_user_id;
 
     RETURN QUERY
-    WITH AttendedEvents AS (
-        SELECT e.club_id, COUNT(*) as hit_rate
+    WITH attended_events AS (
+        SELECT e.club_id, COUNT(*)::INT AS hit_rate
         FROM public.attendance_records a
         JOIN public.events e ON a.event_id = e.id
         WHERE a.user_id = p_user_id
+          AND a.status IN ('present', 'late')
         GROUP BY e.club_id
     )
-    SELECT 
-        c.id,
+    SELECT
+        c.id AS club_id,
         c.name,
         c.logo_url,
-        COALESCE(ae.hit_rate, 0) * 15 +
-        COALESCE(ROUND(COALESCE(c.rating, 0) * 5), 0)::INT +
-        (CASE WHEN COALESCE(c.member_count, 0) >= 25 THEN 10 ELSE 0 END) AS match_score,
-        CASE 
-            WHEN ae.hit_rate > 0 THEN 'Based on events attended'
+        (
+            COALESCE(ae.hit_rate, 0) * 15
+            + COALESCE(ROUND(COALESCE(c.rating, 0) * 5), 0)::INT
+            + CASE WHEN COALESCE(c.member_count, 0) >= 25 THEN 10 ELSE 0 END
+        )::INT AS match_score,
+        CASE
+            WHEN COALESCE(ae.hit_rate, 0) > 0 THEN 'Based on events you attended'
             WHEN user_dept IS NOT NULL THEN 'Recommended for active students in your department'
-            ELSE 'Popular on campus'
-        END AS recommendation_reason
+            ELSE 'Active campus club'
+        END::TEXT AS recommendation_reason
     FROM public.clubs c
-    LEFT JOIN AttendedEvents ae ON c.id = ae.club_id
+    LEFT JOIN attended_events ae ON c.id = ae.club_id
     WHERE c.status = 'active'
-      AND c.id NOT IN (SELECT cm.club_id FROM public.club_memberships cm WHERE cm.user_id = p_user_id)
-    ORDER BY match_score DESC
+      AND NOT EXISTS (
+          SELECT 1
+          FROM public.club_memberships cm
+          WHERE cm.club_id = c.id
+            AND cm.user_id = p_user_id
+            AND cm.status IN ('approved', 'active', 'core_member', 'sub_coordinator')
+      )
+    ORDER BY match_score DESC, c.name ASC
     LIMIT p_limit;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
 
 
 -- RPC: Attendance Prediction Model

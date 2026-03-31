@@ -6,6 +6,7 @@ import LoadingDots from '../components/LoadingDots';
 const ProtectedRoute = ({ allowedRoles }) => {
     const { user, profile, role, loading } = useAuthStore();
     const location = useLocation();
+    const hasRoleGate = Array.isArray(allowedRoles) && allowedRoles.length > 0;
 
     if (loading) {
         return (
@@ -49,7 +50,7 @@ const ProtectedRoute = ({ allowedRoles }) => {
         );
     }
 
-    if (allowedRoles && role && !allowedRoles.includes(role)) {
+    if (hasRoleGate && (!role || !allowedRoles.includes(role))) {
         return <Navigate to="/unauthorized" replace />;
     }
 

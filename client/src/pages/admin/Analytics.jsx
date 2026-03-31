@@ -1,4 +1,5 @@
 import {
+    Alert,
     Box,
     Card,
     CardContent,
@@ -98,7 +99,7 @@ const SectionCard = ({ title, subtitle, children, height = 340 }) => (
 );
 
 const AdminAnalytics = () => {
-    const { data, isLoading } = useAdminAnalytics();
+    const { data, isLoading, error } = useAdminAnalytics();
 
     if (isLoading) {
         return <LoadingDots minHeight="50vh" label="Loading analytics..." />;
@@ -107,9 +108,16 @@ const AdminAnalytics = () => {
     if (!data) {
         return (
             <Box sx={{ minHeight: '50vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Typography color="text.secondary" fontWeight={700}>
-                    Analytics will appear here once platform data is available.
-                </Typography>
+                {error ? (
+                    <Alert severity="error" sx={{ borderRadius: '16px' }}>
+                        <Typography fontWeight={800}>Analytics could not be loaded</Typography>
+                        <Typography variant="body2">{error.message}</Typography>
+                    </Alert>
+                ) : (
+                    <Typography color="text.secondary" fontWeight={700}>
+                        Analytics will appear here once platform data is available.
+                    </Typography>
+                )}
             </Box>
         );
     }

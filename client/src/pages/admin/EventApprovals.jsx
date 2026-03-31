@@ -27,9 +27,7 @@ import {
 import { CheckCircleOutline, Visibility as ViewIcon } from '@mui/icons-material';
 import { toast } from 'sonner';
 import { useEvents, useUpdateEventStatus } from '../../hooks/useEvents';
-import { supabase } from '../../services/supabaseClient';
 import { sendNotification } from '../../services/notificationService';
-import { writeAuditLog } from '../../services/auditLogService';
 import LoadingDots from '../../components/LoadingDots';
 import ApprovalDetails from './ApprovalDetails';
 import ApprovalHistory from './ApprovalHistory';
@@ -96,15 +94,6 @@ const EventApprovals = () => {
                             related_type: 'event'
                         });
                     }
-
-                    const { data: { user } } = await supabase.auth.getUser();
-                    await writeAuditLog({
-                        actor_id: user?.id,
-                        action: `${actionType}_event`,
-                        target_table: 'events',
-                        target_id: selectedEvent.id,
-                        meta: { title: selectedEvent.title, reason: rejectionReason.trim() }
-                    });
 
                     setSelectedEvent(null);
                     setRejectionReason('');

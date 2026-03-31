@@ -3,12 +3,42 @@ import { supabase } from '../services/supabaseClient';
 import { fetchAuditLogs, writeAuditLog } from '../services/auditLogService';
 import { toast } from 'sonner';
 
+export const SECURITY_MIGRATION_HINT = 'Apply Supabase migration 20260306_security_module.sql.';
+
+export const isMissingSecurityBackendObjectError = (error) => {
+    const code = error?.code;
+    const message = `${error?.message || ''} ${error?.details || ''}`.toLowerCase();
+
+    return (
+        ['42P01', '42883', 'PGRST202', 'PGRST205'].includes(code) ||
+        message.includes('does not exist') ||
+        message.includes('could not find the table') ||
+        message.includes('could not find the function') ||
+        message.includes('relation') ||
+        message.includes('function public.')
+    );
+};
+
+export const getSecurityBackendErrorMessage = (error) => {
+    if (!error) return null;
+    if (isMissingSecurityBackendObjectError(error)) {
+        return `Security backend objects are missing. ${SECURITY_MIGRATION_HINT}`;
+    }
+    return error.message || 'Security data could not be loaded.';
+};
+
+const createSecurityQueryOptions = (baseOptions) => ({
+    ...baseOptions,
+    retry: (failureCount, error) =>
+        !isMissingSecurityBackendObjectError(error) && failureCount < 2,
+});
+
 // ─────────────────────────────────────────────────────────────────────────────
 // SECURITY KPI HOOK
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const useSecurityKPIs = () =>
-    useQuery({
+    useQuery(createSecurityQueryOptions({
         queryKey: ['securityKPIs'],
         queryFn: async () => {
             const { data, error } = await supabase
@@ -19,18 +49,18 @@ export const useSecurityKPIs = () =>
             return data;
         },
         refetchInterval: 30_000, // Refresh every 30s
-    });
+    }));
 
 // ─────────────────────────────────────────────────────────────────────────────
 // AUDIT LOGS HOOK
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const useAuditLogs = (limit = 200) =>
-    useQuery({
+    useQuery(createSecurityQueryOptions({
         queryKey: ['auditLogs', limit],
         queryFn: async () => fetchAuditLogs({ limit }),
         refetchInterval: 60_000,
-    });
+    }));
 
 // Write a structured audit log entry from the frontend
 export const useAuditLog = () => {
@@ -57,7 +87,7 @@ export const useAuditLog = () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const useLoginLogs = (limit = 100) =>
-    useQuery({
+    useQuery(createSecurityQueryOptions({
         queryKey: ['loginLogs', limit],
         queryFn: async () => {
             const { data, error } = await supabase
@@ -78,10 +108,10 @@ export const useLoginLogs = (limit = 100) =>
             return data || [];
         },
         refetchInterval: 30_000,
-    });
+    }));
 
 export const useFailedLogins24h = () =>
-    useQuery({
+    useQuery(createSecurityQueryOptions({
         queryKey: ['failedLogins24h'],
         queryFn: async () => {
             const { data, error } = await supabase
@@ -91,14 +121,14 @@ export const useFailedLogins24h = () =>
             return data || [];
         },
         refetchInterval: 60_000,
-    });
+    }));
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SECURITY EVENTS HOOK
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const useSecurityEvents = (resolvedFilter = false) =>
-    useQuery({
+    useQuery(createSecurityQueryOptions({
         queryKey: ['securityEvents', resolvedFilter],
         queryFn: async () => {
             let query = supabase
@@ -125,7 +155,7 @@ export const useSecurityEvents = (resolvedFilter = false) =>
             return data || [];
         },
         refetchInterval: 30_000,
-    });
+    }));
 
 // Resolve a security incident
 export const useResolveSecurityEvent = () => {
@@ -174,7 +204,7 @@ export const useBlockUser = () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const useRateLimitStatus = () =>
-    useQuery({
+    useQuery(createSecurityQueryOptions({
         queryKey: ['rateLimitStatus'],
         queryFn: async () => {
             const { data, error } = await supabase
@@ -195,14 +225,14 @@ export const useRateLimitStatus = () =>
             return Object.values(byAction);
         },
         refetchInterval: 60_000,
-    });
+    }));
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ACTIVE INCIDENTS HOOK
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const useActiveIncidents = () =>
-    useQuery({
+    useQuery(createSecurityQueryOptions({
         queryKey: ['activeIncidents'],
         queryFn: async () => {
             const { data, error } = await supabase
@@ -212,4 +242,4 @@ export const useActiveIncidents = () =>
             return data || [];
         },
         refetchInterval: 30_000,
-    });
+    }));

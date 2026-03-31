@@ -74,12 +74,20 @@ CREATE INDEX IF NOT EXISTS idx_results_event_rank
     WHERE status IN ('published', 'locked'); -- Partial: only visible results
 
 -- 1j. Login logs: Security dashboard (last 24h queries)
-CREATE INDEX IF NOT EXISTS idx_login_logs_status_created
-    ON public.login_logs(status, created_at DESC);
+DO $$
+BEGIN
+    IF to_regclass('public.login_logs') IS NOT NULL THEN
+        EXECUTE 'CREATE INDEX IF NOT EXISTS idx_login_logs_status_created ON public.login_logs(status, created_at DESC)';
+    END IF;
+END $$;
 
 -- 1k. Security events: Severity-based incident listing
-CREATE INDEX IF NOT EXISTS idx_security_events_severity_created
-    ON public.security_events(resolved, severity, created_at DESC);
+DO $$
+BEGIN
+    IF to_regclass('public.security_events') IS NOT NULL THEN
+        EXECUTE 'CREATE INDEX IF NOT EXISTS idx_security_events_severity_created ON public.security_events(resolved, severity, created_at DESC)';
+    END IF;
+END $$;
 
 
 -- ==============================================================================
@@ -135,7 +143,7 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS public.mv_event_stats AS
         e.club_id,
         e.status,
         e.start_time,
-        e.capacity,
+        e.max_participants AS capacity,
         -- Registration metrics
         COUNT(DISTINCT r.id) FILTER (WHERE r.status IN ('registered', 'confirmed', 'attended'))
                                                 AS registration_count,
@@ -156,10 +164,10 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS public.mv_event_stats AS
                                                 AS certificates_issued,
         -- Capacity fill rate (0-100)
         CASE
-            WHEN e.capacity IS NULL OR e.capacity = 0 THEN NULL
+            WHEN e.max_participants IS NULL OR e.max_participants = 0 THEN NULL
             ELSE ROUND(
                 COUNT(DISTINCT r.id) FILTER (WHERE r.status IN ('registered', 'confirmed', 'attended'))::numeric
-                / e.capacity * 100, 1
+                / e.max_participants * 100, 1
             )
         END                                     AS fill_rate_pct,
         NOW()                                   AS last_refreshed
@@ -169,7 +177,7 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS public.mv_event_stats AS
     LEFT JOIN public.feedback f ON f.event_id = e.id
     LEFT JOIN public.certificates c ON c.event_id = e.id
     WHERE e.status NOT IN ('archived')
-    GROUP BY e.id, e.title, e.club_id, e.status, e.start_time, e.capacity;
+    GROUP BY e.id, e.title, e.club_id, e.status, e.start_time, e.max_participants;
 
 -- Index the materialized view for fast lookups
 CREATE UNIQUE INDEX IF NOT EXISTS idx_mv_event_stats_event_id

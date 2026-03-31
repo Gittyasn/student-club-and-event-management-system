@@ -23,29 +23,16 @@ const authService = {
             }
         });
 
-        let currentAuthData = authData;
-
         if (authError) {
-            // Check if user already exists
-            if (authError.message.toLowerCase().includes('already registered') || authError.status === 422) {
-                // Try to sign in to see if we can get the user ID to fix the profile
-                const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-                    email,
-                    password,
-                });
-
-                if (signInError) {
-                    console.error('Sign in error during catch:', signInError);
-                    throw authError; // Throw original registration error
-                }
-                currentAuthData = signInData;
-            } else {
-                throw authError;
+            const message = authError.message?.toLowerCase?.() || '';
+            if (message.includes('already registered') || authError.status === 422) {
+                throw new Error('An account with this email already exists. Please sign in instead.');
             }
+            throw authError;
         }
 
-        if (currentAuthData?.user) {
-            const user = currentAuthData.user;
+        if (authData?.user) {
+            const user = authData.user;
             // Create profile in the public.profiles table using upsert to handle partial registration
             const { error: profileError } = await supabase
                 .from('profiles')
@@ -70,7 +57,7 @@ const authService = {
             await supabase.auth.signOut();
         }
 
-        return currentAuthData;
+        return authData;
     },
 
     /**
