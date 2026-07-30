@@ -1,4 +1,4 @@
-# Student Club & Event Management System
+#### Student Club & Event Management System
 
 A comprehensive management system for university clubs and events, built with React, TypeScript, and Supabase.
 
@@ -29,7 +29,7 @@ VITE_SUPABASE_URL=your_supabase_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
-## 🛠️ Available Commands
+##  Available Commands
 
 ### Development
 Run the app in development mode with Hot Module Replacement (HMR):
@@ -64,7 +64,7 @@ npx tsc -b
 - Technical stack summary: `TECH_STACK.md`
 - Extended deployment/setup/reference docs: `docs/`
 
-## 👥 Roles & Access
+##  Roles & Access
 - **Admin**: Full system control, event approvals, global settings.
 - **Coordinator**: Club management, event creation (requires approval), registration tracking.
 - **Student**: Club memberships, event registration, certificates, and feedback.
