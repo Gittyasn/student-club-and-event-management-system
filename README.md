@@ -8,7 +8,7 @@ A comprehensive management system for university clubs and events, built with Re
 - `/supabase`: Edge functions, migrations, and manual support patches
 - `supabase_schema.sql`: Master database schema and security policies
 
-## 🚀 Getting Started
+##  Getting Started
 
 ### 1. Database Setup (Supabase)
 1. Create a new project on [Supabase](https://supabase.com).
