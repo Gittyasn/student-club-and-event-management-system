@@ -35,3 +35,10 @@ supabase/tree_db.txt
 supabase/.temp/
 test_schema.txt
 users_jsx_content.txt
+node_modules/
+dist/
+.env
+.env.local
+.vscode/
+.idea/
+.DS_Store
