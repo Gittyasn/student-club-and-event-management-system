@@ -1,4 +1,4 @@
-#### Student Club & Event Management System
+🧑🏻‍🎓 Student Club & Event Management System
 
 A comprehensive management system for university clubs and events, built with React, TypeScript, and Supabase.
 
